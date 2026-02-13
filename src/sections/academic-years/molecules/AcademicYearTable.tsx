@@ -21,7 +21,8 @@ import type { UpdateAcademicYearDTO } from "@/modules/academic-year/domain/dto/U
 import AcademicYearModal from "@/sections/academic-years/organisms/AcademicYearModal";
 import { Modal } from "@/shared-ui/component/Modal";
 import Switch from "@/shared-ui/component/Switch";
-import {dateFormater, parseDate} from "@/libs/utils";
+import {dateFormater, formatDateForInput, parseDate} from "@/libs/utils";
+import Button from "@/shared-ui/component/Button";
 
 interface FormState {
     name: string;
@@ -62,8 +63,8 @@ export default function AcademicYearTable({ api }: Props) {
 
         setForm({
             name: item.name,
-            startDate: dateFormater(item.startDate),
-            endDate: dateFormater(item.endDate),
+            startDate: formatDateForInput(item.startDate),
+            endDate: formatDateForInput(item.endDate),
         });
     };
 
@@ -101,16 +102,31 @@ export default function AcademicYearTable({ api }: Props) {
 
     return (
         <>
-            <Table wrapperClassName="rounded-xl shadow-sm">
-                <TableHead>
+            <Table wrapperClassName="rounded-xl shadow-sm overflow-hidden">
+                <TableHead className="bg-gray-100 border-b h-16">
                     <tr>
-                        <TableHeaderCell>Nama</TableHeaderCell>
-                        <TableHeaderCell>Mulai</TableHeaderCell>
-                        <TableHeaderCell>Selesai</TableHeaderCell>
-                        <TableHeaderCell>Status</TableHeaderCell>
-                        <TableHeaderCell>Aksi</TableHeaderCell>
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+                            Nama
+                        </TableHeaderCell>
+
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+                            Mulai
+                        </TableHeaderCell>
+
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+                            Selesai
+                        </TableHeaderCell>
+
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+                            Status
+                        </TableHeaderCell>
+
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+                            Aksi
+                        </TableHeaderCell>
                     </tr>
                 </TableHead>
+
 
                 <tbody>
                 {academicYears.map((item) => (
@@ -148,25 +164,26 @@ export default function AcademicYearTable({ api }: Props) {
                         </TableCell>
 
                         <TableCell>
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() =>
-                                        handleEdit(item)
-                                    }
-                                    className="text-gray-600 hover:text-indigo-600 transition-colors"
-                                >
-                                    <FiEdit />
-                                </button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="text"
+                                    size="md"
+                                    color="primary"
+                                    onClick={() => handleEdit(item)}
+                                    leftIcon={FiEdit}
+                                    aria-label="Edit"
+                                />
 
-                                <button
-                                    onClick={() =>
-                                        setDeleteId(item.id)
-                                    }
-                                    className="text-gray-600 hover:text-red-600 transition-colors"
-                                >
-                                    <FiTrash2 />
-                                </button>
+                                <Button
+                                    variant="text"
+                                    size="md"
+                                    color="error"
+                                    onClick={() => setDeleteId(item.id)}
+                                    leftIcon={FiTrash2}
+                                    aria-label="Delete"
+                                />
                             </div>
+
                         </TableCell>
                     </TableRow>
                 ))}

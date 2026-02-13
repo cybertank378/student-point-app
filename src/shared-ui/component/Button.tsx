@@ -16,13 +16,14 @@ type Color =
     | "success";
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
-    children: ReactNode;
+    children?: ReactNode; // ✅ optional
     variant?: Variant;
     size?: Size;
     color?: Color;
     leftIcon?: IconType;
     rightIcon?: IconType;
-    loading?: boolean; // ✅ support loading
+    loading?: boolean;
+    iconOnly?: boolean; // ✅ new prop
 }
 
 const baseStyles =
@@ -34,6 +35,18 @@ const sizeStyles: Record<Size, string> = {
     sm: "px-3 py-1.5 text-xs",
 };
 
+const iconOnlySizeStyles: Record<Size, string> = {
+    lg: "p-3",
+    md: "p-2.5",
+    sm: "p-2",
+};
+
+const iconSizeMap: Record<Size, number> = {
+    lg: 18,
+    md: 16,
+    sm: 14,
+};
+
 const colorMap: Record<Color, Record<Variant, string>> = {
     primary: {
         filled:
@@ -42,8 +55,7 @@ const colorMap: Record<Color, Record<Variant, string>> = {
             "bg-indigo-100 text-indigo-600 hover:bg-indigo-200 active:bg-indigo-300",
         outline:
             "border border-indigo-500 text-indigo-500 hover:bg-indigo-50 active:bg-indigo-100",
-        text:
-            "text-indigo-500 hover:bg-indigo-50 active:bg-indigo-100",
+        text: "text-indigo-500 hover:bg-indigo-50 active:bg-indigo-100",
     },
     secondary: {
         filled:
@@ -52,8 +64,7 @@ const colorMap: Record<Color, Record<Variant, string>> = {
             "bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400",
         outline:
             "border border-gray-500 text-gray-600 hover:bg-gray-100 active:bg-gray-200",
-        text:
-            "text-gray-600 hover:bg-gray-100 active:bg-gray-200",
+        text: "text-gray-600 hover:bg-gray-100 active:bg-gray-200",
     },
     error: {
         filled:
@@ -62,8 +73,7 @@ const colorMap: Record<Color, Record<Variant, string>> = {
             "bg-red-100 text-red-600 hover:bg-red-200 active:bg-red-300",
         outline:
             "border border-red-500 text-red-500 hover:bg-red-50 active:bg-red-100",
-        text:
-            "text-red-500 hover:bg-red-50 active:bg-red-100",
+        text: "text-red-500 hover:bg-red-50 active:bg-red-100",
     },
     warning: {
         filled:
@@ -72,8 +82,7 @@ const colorMap: Record<Color, Record<Variant, string>> = {
             "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 active:bg-yellow-300",
         outline:
             "border border-yellow-500 text-yellow-600 hover:bg-yellow-50 active:bg-yellow-100",
-        text:
-            "text-yellow-600 hover:bg-yellow-50 active:bg-yellow-100",
+        text: "text-yellow-600 hover:bg-yellow-50 active:bg-yellow-100",
     },
     info: {
         filled:
@@ -82,8 +91,7 @@ const colorMap: Record<Color, Record<Variant, string>> = {
             "bg-cyan-100 text-cyan-600 hover:bg-cyan-200 active:bg-cyan-300",
         outline:
             "border border-cyan-500 text-cyan-500 hover:bg-cyan-50 active:bg-cyan-100",
-        text:
-            "text-cyan-500 hover:bg-cyan-50 active:bg-cyan-100",
+        text: "text-cyan-500 hover:bg-cyan-50 active:bg-cyan-100",
     },
     success: {
         filled:
@@ -92,8 +100,7 @@ const colorMap: Record<Color, Record<Variant, string>> = {
             "bg-green-100 text-green-600 hover:bg-green-200 active:bg-green-300",
         outline:
             "border border-green-500 text-green-500 hover:bg-green-50 active:bg-green-100",
-        text:
-            "text-green-500 hover:bg-green-50 active:bg-green-100",
+        text: "text-green-500 hover:bg-green-50 active:bg-green-100",
     },
 };
 
@@ -105,16 +112,22 @@ export default function Button({
                                    leftIcon: LeftIcon,
                                    rightIcon: RightIcon,
                                    loading = false,
+                                   iconOnly = false,
                                    className,
                                    disabled,
                                    ...props
                                }: Props) {
+    const isIconOnly =
+        iconOnly || (!children && (LeftIcon || RightIcon));
+
+    const iconSize = iconSizeMap[size];
+
     return (
         <button
             disabled={disabled || loading}
             className={clsx(
                 baseStyles,
-                sizeStyles[size],
+                isIconOnly ? iconOnlySizeStyles[size] : sizeStyles[size],
                 colorMap[color][variant],
                 className
             )}
@@ -122,7 +135,9 @@ export default function Button({
         >
             {loading ? (
                 <svg
-                    className="h-5 w-5 animate-spin"
+                    className="animate-spin"
+                    width={iconSize}
+                    height={iconSize}
                     viewBox="0 0 24 24"
                     fill="none"
                 >
@@ -142,12 +157,13 @@ export default function Button({
                 </svg>
             ) : (
                 <>
-                    {LeftIcon && <LeftIcon size={16} />}
-                    {children}
-                    {RightIcon && <RightIcon size={16} />}
+                    {LeftIcon && <LeftIcon size={iconSize} />}
+                    {!isIconOnly && children}
+                    {RightIcon && <RightIcon size={iconSize} />}
                 </>
             )}
         </button>
     );
 }
+
 

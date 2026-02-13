@@ -66,7 +66,7 @@ export default function AcademicYearHeader({ api }: Props) {
         <>
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-xl font-semibold">
+                    <h1 className="text-xl text-gray-800 font-semibold">
                         Tahun Ajaran
                     </h1>
                     <p className="text-sm text-gray-500">
