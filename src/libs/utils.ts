@@ -68,3 +68,26 @@ export default function getInitials(name: string) {
         words[1].charAt(0)
     ).toUpperCase();
 }
+
+
+export function dateFormater(dateString: Date): string {
+    const date = new Date(dateString);
+
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const year = date.getUTCFullYear();
+
+    return `${day}-${month}-${year}`;
+}
+
+export function parseDate(value: string | Date): Date {
+    if (value instanceof Date) return value;
+
+    const date = new Date(value);
+
+    if (isNaN(date.getTime())) {
+        throw new Error("Invalid date string");
+    }
+
+    return date;
+}

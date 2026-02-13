@@ -199,9 +199,11 @@ model LoginAudit {
 /////////////////////////////////////////////////////
 
 model AcademicYear {
-  id       String  @id @default(uuid())
-  name     String  @unique // contoh: 2024/2025
-  isActive Boolean @default(false)
+  id        String   @id @default(uuid())
+  name      String   @unique // contoh: 2024/2025
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  isActive  Boolean  @default(false)
 
   classes Class[]
 
@@ -360,7 +362,7 @@ model Teacher {
 
 model Violation {
   id        String         @id @default(uuid())
-  name      String
+  name      String         @unique // ← TAMBAHKAN INI
   point     Int
   level     ViolationLevel
   deletedAt DateTime?

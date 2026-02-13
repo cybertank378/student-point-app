@@ -1,5 +1,4 @@
 //Files: src/modules/academic-year/domain/mapper/AcademicYearMapper.ts
-
 import type { AcademicYear as PrismaAcademicYear } from "@/generated/prisma";
 import { AcademicYear } from "@/modules/academic-year/domain/entity/AcademicYear";
 
@@ -13,6 +12,8 @@ export class AcademicYearMapper {
         return new AcademicYear(
             row.id,
             row.name,
+            row.startDate,
+            row.endDate,
             row.isActive,
             row.createdAt,
         );
@@ -21,6 +22,8 @@ export class AcademicYearMapper {
     static toDomainList(
         rows: PrismaAcademicYear[],
     ): AcademicYear[] {
-        return rows.map(this.toDomain);
+        return rows.map((row) =>
+            AcademicYearMapper.toDomain(row),
+        );
     }
 }

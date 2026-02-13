@@ -1,25 +1,39 @@
 //Files: src/modules/academic-year/application/usecases/SetActiveAcademicYearUseCase.ts
-
 import { Result } from "@/modules/shared/core/Result";
 import type { AcademicYearInterface } from "@/modules/academic-year/domain/interfaces/AcademicYearInterface";
+import { serverLog } from "@/libs/serverLogger";
 
 export class SetActiveAcademicYearUseCase {
     constructor(
-        private readonly repo: AcademicYearInterface,
+        private readonly repo: AcademicYearInterface
     ) {}
 
     async execute(id: string): Promise<Result<void>> {
-        const existing = await this.repo.findById(id);
+        try {
+            serverLog("SET ACTIVE CALLED WITH ID:", id);
 
-        if (!existing) {
-            return Result.fail("Academic year not found");
+            const existing = await this.repo.findById(id);
+
+            serverLog("FIND RESULT:", existing);
+
+            if (!existing) {
+                serverLog("ACADEMIC YEAR NOT FOUND:", id);
+                return Result.fail("Tahun ajaran tidak ditemukan.");
+            }
+
+            await this.repo.setActive(id);
+
+            serverLog("ACADEMIC YEAR ACTIVATED:", id);
+
+            return Result.ok();
+        } catch (error) {
+            serverLog("SET ACTIVE ERROR:", error);
+
+            return Result.fail(
+                "Gagal mengaktifkan tahun ajaran."
+            );
         }
-
-        // ✅ BUSINESS RULE:
-        // hanya 1 academic year boleh aktif
-        await this.repo.deactivateAll();
-        await this.repo.setActive(id);
-
-        return Result.ok(undefined);
     }
 }
+
+

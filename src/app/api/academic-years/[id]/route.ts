@@ -15,16 +15,16 @@ const controller = createAcademicYearController();
 
 export async function GET(req: NextRequest) {
     const id = getRouteParam(req);
-    return controller.getById(id);
+    return await controller.getById(id);
 }
 
 export async function PUT(req: NextRequest) {
     const id = getRouteParam(req);
-    return controller.update(id, req);
+    return await controller.update(id, req);
 }
 
 export async function DELETE(req: NextRequest) {
     const id = getRouteParam(req);
-    return controller.delete(id);
+    return await controller.delete(id);
 }
 

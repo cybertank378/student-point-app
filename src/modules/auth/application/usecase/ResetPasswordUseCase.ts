@@ -1,4 +1,4 @@
-//Files: src/modules/violation/application/usecases/ResetPasswordUseCase.ts
+//Files: src/modules/auth/application/usecases/ResetPasswordUseCase.ts
 
 import {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
 import {AuthRepositoryInterface} from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";

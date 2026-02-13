@@ -1,12 +1,11 @@
 //Files: src/modules/academic-year/presentation/hooks/useAcademicYearApi.ts
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
 
 import type { AcademicYear } from "@/modules/academic-year/domain/entity/AcademicYear";
-import type { CreateAcademicYearDTO } from "@/modules/academic-year/domain/dto/CreateAcademicYearDTO";
-import type { UpdateAcademicYearDTO } from "@/modules/academic-year/domain/dto/UpdateAcademicYearDTO";
+import type { CreateAcademicYearInput } from "@/modules/academic-year/infrastructure/validators/AcademicYearSchema";
+import type { UpdateAcademicYearInput } from "@/modules/academic-year/infrastructure/validators/AcademicYearSchema";
 
 import {
     type ApiError,
@@ -16,269 +15,212 @@ import {
 } from "@/modules/shared/errors/ApiError";
 
 /**
- * Hook: Academic Year API
- * Endpoint: /api/academic-years
+ * ============================================
+ * ACADEMIC YEAR API HOOK
+ * ============================================
  */
 export const useAcademicYearApi = () => {
     const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<ApiError | null>(null);
 
-    /**
-     * ============================
+    const clearError = () => setError(null);
+
+    /* ============================================
      * FETCH ALL
-     * ============================
-     */
+     * ============================================ */
     const fetchAcademicYears = useCallback(async () => {
         setLoading(true);
+        clearError();
+
         try {
-            setError(null);
-
             const res = await fetch("/api/academic-years");
-            const list = await safeJson<AcademicYear[]>(res);
 
-            setAcademicYears(list ?? []);
-        } catch (err) {
-            const apiErr = toApiError(
+            const data = await safeJson<AcademicYear[]>(res);
+
+            setAcademicYears(data ?? []);
+        } catch (err: unknown) {
+            const apiError = toApiError(
                 err,
-                "Failed to fetch academic years",
+                "Gagal mengambil data tahun ajaran",
             );
-            setError(apiErr);
-            setAcademicYears([]);
+            setError(apiError);
+            throw apiError;
         } finally {
             setLoading(false);
         }
     }, []);
 
-    /**
-     * ============================
-     * GET BY ID
-     * ============================
-     */
-    const getAcademicYearById = useCallback(
-        async (
-            id: string | null | undefined,
-        ): Promise<AcademicYear | null> => {
-            if (!id) {
-                console.warn(
-                    "getAcademicYearById called without id",
-                );
-                return null;
-            }
-
-            try {
-                setError(null);
-
-                const res = await fetch(
-                    `/api/academic-years/${id}`,
-                );
-
-                if (!res.ok) {
-                    const apiErr = await parseError(res);
-                    setError(apiErr);
-                    return null;
-                }
-
-                const year =
-                    await safeJson<AcademicYear>(res);
-
-                return year ?? null;
-            } catch (err) {
-                const apiErr = toApiError(
-                    err,
-                    "Failed to fetch academic year",
-                );
-                setError(apiErr);
-                return null;
-            }
-        },
-        [],
-    );
-
-    /**
-     * ============================
+    /* ============================================
      * CREATE
-     * ============================
-     */
+     * ============================================ */
     const createAcademicYear = useCallback(
         async (
-            payload: CreateAcademicYearDTO,
-        ): Promise<AcademicYear | null> => {
-            try {
-                setError(null);
+            payload: CreateAcademicYearInput,
+        ): Promise<AcademicYear> => {
+            setLoading(true);
+            clearError();
 
+            try {
                 const res = await fetch(
                     "/api/academic-years",
                     {
                         method: "POST",
                         headers: {
-                            "Content-Type": "application/json",
+                            "Content-Type":
+                                "application/json",
                         },
                         body: JSON.stringify(payload),
                     },
                 );
 
-                const created =
+                const data =
                     await safeJson<AcademicYear>(res);
 
                 await fetchAcademicYears();
-                return created ?? null;
-            } catch (err) {
-                const apiErr = toApiError(
+
+                return data;
+            } catch (err: unknown) {
+                const apiError = toApiError(
                     err,
-                    "Failed to create academic year",
+                    "Gagal membuat tahun ajaran",
                 );
-                setError(apiErr);
-                console.error(
-                    "createAcademicYear error",
-                    err,
-                );
-                return null;
+                setError(apiError);
+                throw apiError;
+            } finally {
+                setLoading(false);
             }
         },
         [fetchAcademicYears],
     );
 
-    /**
-     * ============================
+    /* ============================================
      * UPDATE
-     * ============================
-     */
+     * ============================================ */
     const updateAcademicYear = useCallback(
         async (
-            payload: UpdateAcademicYearDTO,
-        ): Promise<AcademicYear | null> => {
-            try {
-                setError(null);
+            id: string,
+            payload: UpdateAcademicYearInput,
+        ): Promise<AcademicYear> => {
+            setLoading(true);
+            clearError();
 
+            try {
                 const res = await fetch(
-                    `/api/academic-years/${payload.id}`,
+                    `/api/academic-years/${id}`,
                     {
                         method: "PUT",
                         headers: {
-                            "Content-Type": "application/json",
+                            "Content-Type":
+                                "application/json",
                         },
-                        body: JSON.stringify({
-                            name: payload.name,
-                        }),
+                        body: JSON.stringify(payload),
                     },
                 );
 
-                const updated =
+                const data =
                     await safeJson<AcademicYear>(res);
 
                 await fetchAcademicYears();
-                return updated ?? null;
-            } catch (err) {
-                const apiErr = toApiError(
+
+                return data;
+            } catch (err: unknown) {
+                const apiError = toApiError(
                     err,
-                    "Failed to update academic year",
+                    "Gagal mengupdate tahun ajaran",
                 );
-                setError(apiErr);
-                console.error(
-                    "updateAcademicYear error",
-                    err,
-                );
-                return null;
+                setError(apiError);
+                throw apiError;
+            } finally {
+                setLoading(false);
             }
         },
         [fetchAcademicYears],
     );
 
-    /**
-     * ============================
+    /* ============================================
      * SET ACTIVE
-     * ============================
-     */
+     * ============================================ */
     const setActiveAcademicYear = useCallback(
-        async (id: string): Promise<boolean> => {
-            if (!id) return false;
+        async (id: string): Promise<void> => {
+            setLoading(true);
+            clearError();
 
             try {
-                setError(null);
-
                 const res = await fetch(
                     `/api/academic-years/${id}/activate`,
-                    { method: "PATCH" },
+                    {
+                        method: "PATCH",
+                    },
                 );
 
                 if (!res.ok) {
-                    const apiErr = await parseError(res);
-                    setError(apiErr);
-                    return false;
+                    throw await parseError(res);
                 }
 
                 await fetchAcademicYears();
-                return true;
-            } catch (err) {
-                const apiErr = toApiError(
+            } catch (err: unknown) {
+                const apiError = toApiError(
                     err,
-                    "Failed to activate academic year",
+                    "Gagal mengaktifkan tahun ajaran",
                 );
-                setError(apiErr);
-                return false;
+                setError(apiError);
+                throw apiError;
+            } finally {
+                setLoading(false);
             }
         },
         [fetchAcademicYears],
     );
 
-    /**
-     * ============================
+    /* ============================================
      * DELETE
-     * ============================
-     */
+     * ============================================ */
     const deleteAcademicYear = useCallback(
         async (id: string): Promise<void> => {
-            if (!id) return;
+            setLoading(true);
+            clearError();
 
             try {
-                setError(null);
-
                 const res = await fetch(
                     `/api/academic-years/${id}`,
-                    { method: "DELETE" },
+                    {
+                        method: "DELETE",
+                    },
                 );
 
                 if (!res.ok) {
-                    const apiErr = await parseError(res);
-                    setError(apiErr);
-                    console.error(
-                        "deleteAcademicYear failed",
-                        apiErr,
-                    );
+                    throw await parseError(res);
                 }
 
                 await fetchAcademicYears();
-            } catch (err) {
-                const apiErr = toApiError(
+            } catch (err: unknown) {
+                const apiError = toApiError(
                     err,
-                    "Failed to delete academic year",
+                    "Gagal menghapus tahun ajaran",
                 );
-                setError(apiErr);
-                console.error(
-                    "deleteAcademicYear error",
-                    err,
-                );
+                setError(apiError);
+                throw apiError;
+            } finally {
+                setLoading(false);
             }
         },
         [fetchAcademicYears],
     );
 
-    /**
-     * ============================
+    /* ============================================
      * INITIAL LOAD
-     * ============================
-     */
+     * ============================================ */
     useEffect(() => {
-        fetchAcademicYears().catch(console.error);
+        fetchAcademicYears().catch(() => {});
     }, [fetchAcademicYears]);
 
     return {
         academicYears,
         loading,
-        error, // error?.statusCode bisa dipakai di UI
+        error,
+        clearError,
         fetchAcademicYears,
-        getAcademicYearById,
         createAcademicYear,
         updateAcademicYear,
         setActiveAcademicYear,

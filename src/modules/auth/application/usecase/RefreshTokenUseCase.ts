@@ -12,9 +12,7 @@ export class RefreshTokenUseCase {
         private readonly token: TokenServiceInterface,
     ) {}
 
-    async execute(
-        refreshToken: string,
-    ): Promise<{
+    async execute(refreshToken: string,): Promise<{
         accessToken: string;
         refreshToken: string;
     }> {
@@ -44,7 +42,9 @@ export class RefreshTokenUseCase {
 
         const newPayload = {
             sub: payload.sub,
+            username: payload.username,
             role: payload.role,
+            teacherRole:payload.teacherRole
         };
 
         const newAccess =

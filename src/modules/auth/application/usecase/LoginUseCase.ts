@@ -90,7 +90,9 @@ export class LoginUseCase {
 
         const payload = {
             sub: user.id,
+            username: user.username,
             role: user.role,
+            teacherRole:user.teacherRole
         };
 
         const accessToken =
@@ -122,7 +124,9 @@ export class LoginUseCase {
 
         serverLog("Login success", {
             userId: user.id,
+            username:user.username,
             role: user.role,
+            teacherRole:user.teacherRole,
             ip,
         });
 

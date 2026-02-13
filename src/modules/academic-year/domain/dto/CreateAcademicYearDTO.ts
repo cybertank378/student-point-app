@@ -6,4 +6,7 @@
  */
 export interface CreateAcademicYearDTO {
     name: string;
+    startDate: Date;
+    endDate: Date;
+    isActive?: boolean;
 }

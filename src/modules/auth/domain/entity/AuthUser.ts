@@ -1,6 +1,6 @@
 //Files: src/modules/auth/domain/entity/AuthUser.ts
 
-import {Role} from "@/generated/prisma";
+import { Role, TeacherRole } from "@/generated/prisma";
 
 export class AuthUser {
     constructor(
@@ -8,9 +8,10 @@ export class AuthUser {
         public readonly username: string,
         public readonly password: string,
         public readonly role: Role,
-        public readonly isActive: boolean,
-        public readonly failedAttempts: number,
-        public readonly lockUntil: Date | null,
-        public readonly mustChangePassword: boolean,
+        public readonly teacherRole?: TeacherRole, // ← ini wajib optional
+        public readonly isActive: boolean = true,
+        public readonly failedAttempts: number = 0,
+        public readonly lockUntil: Date | null = null,
+        public readonly mustChangePassword: boolean = false,
     ) {}
 }

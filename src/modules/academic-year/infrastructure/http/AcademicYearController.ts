@@ -1,29 +1,25 @@
 //Files: src/modules/academic-year/infrastructure/http/AcademicYearController.ts
-
 import type { NextRequest } from "next/server";
 
 import { AcademicYearService } from "@/modules/academic-year/application/services/AcademicYearService";
 
-
-import type { CreateAcademicYearDTO } from "@/modules/academic-year/domain/dto/CreateAcademicYearDTO";
-import type { UpdateAcademicYearDTO } from "@/modules/academic-year/domain/dto/UpdateAcademicYearDTO";
 import {
     CreateAcademicYearSchema,
-    UpdateAcademicYearSchema
-} from "@/modules/academic-year/infrastructure/validators/academicYear.validator";
-import {handleZodError} from "@/modules/shared/errors/handleZodError";
+    UpdateAcademicYearSchema,
+    type CreateAcademicYearInput,
+    type UpdateAcademicYearInput,
+} from "@/modules/academic-year/infrastructure/validators/AcademicYearSchema";
+
+import { handleZodError } from "@/modules/shared/errors/handleZodError";
+import { serverLog } from "@/libs/serverLogger";
 
 export class AcademicYearController {
     constructor(
         private readonly service: AcademicYearService,
     ) {}
 
-    /**
-     * ======================================
-     * ============ LIST (GET ALL) ==========
-     * ======================================
-     * GET /api/academic-years
-     */
+    /* ========================= GET ALL ========================= */
+
     async getAll() {
         const result = await this.service.getAll();
 
@@ -37,12 +33,8 @@ export class AcademicYearController {
         return Response.json(result.getValue());
     }
 
-    /**
-     * ======================================
-     * ============ GET BY ID ===============
-     * ======================================
-     * GET /api/academic-years/:id
-     */
+    /* ========================= GET BY ID ========================= */
+
     async getById(id: string) {
         const result = await this.service.getById(id);
 
@@ -56,18 +48,16 @@ export class AcademicYearController {
         return Response.json(result.getValue());
     }
 
-    /**
-     * ======================================
-     * ============== CREATE ===============
-     * ======================================
-     * POST /api/academic-years
-     */
+    /* ========================= CREATE ========================= */
+
     async create(req: NextRequest) {
         try {
-            const body =
-                CreateAcademicYearSchema.parse(
-                    await req.json(),
-                ) as CreateAcademicYearDTO;
+            const json = await req.json();
+
+            serverLog("Incoming Payload:", json);
+
+            // 🔥 VALIDATE + TRANSFORM
+            const body: CreateAcademicYearInput = CreateAcademicYearSchema.parse(json);
 
             const result = await this.service.create(body);
 
@@ -86,23 +76,21 @@ export class AcademicYearController {
         }
     }
 
-    /**
-     * ======================================
-     * ============== UPDATE ===============
-     * ======================================
-     * PUT /api/academic-years/:id
-     */
+    /* ========================= UPDATE ========================= */
+
     async update(id: string, req: NextRequest) {
         try {
-            const body =
-                UpdateAcademicYearSchema.parse(
-                    await req.json(),
-                ) as Omit<UpdateAcademicYearDTO, "id">;
+            const json = await req.json();
 
-            const result = await this.service.update({
-                id,
-                name: body.name,
-            });
+            const body: UpdateAcademicYearInput =
+                UpdateAcademicYearSchema.parse(json);
+
+            const result =
+                await this.service.update({
+                    id,
+                    ...body,
+                    isActive: false
+                });
 
             if (result.isFailure) {
                 return Response.json(
@@ -117,14 +105,11 @@ export class AcademicYearController {
         }
     }
 
-    /**
-     * ======================================
-     * ============ SET ACTIVE ==============
-     * ======================================
-     * PATCH /api/academic-years/:id/activate
-     */
+    /* ========================= SET ACTIVE ========================= */
+
     async setActive(id: string) {
-        const result = await this.service.setActive(id);
+        const result =
+            await this.service.setActive(id);
 
         if (result.isFailure) {
             return Response.json(
@@ -136,14 +121,11 @@ export class AcademicYearController {
         return Response.json({ success: true });
     }
 
-    /**
-     * ======================================
-     * ============== DELETE ===============
-     * ======================================
-     * DELETE /api/academic-years/:id
-     */
+    /* ========================= DELETE ========================= */
+
     async delete(id: string) {
-        const result = await this.service.delete(id);
+        const result =
+            await this.service.delete(id);
 
         if (result.isFailure) {
             return Response.json(

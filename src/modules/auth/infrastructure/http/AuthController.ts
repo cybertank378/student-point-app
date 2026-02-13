@@ -10,7 +10,7 @@ import {
 import { handleZodError } from "@/modules/shared/errors/handleZodError";
 import {DomainError} from "@/modules/shared/errors/DomainError";
 import {AuthService} from "@/modules/auth/application/service/AuthService";
-import {FIFTEEN_MINUTES, SEVEN_DAYS} from "@/libs/utils";
+import {ONE_DAY, SEVEN_DAYS} from "@/libs/utils";
 
 export class AuthController {
     constructor(
@@ -67,7 +67,7 @@ export class AuthController {
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
                 path: "/",
-                maxAge: FIFTEEN_MINUTES, // 15 menit
+                maxAge: ONE_DAY, // 15 menit
             });
 
             // 🔥 REFRESH TOKEN COOKIE

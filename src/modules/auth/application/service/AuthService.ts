@@ -5,10 +5,10 @@ import {RefreshTokenUseCase} from "@/modules/auth/application/usecase/RefreshTok
 import {LogoutUseCase} from "@/modules/auth/application/usecase/LogoutUseCase";
 import {ChangePasswordUseCase} from "@/modules/auth/application/usecase/ChangePasswordUseCase";
 import {RequestResetPasswordUseCase} from "@/modules/auth/application/usecase/RequestResetPasswordUseCase";
-import {ResetPasswordUseCase} from "@/modules/violation/application/usecases/ResetPasswordUseCase";
 import {AuthRepositoryInterface} from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
 import {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
 import {TokenServiceInterface} from "@/modules/auth/domain/interfaces/TokenServiceInterface";
+import {ResetPasswordUseCase} from "@/modules/auth/application/usecase/ResetPasswordUseCase";
 
 export class AuthService {
     private loginUC: LoginUseCase;

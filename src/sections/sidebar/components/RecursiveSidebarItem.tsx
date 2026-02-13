@@ -1,79 +1,119 @@
 //Files: src/sections/sidebar/components/RecursiveSidebarItem.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
-import clsx from "clsx";
+import { usePathname, useRouter } from "next/navigation";
 import { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
-import { isMenuActive } from "../utils/isMenuActive";
+import { FaChevronRight } from "react-icons/fa";
+import clsx from "clsx";
 
-interface RecursiveSidebarItemProps {
+interface Props {
     item: SidebarMenuItem;
-    depth?: number;
+    level?: number;
+    index: number;
+    expandedIndex: number | null;
+    setExpandedIndex: (index: number | null) => void;
+    collapsed?: boolean; // ✅ TAMBAHKAN INI
 }
 
 export function RecursiveSidebarItem({
                                          item,
-                                         depth = 0,
-                                     }: RecursiveSidebarItemProps) {
+                                         level = 0,
+                                         index,
+                                         expandedIndex,
+                                         setExpandedIndex,
+                                         collapsed = false, // default
+                                     }: Props) {
     const pathname = usePathname();
-    const active = isMenuActive(item, pathname);
-    const hasChildren = Boolean(item.children && item.children.length > 0);
+    const router = useRouter();
 
-    const [open, setOpen] = useState<boolean>(active);
+    const hasChildren = !!item.children?.length;
+    const isActive = item.path && pathname === item.path;
+    const isOpen = expandedIndex === index;
 
-    useEffect(() => {
-        if (active) {
-            setOpen(true);
+    const handleClick = () => {
+        if (collapsed && item.path) {
+            router.push(item.path);
+            return;
         }
-    }, [active]);
+
+        if (hasChildren && level === 0) {
+            setExpandedIndex(isOpen ? null : index);
+        } else if (item.path) {
+            router.push(item.path);
+        }
+    };
+
+    const paddingLeft = collapsed ? 12 : 16 + level * 18;
 
     return (
         <div>
-            <div
-                onClick={() => {
-                    if (hasChildren) setOpen((prev) => !prev);
-                }}
+            <button
+                onClick={handleClick}
                 className={clsx(
-                    "flex items-center justify-between px-4 py-2 rounded-lg transition-colors cursor-pointer",
-                    active
-                        ? "bg-indigo-600 text-white"
-                        : "text-gray-700 hover:bg-gray-100",
-                    depth > 0 && "ml-4"
+                    "flex items-center justify-between w-full rounded-xl",
+                    "text-sm font-medium px-3 py-2 transition-all duration-200",
+                    {
+                        "bg-[#666CFF] text-white": isActive,
+                        "bg-[#383951] text-[#D8D8EE]":
+                            level === 0 && isOpen && !isActive,
+                        "hover:bg-[#383951] text-[#D8D8EE]":
+                            !isActive && !(level === 0 && isOpen),
+                    }
                 )}
+                style={{ paddingLeft }}
             >
-                {item.path ? (
-                    <Link href={item.path} className="flex items-center gap-2 w-full">
-                        {item.icon && <item.icon size={18} />}
-                        <span>{item.label}</span>
-                    </Link>
-                ) : (
-                    <div className="flex items-center gap-2 w-full">
-                        {item.icon && <item.icon size={18} />}
-                        <span>{item.label}</span>
-                    </div>
-                )}
+                <div className="flex items-center gap-2">
+                    {level === 0 && item.icon && (
+                        <item.icon size={18} />
+                    )}
 
-                {hasChildren && (
-                    <span
+                    {/* 🔥 HIDE LABEL IF COLLAPSED */}
+                    {!collapsed && (
+                        <>
+                            {level > 0 && (
+                                <span
+                                    className={clsx(
+                                        "w-2 h-2 rounded-full",
+                                        isActive ? "bg-white" : "bg-[#B0B0C6]"
+                                    )}
+                                />
+                            )}
+
+                            <span
+                                className={clsx(
+                                    level > 0 && !isActive
+                                        ? "text-[#B0B0C6]"
+                                        : ""
+                                )}
+                            >
+                {item.label}
+              </span>
+                        </>
+                    )}
+                </div>
+
+                {hasChildren && level === 0 && !collapsed && (
+                    <FaChevronRight
+                        size={12}
                         className={clsx(
-                            "text-xs transition-transform",
-                            open && "rotate-90"
+                            "transition-transform duration-200",
+                            isOpen && "rotate-90"
                         )}
-                    >
-            ▶
-          </span>
+                    />
                 )}
-            </div>
+            </button>
 
-            {hasChildren && open && item.children && (
+            {hasChildren && isOpen && !collapsed && (
                 <div className="mt-1 space-y-1">
-                    {item.children.map((child) => (
+                    {item.children?.map((child, i) => (
                         <RecursiveSidebarItem
-                            key={`${child.label}-${depth}`}
+                            key={child.label}
                             item={child}
-                            depth={depth + 1}
+                            level={level + 1}
+                            index={i}
+                            expandedIndex={expandedIndex}
+                            setExpandedIndex={setExpandedIndex}
+                            collapsed={collapsed} // ✅ teruskan ke child
                         />
                     ))}
                 </div>
@@ -81,3 +121,6 @@ export function RecursiveSidebarItem({
         </div>
     );
 }
+
+
+

@@ -44,18 +44,19 @@ export class AcademicYearRepository
             : null;
     }
 
-    async create(
-        dto: CreateAcademicYearDTO,
-    ): Promise<AcademicYear> {
+    async create(dto: CreateAcademicYearDTO): Promise<AcademicYear> {
         const row = await prisma.academicYear.create({
             data: {
                 name: dto.name,
+                startDate: dto.startDate,
+                endDate: dto.endDate,
                 isActive: false,
             },
         });
 
         return AcademicYearMapper.toDomain(row);
     }
+
 
     async update(
         dto: UpdateAcademicYearDTO,
@@ -64,6 +65,9 @@ export class AcademicYearRepository
             where: { id: dto.id },
             data: {
                 name: dto.name,
+                startDate: dto.startDate,
+                endDate: dto.endDate,
+                isActive:dto.isActive
             },
         });
 
@@ -85,12 +89,34 @@ export class AcademicYearRepository
      * Set satu academic year sebagai aktif
      */
     async setActive(id: string): Promise<void> {
-        await prisma.academicYear.update({
-            where: { id },
-            data: { isActive: true },
+        await prisma.$transaction(async (tx) => {
+            // pastikan data ada
+            const existing = await tx.academicYear.findUnique({
+                where: { id },
+            });
+
+            if (!existing) {
+                throw new Error("Academic year tidak ditemukan.");
+            }
+
+            // jika sudah aktif, tidak perlu apa-apa
+            if (existing.isActive) {
+                return;
+            }
+
+            // nonaktifkan yang aktif saja
+            await tx.academicYear.updateMany({
+                where: { isActive: true },
+                data: { isActive: false },
+            });
+
+            // aktifkan yang dipilih
+            await tx.academicYear.update({
+                where: { id },
+                data: { isActive: true },
+            });
         });
     }
-
     /**
      * Delete academic year
      *

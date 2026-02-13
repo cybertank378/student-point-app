@@ -1,12 +1,15 @@
 //Files: src/app/(protected)/dashboard/components/StudentDashboard.tsx
 
-import { CurrentUser } from "@/modules/auth/server/getCurrentUser";
+import { getCurrentUser} from "@/modules/auth/server/getCurrentUser";
+import {redirect} from "next/navigation";
 
-interface Props {
-    user: CurrentUser;
-}
+export default async function StudentDashboard() {
+    const user = await getCurrentUser();
 
-export default function StudentDashboard({ user }: Props) {
+    if (!user) {
+        redirect("/login");
+    }
+
     return (
         <div className="space-y-6">
             <header>

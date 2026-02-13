@@ -11,9 +11,9 @@ const controller = createAcademicYearController();
  */
 
 export async function GET() {
-    return controller.getAll();
+    return await  controller.getAll();
 }
 
 export async function POST(req: NextRequest) {
-    return controller.create(req);
+    return await controller.create(req);
 }

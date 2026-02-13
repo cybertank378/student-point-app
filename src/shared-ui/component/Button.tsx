@@ -1,4 +1,4 @@
-// Files: src/shared-ui/component/ui/Button.tsx
+// Files: src/shared-ui/component/Button.tsx
 "use client";
 
 import { ButtonHTMLAttributes, ReactNode } from "react";

@@ -14,7 +14,7 @@ export function useSidebarMenu(
 ): SidebarMenuItem[] {
     return useMemo(() => {
         const permissions = getPermissions(role, teacherRole);
-        const rawMenu = getRoleMenu(role, teacherRole);
+        const rawMenu = getRoleMenu(role);
         return filterMenuByPermission(rawMenu, permissions);
     }, [role, teacherRole]);
 }

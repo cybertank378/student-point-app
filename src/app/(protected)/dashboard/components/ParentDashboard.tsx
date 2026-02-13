@@ -1,12 +1,16 @@
 //Files: src/app/(protected)/dashboard/components/ParentDashboard.
 
-import { CurrentUser } from "@/modules/auth/server/getCurrentUser";
+import { getCurrentUser } from "@/modules/auth/server/getCurrentUser";
+import {redirect} from "next/navigation";
 
-interface Props {
-    user: CurrentUser;
-}
 
-export default function ParentDashboard({ user }: Props) {
+export default async function ParentDashboard() {
+    const user = await getCurrentUser();
+
+    if (!user) {
+        redirect("/login");
+    }
+
     return (
         <div className="space-y-6">
             <header>

@@ -13,6 +13,13 @@ export class AuthRepository implements AuthRepositoryInterface{
     ): Promise<AuthUser | null> {
         const data = await prisma.user.findUnique({
             where: { username },
+            include: {
+                teacher: {
+                    select: {
+                        roles: true,
+                    },
+                },
+            },
         });
 
         if (!data) return null;

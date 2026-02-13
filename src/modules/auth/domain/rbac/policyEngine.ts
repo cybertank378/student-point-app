@@ -31,7 +31,7 @@ const policyMatrix: PolicyRule[] = [
     },
     {
         path: "/api/academic-years",
-        methods: ["GET", "POST", "PUT", "DELETE"],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
         permission: "academicYear.manage",
     },
 ];

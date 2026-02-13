@@ -1,30 +1,26 @@
 //Files: src/sections/dashboard/pages/AdminPages.tsx
 "use client";
 
-import type {CurrentUser} from "@/modules/auth/server/getCurrentUser";
-import {MdEmojiEvents, MdGavel, MdSchool, MdWarning,} from "react-icons/md";
+import type { getCurrentUser } from "@/modules/auth/server/getCurrentUser";
+import { MdEmojiEvents, MdGavel, MdSchool, MdWarning } from "react-icons/md";
 
-import {useEffect, useState} from "react";
-
-import {KPICard} from "@/sections/dashboard/atomic/KPICard";
+import { KPICard } from "@/sections/dashboard/atomic/KPICard";
 import ViolationChart from "@/sections/dashboard/atomic/ViolationChart";
 import AttendanceChart from "@/sections/dashboard/atomic/AttendanceChart";
-
-
 import StudentViolationTable from "@/sections/dashboard/molecules/StudentViolationTable";
 import FollowUpCard from "@/sections/dashboard/atomic/FollowUpCard";
 
+/* ================= TYPE DERIVED FROM SERVER FUNCTION ================= */
 
+type CurrentUser = NonNullable<
+    Awaited<ReturnType<typeof getCurrentUser>>
+>;
 
 interface Props {
     user: CurrentUser;
 }
 
-export default function AdminDashboardPage({user}: Props) {
-
-
-
-
+export default function AdminDashboardPage({ user }: Props) {
     return (
         <div className="min-h-screen bg-gray-100 p-6 space-y-6">
 
@@ -45,35 +41,35 @@ export default function AdminDashboardPage({user}: Props) {
                     value="842"
                     percent="+12.4%"
                     accent="indigo"
-                    icon={<MdSchool size={20}/>}
+                    icon={<MdSchool size={20} />}
                 />
                 <KPICard
                     title="Pelanggaran"
                     value="134"
                     percent="-8.7%"
                     accent="amber"
-                    icon={<MdGavel size={20}/>}
+                    icon={<MdGavel size={20} />}
                 />
                 <KPICard
                     title="Prestasi"
                     value="27"
                     percent="+4.3%"
                     accent="rose"
-                    icon={<MdEmojiEvents size={20}/>}
+                    icon={<MdEmojiEvents size={20} />}
                 />
                 <KPICard
                     title="SP2 & SP3"
                     value="12"
                     percent="-2.5%"
                     accent="sky"
-                    icon={<MdWarning size={20}/>}
+                    icon={<MdWarning size={20} />}
                 />
             </div>
 
             {/* ================= CHART SECTION ================= */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <ViolationChart/>
-                <AttendanceChart/>
+                <ViolationChart />
+                <AttendanceChart />
             </div>
 
             {/* ================= ROW 3 ================= */}
@@ -86,16 +82,14 @@ export default function AdminDashboardPage({user}: Props) {
                     </h3>
 
                     <div className="space-y-4 text-sm">
-                        <SummaryItem label="Pelanggaran Aktif" value="89" positive/>
-                        <SummaryItem label="SP1 Dikeluarkan" value="24"/>
-                        <SummaryItem label="SP2 Dikeluarkan" value="10"/>
-                        <SummaryItem label="SP3 Dikeluarkan" value="2" negative/>
+                        <SummaryItem label="Pelanggaran Aktif" value="89" positive />
+                        <SummaryItem label="SP1 Dikeluarkan" value="24" />
+                        <SummaryItem label="SP2 Dikeluarkan" value="10" />
+                        <SummaryItem label="SP3 Dikeluarkan" value="2" negative />
                     </div>
                 </div>
 
-                {/* DONUT TINDAK LANJUT */}
                 <FollowUpCard />
-
 
                 {/* Aktivitas */}
                 <div className="bg-white rounded-2xl shadow-sm p-6">
@@ -112,14 +106,12 @@ export default function AdminDashboardPage({user}: Props) {
             </div>
 
             {/* ================= TABLE ================= */}
-
             <StudentViolationTable />
-
         </div>
     );
 }
 
-/* ================= COMPONENTS ================= */
+/* ================= SMALL COMPONENT ================= */
 
 function SummaryItem({
                          label,

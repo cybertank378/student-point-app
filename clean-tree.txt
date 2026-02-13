@@ -122,6 +122,8 @@
 │   │   │   │   │   ├── UpdateAcademicYearDTO.ts
 │   │   │   │   ├── entity
 │   │   │   │   │   ├── AcademicYear.ts
+│   │   │   │   ├── errors
+│   │   │   │   │   ├── AcademicYearAlreadyActiveError.ts
 │   │   │   │   ├── interfaces
 │   │   │   │   │   ├── AcademicYearInterface.ts
 │   │   │   │   ├── mapper
@@ -178,8 +180,10 @@
 │   │   │   │   │   ├── LogoutUseCase.ts
 │   │   │   │   │   ├── RefreshTokenUseCase.ts
 │   │   │   │   │   ├── RequestResetPasswordUseCase.ts
+│   │   │   │   │   ├── ResetPasswordUseCase.ts
 │   │   │   ├── domain
 │   │   │   │   ├── entity
+│   │   │   │   │   ├── AuthPayload.ts
 │   │   │   │   │   ├── AuthSession.ts
 │   │   │   │   │   ├── AuthUser.ts
 │   │   │   │   │   ├── PasswordResetToken.ts
@@ -193,9 +197,7 @@
 │   │   │   │   │   ├── AuthMapper.ts
 │   │   │   │   ├── rbac
 │   │   │   │   │   ├── getSidebarMenu.ts
-│   │   │   │   │   ├── guard.ts
 │   │   │   │   │   ├── menuFilter.ts
-│   │   │   │   │   ├── permissionPolicy.ts
 │   │   │   │   │   ├── permissions.ts
 │   │   │   │   │   ├── policyEngine.ts
 │   │   │   │   │   ├── roleMenuPolicy.ts
@@ -410,7 +412,6 @@
 │   │   │   │   │   ├── DeleteViolationUseCase.ts
 │   │   │   │   │   ├── GetViolationByIdUseCase.ts
 │   │   │   │   │   ├── ListViolationUseCase.ts
-│   │   │   │   │   ├── ResetPasswordUseCase.ts
 │   │   │   │   │   ├── UpdateViolationUseCase.ts
 │   │   │   ├── domain
 │   │   │   │   ├── dto
@@ -435,6 +436,16 @@
 │   │   │   │   ├── hooks
 │   │   │   │   │   ├── useViolationApi.ts
 │   ├── sections
+│   │   ├── academic-years
+│   │   │   ├── data
+│   │   │   │   ├── dummyAcademicYears.ts
+│   │   │   ├── molecules
+│   │   │   │   ├── AcademicYearTable.tsx
+│   │   │   ├── organisms
+│   │   │   │   ├── AcademicYearHeader.tsx
+│   │   │   │   ├── AcademicYearModal.tsx
+│   │   │   ├── pages
+│   │   │   │   ├── AcademicYearSection.tsx
 │   │   ├── auth
 │   │   │   ├── atoms
 │   │   │   │   ├── AuthCheckbox.tsx

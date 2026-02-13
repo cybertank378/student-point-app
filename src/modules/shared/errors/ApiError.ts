@@ -17,25 +17,44 @@ export interface ApiError {
  * Parse Response → ApiError (dipakai di semua hook)
  */
 export const parseError = async (res: Response): Promise<ApiError> => {
-	let data: any = null;
+    let data: unknown = null;
 
-	try {
-		data = await res.json();
-	} catch {
-		// body kosong / bukan JSON → abaikan, pakai fallback
-	}
+    const contentType = res.headers.get("content-type");
 
-	const message =
-		data?.message || data?.error || `Request failed with status ${res.status}`;
+    try {
+        if (contentType?.includes("application/json")) {
+            data = await res.json();
+        } else {
+            const text = await res.text();
+            data = { message: text.slice(0, 200) };
+        }
+    } catch {
+        // ignore parsing error
+    }
 
-	return {
-		message,
-		code: typeof data?.code === "number" ? data.code : undefined,
-		statusCode:
-			typeof data?.statusCode === "number" ? data.statusCode : res.status,
-		details: data ?? undefined,
-	};
+    const record =
+        data && typeof data === "object"
+            ? (data as Record<string, unknown>)
+            : {};
+
+    const message =
+        typeof record.message === "string"
+            ? record.message
+            : typeof record.error === "string"
+                ? record.error
+                : `Request failed with status ${res.status}`;
+
+    return {
+        message,
+        code: typeof record.code === "number" ? record.code : undefined,
+        statusCode:
+            typeof record.statusCode === "number"
+                ? record.statusCode
+                : res.status,
+        details: data ?? undefined,
+    };
 };
+
 
 /**
  * Helper internal: ekstrak message/code/statusCode dari unknown object
@@ -93,17 +112,25 @@ export const toApiError = (err: unknown, fallbackMessage: string): ApiError => {
  * - T langsung
  */
 export const safeJson = async <T>(res: Response): Promise<T> => {
-	if (!res.ok) {
-		// lempar ApiError dari helper shared
-		throw await parseError(res);
-	}
+    if (!res.ok) {
+        throw await parseError(res);
+    }
 
-	const json = (await res.json()) as unknown;
+    const contentType = res.headers.get("content-type");
 
-	if (json && typeof json === "object" && "_value" in json) {
-		const wrapped = json as { _value: T | null | undefined };
-		return (wrapped._value as T) ?? ({} as T);
-	}
+    if (!contentType?.includes("application/json")) {
+        throw {
+            message: "Server returned non-JSON response",
+            statusCode: res.status,
+        } satisfies ApiError;
+    }
 
-	return json as T;
+    const json = (await res.json()) as unknown;
+
+    if (json && typeof json === "object" && "_value" in json) {
+        const wrapped = json as { _value: T | null | undefined };
+        return (wrapped._value as T) ?? ({} as T);
+    }
+
+    return json as T;
 };

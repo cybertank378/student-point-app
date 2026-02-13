@@ -1,60 +1,75 @@
 // src/shared-ui/layout/AppSidebar.tsx
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useSidebarMenu } from "@/sections/sidebar/hooks/useSidebarMenu";
 import { RecursiveSidebarItem } from "@/sections/sidebar/components/RecursiveSidebarItem";
-import {TeacherRole, UserRole} from "@/libs/utils";
+import { TeacherRole, UserRole } from "@/libs/utils";
 
-;
-
-interface AppSidebarProps {
+interface Props {
     role: UserRole;
     teacherRole?: TeacherRole;
-    onToggleSidebar?: () => void;
+    collapsed?: boolean; // ✅ tambahkan
+    onToggleSidebar?: () => void; // ✅ tambahkan
 }
 
 export default function AppSidebar({
                                        role,
                                        teacherRole,
+                                       collapsed = false,
                                        onToggleSidebar,
-                                   }: AppSidebarProps) {
+                                   }: Props) {
     const menu = useSidebarMenu(role, teacherRole);
 
+    const [expandedIndex, setExpandedIndex] =
+        useState<number | null>(1);
+
     return (
-        <aside className="w-[260px] bg-[#2c2f48] text-gray-300 flex flex-col min-h-screen">
-            {/* ===================================== */}
+        <aside
+            className={`bg-[#282A42] text-[#D8D8EE] min-h-screen transition-all duration-300 ${
+                collapsed ? "w-[80px]" : "w-[260px]"
+            }`}
+        >
             {/* HEADER */}
-            {/* ===================================== */}
-            <div className="h-16 flex items-center bg-white justify-between px-6 border-b border-gray-200">
-                <div className="flex items-center gap-3">
+            <div className="h-16 flex items-center justify-between px-4">
+                <div className="flex items-center">
                     <Image
                         src="/assets/images/logo/logo.png"
                         alt="Logo"
                         width={32}
                         height={32}
-                        priority
                     />
-                    <span className="text-[#2c2f48] text-lg font-semibold tracking-wide">SMP Negeri 29 Jakarta</span>
+
+                    {!collapsed && (
+                        <span className="ml-3 font-semibold">
+              SMP Negeri 29
+            </span>
+                    )}
                 </div>
 
+                {/* Toggle Button */}
                 {onToggleSidebar && (
                     <button
                         onClick={onToggleSidebar}
-                        className="text-gray-400 hover:text-gray-700 transition"
-                        aria-label="Toggle Sidebar"
+                        className="text-sm opacity-70 hover:opacity-100"
                     >
-                        ❮❮
+                        ☰
                     </button>
                 )}
             </div>
 
-            {/* ===================================== */}
             {/* MENU */}
-            {/* ===================================== */}
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                {menu.map((item) => (
-                    <RecursiveSidebarItem key={item.label} item={item} />
+            <nav className="px-3 space-y-1">
+                {menu.map((item, index) => (
+                    <RecursiveSidebarItem
+                        key={item.label}
+                        item={item}
+                        index={index}
+                        expandedIndex={expandedIndex}
+                        setExpandedIndex={setExpandedIndex}
+                        collapsed={collapsed} // optional kalau mau support icon-only
+                    />
                 ))}
             </nav>
         </aside>
