@@ -1,0 +1,464 @@
+// ==================================================
+// PRISMA SCHEMA
+// ==================================================
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/////////////////////////////////////////////////////
+// ENUMS
+/////////////////////////////////////////////////////
+
+// =====================
+// AUTH & USER
+// =====================
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+// =====================
+// TEACHER
+// =====================
+enum TeacherRole {
+  SUBJECT_TEACHER // guru mapel
+  HOMEROOM // wali kelas
+  COUNSELOR // guru BK
+  DUTY_TEACHER // guru piket
+}
+
+// =====================
+// STUDENT
+// =====================
+enum StudentStatus {
+  ACTIVE
+  GRADUATED
+  DROPPED
+  MUTATION
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+// =====================
+// MASTER DATA
+// =====================
+enum ParentType {
+  FATHER
+  MOTHER
+  GUARDIAN
+}
+
+// =====================
+// VIOLATION LEVEL
+// =====================
+enum ViolationLevel {
+  LIGHT
+  MEDIUM
+  HEAVY
+}
+
+// ===========================
+// VIOLATION RESOLUTION STATUS
+// ===========================
+enum ViolationResolutionStatus {
+  OPEN // baru dicatat
+  IN_PROGRESS // sedang ditangani
+  RESOLVED // selesai
+  ESCALATED // naik ke orang tua / kepala sekolah
+}
+
+// ===========================
+// VIOLATION ACTION TYPE
+// ===========================
+
+enum ViolationActionType {
+  WARNING // teguran lisan
+  WRITTEN_NOTICE // surat peringatan
+  COUNSELING // konseling
+  PARENT_CALL // panggil orang tua
+  SUSPENSION // skors
+}
+
+/////////////////////////////////////////////////////
+// AUTH MODULE
+/////////////////////////////////////////////////////
+
+model User {
+  id       String @id @default(uuid())
+  username String @unique
+  password String
+  role     Role
+
+  isActive Boolean @default(true)
+
+  // 🔐 Security
+  failedAttempts     Int       @default(0)
+  lockUntil          DateTime?
+  mustChangePassword Boolean   @default(false)
+
+  // 🔗 Relation ke domain user
+  studentId String?
+  parentId  String?
+
+  student Student? @relation(fields: [studentId], references: [id])
+  parent  Parent?  @relation(fields: [parentId], references: [id])
+  teacher Teacher?
+
+  // 🔄 Sessions
+  sessions AuthSession[]
+
+  // 🔁 Reset password
+  resetTokens PasswordResetToken[]
+
+  // 📜 Login audit
+  loginAudits LoginAudit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([isActive])
+}
+
+/////////////////////////////////////////////////////
+// REFRESH TOKEN SESSION
+/////////////////////////////////////////////////////
+
+model AuthSession {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+
+  device String? // optional device info
+  ip     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/////////////////////////////////////////////////////
+// PASSWORD RESET TOKEN
+/////////////////////////////////////////////////////
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/////////////////////////////////////////////////////
+// LOGIN AUDIT LOG
+/////////////////////////////////////////////////////
+
+model LoginAudit {
+  id         String  @id @default(uuid())
+  userId     String?
+  identifier String // username / nis / nip yg dipakai login
+  success    Boolean
+  ip         String?
+  userAgent  String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([identifier])
+  @@index([createdAt])
+}
+
+/////////////////////////////////////////////////////
+// ACADEMIC YEAR MODULE
+/////////////////////////////////////////////////////
+
+model AcademicYear {
+  id       String  @id @default(uuid())
+  name     String  @unique // contoh: 2024/2025
+  isActive Boolean @default(false)
+
+  classes Class[]
+
+  createdAt DateTime @default(now())
+}
+
+/////////////////////////////////////////////////////
+// CLASS MODULE
+/////////////////////////////////////////////////////
+
+model Class {
+  id             String @id @default(uuid())
+  grade          String
+  name           String
+  academicYearId String
+
+  homeroomTeacherId String? @unique
+
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  homeroomTeacher Teacher?     @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+  students        Student[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([grade, name, academicYearId])
+}
+
+/////////////////////////////////////////////////////
+// STUDENT MODULE
+/////////////////////////////////////////////////////
+
+model Student {
+  id       String  @id @default(uuid())
+  nisn     Int     @unique
+  nis      Int     @unique
+  name     String
+  nickname String?
+
+  gender     Gender
+  religionId String
+  rombelId   String
+
+  status    StudentStatus @default(ACTIVE)
+  deletedAt DateTime?
+
+  religion Religion @relation(fields: [religionId], references: [id])
+  rombel   Class    @relation(fields: [rombelId], references: [id])
+
+  profile StudentProfile?
+
+  users        User[]
+  parents      Parent[]
+  violations   StudentViolation[]
+  achievements StudentAchievement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/////////////////////////////////////////////////////
+// STUDENT PROFILE
+/////////////////////////////////////////////////////
+
+model StudentProfile {
+  id        String @id @default(uuid())
+  studentId String @unique
+
+  birthPlace String
+  birthDate  DateTime
+  address    String
+
+  distanceToSchool  String
+  transportToSchool String
+  previousSchool    String
+
+  hobby    String?
+  ambition String?
+
+  phone     String?
+  email     String?
+  instagram String?
+
+  internetAccess String?
+  hasLaptop      Boolean
+  hasPC          Boolean
+  hasPhone       Boolean
+
+  kjpRecipient Boolean
+  pipRecipient Boolean
+
+  specialNeeds Boolean
+  inclusion    Boolean
+
+  student Student @relation(fields: [studentId], references: [id])
+}
+
+/////////////////////////////////////////////////////
+// MASTER DATA: RELIGION
+/////////////////////////////////////////////////////
+
+model Religion {
+  id   String @id @default(uuid())
+  kode String @unique
+  name String
+
+  students Student[]
+}
+
+/////////////////////////////////////////////////////
+// PARENT MODULE
+/////////////////////////////////////////////////////
+
+model Parent {
+  id        String @id @default(uuid())
+  studentId String
+
+  type      ParentType
+  name      String
+  education String
+  job       String
+  income    String?
+  religion  String
+  phone     String
+  address   String
+
+  student Student @relation(fields: [studentId], references: [id])
+  users   User[]
+}
+
+/////////////////////////////////////////////////////
+// TEACHER MODULE
+/////////////////////////////////////////////////////
+
+model Teacher {
+  id    String  @id @default(uuid())
+  nip   String  @unique
+  name  String
+  phone String?
+  email String?
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  roles TeacherRole[]
+
+  homeroomOf Class? @relation("HomeroomTeacher")
+
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  ViolationResolution ViolationResolution[]
+}
+
+/////////////////////////////////////////////////////
+// VIOLATION MODULE (MASTER)
+/////////////////////////////////////////////////////
+
+model Violation {
+  id        String         @id @default(uuid())
+  name      String
+  point     Int
+  level     ViolationLevel
+  deletedAt DateTime?
+
+  records StudentViolation[]
+
+  createdAt DateTime @default(now())
+}
+
+/////////////////////////////////////////////////////
+// VIOLATION RESOLUTION
+/////////////////////////////////////////////////////
+
+model ViolationResolution {
+  id                 String @id @default(uuid())
+  studentViolationId String @unique
+  handlerTeacherId   String
+
+  status ViolationResolutionStatus
+  action ViolationActionType
+
+  note String?
+
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  studentViolation   StudentViolation     @relation(fields: [studentViolationId], references: [id])
+  handlerTeacher     Teacher              @relation(fields: [handlerTeacherId], references: [id])
+  ViolationActionLog ViolationActionLog[]
+}
+
+/////////////////////////////////////////////////////
+// VIOLATION HISTORY LOG
+/////////////////////////////////////////////////////
+
+model ViolationActionLog {
+  id           String              @id @default(uuid())
+  resolutionId String
+  action       ViolationActionType
+  note         String?
+  createdAt    DateTime            @default(now())
+
+  resolution ViolationResolution @relation(fields: [resolutionId], references: [id])
+}
+
+/////////////////////////////////////////////////////
+// STUDENT VIOLATION (TRANSACTION)
+/////////////////////////////////////////////////////
+
+model StudentViolation {
+  id          String   @id @default(uuid())
+  studentId   String
+  violationId String
+  point       Int
+  occurredAt  DateTime
+
+  student   Student   @relation(fields: [studentId], references: [id])
+  violation Violation @relation(fields: [violationId], references: [id])
+
+  createdAt           DateTime             @default(now())
+  ViolationResolution ViolationResolution?
+
+  @@index([studentId])
+  @@index([occurredAt])
+}
+
+/////////////////////////////////////////////////////
+// ACHIEVEMENT MODULE (MASTER)
+/////////////////////////////////////////////////////
+
+model Achievement {
+  id        String    @id @default(uuid())
+  name      String
+  point     Int
+  deletedAt DateTime?
+
+  records StudentAchievement[]
+
+  createdAt DateTime @default(now())
+}
+
+/////////////////////////////////////////////////////
+// STUDENT ACHIEVEMENT (TRANSACTION)
+/////////////////////////////////////////////////////
+
+model StudentAchievement {
+  id            String   @id @default(uuid())
+  studentId     String
+  achievementId String
+  point         Int
+  achievedAt    DateTime
+
+  student     Student     @relation(fields: [studentId], references: [id])
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+  @@index([achievedAt])
+}

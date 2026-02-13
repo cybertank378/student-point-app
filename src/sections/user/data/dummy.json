@@ -1,0 +1,272 @@
+[
+    {
+        "id": 1,
+        "name": "Ahmad Fauzi",
+        "nis": "230701",
+        "email": "ahmad.fauzi@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "7A",
+        "status": "Aktif"
+    },
+    {
+        "id": 2,
+        "name": "Siti Nurhaliza",
+        "nis": "230702",
+        "email": "siti.nurhaliza@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "7A",
+        "status": "Aktif"
+    },
+    {
+        "id": 3,
+        "name": "Rizky Pratama",
+        "nis": "230703",
+        "email": "rizky.pratama@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "7B",
+        "status": "Aktif"
+    },
+    {
+        "id": 4,
+        "name": "Dewi Lestari",
+        "nis": "230704",
+        "email": "dewi.lestari@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "7B",
+        "status": "Aktif"
+    },
+    {
+        "id": 5,
+        "name": "Bagas Saputra",
+        "nis": "230705",
+        "email": "bagas.saputra@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "8A",
+        "status": "Aktif"
+    },
+    {
+        "id": 6,
+        "name": "Nabila Putri",
+        "nis": "230706",
+        "email": "nabila.putri@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "8A",
+        "status": "Aktif"
+    },
+    {
+        "id": 7,
+        "name": "Fajar Ramadhan",
+        "nis": "230707",
+        "email": "fajar.ramadhan@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "8B",
+        "status": "Aktif"
+    },
+    {
+        "id": 8,
+        "name": "Putri Amelia",
+        "nis": "230708",
+        "email": "putri.amelia@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "8B",
+        "status": "Aktif"
+    },
+    {
+        "id": 9,
+        "name": "Ilham Maulana",
+        "nis": "230709",
+        "email": "ilham.maulana@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "9A",
+        "status": "Aktif"
+    },
+    {
+        "id": 10,
+        "name": "Alya Safitri",
+        "nis": "230710",
+        "email": "alya.safitri@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "9A",
+        "status": "Aktif"
+    },
+    {
+        "id": 11,
+        "name": "Budi Santoso",
+        "nis": "230711",
+        "email": "budi.santoso@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "9B",
+        "status": "Aktif"
+    },
+    {
+        "id": 12,
+        "name": "Rani Permata",
+        "nis": "230712",
+        "email": "rani.permata@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "9B",
+        "status": "Aktif"
+    },
+    {
+        "id": 13,
+        "name": "Yoga Pratama",
+        "nis": "230713",
+        "email": "yoga.pratama@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "7A",
+        "status": "Pindah"
+    },
+    {
+        "id": 14,
+        "name": "Citra Lestari",
+        "nis": "230714",
+        "email": "citra.lestari@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "7B",
+        "status": "Aktif"
+    },
+    {
+        "id": 15,
+        "name": "Andi Wijaya",
+        "nis": "230715",
+        "email": "andi.wijaya@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "8A",
+        "status": "Nonaktif"
+    },
+    {
+        "id": 16,
+        "name": "Hendra Gunawan",
+        "nis": "T001",
+        "email": "hendra.gunawan@smp.sch.id",
+        "role": "Guru",
+        "kelas": "-",
+        "status": "Aktif"
+    },
+    {
+        "id": 17,
+        "name": "Sari Dewi",
+        "nis": "T002",
+        "email": "sari.dewi@smp.sch.id",
+        "role": "Guru",
+        "kelas": "-",
+        "status": "Aktif"
+    },
+    {
+        "id": 18,
+        "name": "Agus Salim",
+        "nis": "T003",
+        "email": "agus.salim@smp.sch.id",
+        "role": "Guru",
+        "kelas": "-",
+        "status": "Aktif"
+    },
+    {
+        "id": 19,
+        "name": "Lina Marlina",
+        "nis": "T004",
+        "email": "lina.marlina@smp.sch.id",
+        "role": "Wali Kelas",
+        "kelas": "7A",
+        "status": "Aktif"
+    },
+    {
+        "id": 20,
+        "name": "Rudi Hartono",
+        "nis": "T005",
+        "email": "rudi.hartono@smp.sch.id",
+        "role": "Wali Kelas",
+        "kelas": "8A",
+        "status": "Aktif"
+    },
+    {
+        "id": 21,
+        "name": "Maya Sari",
+        "nis": "230716",
+        "email": "maya.sari@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "8B",
+        "status": "Aktif"
+    },
+    {
+        "id": 22,
+        "name": "Dian Prasetyo",
+        "nis": "230717",
+        "email": "dian.prasetyo@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "9A",
+        "status": "Aktif"
+    },
+    {
+        "id": 23,
+        "name": "Rahmawati",
+        "nis": "230718",
+        "email": "rahmawati@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "9B",
+        "status": "Aktif"
+    },
+    {
+        "id": 24,
+        "name": "Galih Nugraha",
+        "nis": "230719",
+        "email": "galih.nugraha@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "7A",
+        "status": "Aktif"
+    },
+    {
+        "id": 25,
+        "name": "Tania Putri",
+        "nis": "230720",
+        "email": "tania.putri@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "7B",
+        "status": "Aktif"
+    },
+    {
+        "id": 26,
+        "name": "Admin Sekolah",
+        "nis": "ADM01",
+        "email": "admin@smp.sch.id",
+        "role": "Admin",
+        "kelas": "-",
+        "status": "Aktif"
+    },
+    {
+        "id": 27,
+        "name": "Staff TU",
+        "nis": "ADM02",
+        "email": "staff@smp.sch.id",
+        "role": "Admin",
+        "kelas": "-",
+        "status": "Aktif"
+    },
+    {
+        "id": 28,
+        "name": "Raka Saputra",
+        "nis": "230721",
+        "email": "raka.saputra@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "8A",
+        "status": "Aktif"
+    },
+    {
+        "id": 29,
+        "name": "Vina Anggraini",
+        "nis": "230722",
+        "email": "vina.anggraini@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "8B",
+        "status": "Aktif"
+    },
+    {
+        "id": 30,
+        "name": "Ardiansyah",
+        "nis": "230723",
+        "email": "ardiansyah@smp.sch.id",
+        "role": "Siswa",
+        "kelas": "9A",
+        "status": "Lulus"
+    }
+]
