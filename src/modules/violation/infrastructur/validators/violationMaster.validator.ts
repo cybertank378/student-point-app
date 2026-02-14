@@ -1,46 +1,58 @@
 //Files: src/modules/violation/infrastructur/validators/violationMaster.validator.ts
-
 import { z } from "zod";
 
-/**
- * ================================
- * CREATE MASTER VIOLATION
- * ================================
- * POST /api/violations-master
- */
-export const CreateViolationSchema = z.object({
+/* ======================================================
+   ENUM
+====================================================== */
+
+export const ViolationLevelEnum = z.enum([
+    "LIGHT",
+    "MEDIUM",
+    "HEAVY",
+]);
+
+export type ViolationLevel =
+    z.infer<typeof ViolationLevelEnum>;
+
+/* ======================================================
+   BASE SCHEMA
+====================================================== */
+
+const BaseViolationSchema = z.object({
     name: z
         .string()
-        .min(1, "Nama pelanggaran wajib diisi")
-        .min(3, "Nama pelanggaran minimal 3 karakter")
-        .max(100, "Nama pelanggaran maksimal 100 karakter"),
+        .trim()
+        .min(1, { message: "Nama pelanggaran wajib diisi" })
+        .min(3, { message: "Nama pelanggaran minimal 3 karakter" })
+        .max(100, { message: "Nama pelanggaran maksimal 100 karakter" }),
 
     point: z
         .number()
-        .int("Point harus bilangan bulat")
-        .min(10, "Minimal 10 poin")
-        .max(100, "Maksimal 100 poin"),
+        .int({ message: "Point harus bilangan bulat" })
+        .min(10, { message: "Minimal 10 poin" })
+        .max(100, { message: "Maksimal 100 poin" }),
+
+    level: ViolationLevelEnum,
 });
 
-/**
- * ================================
- * UPDATE MASTER VIOLATION
- * ================================
- * PUT /api/violations-master/:id
- *
- * NOTE:
- * - id diambil dari URL, BUKAN body
- */
-export const UpdateViolationSchema = z.object({
-    name: z
-        .string()
-        .min(1, "Nama pelanggaran wajib diisi")
-        .min(3, "Nama pelanggaran minimal 3 karakter")
-        .max(100, "Nama pelanggaran maksimal 100 karakter"),
+/* ======================================================
+   CREATE
+====================================================== */
 
-    point: z
-        .number()
-        .int("Point harus berupa bilangan bulat")
-        .positive("Point harus bernilai positif"),
-});
+export const CreateViolationSchema =
+    BaseViolationSchema;
+
+export type CreateViolationInput =
+    z.infer<typeof CreateViolationSchema>;
+
+/* ======================================================
+   UPDATE
+====================================================== */
+
+export const UpdateViolationSchema =
+    BaseViolationSchema;
+
+export type UpdateViolationInput =
+    z.infer<typeof UpdateViolationSchema>;
+
 

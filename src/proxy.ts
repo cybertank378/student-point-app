@@ -1,4 +1,4 @@
-
+//Files: src/proxy.ts
 import { NextRequest, NextResponse } from "next/server";
 import {
     verifyAccessToken,
@@ -7,34 +7,45 @@ import {
 } from "@/modules/shared/core/jwt";
 
 import { evaluatePolicy } from "@/modules/auth/domain/rbac/policyEngine";
+import { canAccessRoute } from "@/modules/auth/domain/rbac/fieldGuard";
 
 import {
-    UserRole,
-    TeacherRole,
-    ONE_DAY,
     USER_ROLES,
     TEACHER_ROLES,
     mapToAuthPayload,
-    ACCESS_TOKEN_EXPIRE, REFRESH_TOKEN_EXPIRE
+    ACCESS_TOKEN_EXPIRE,
+    REFRESH_TOKEN_EXPIRE,
+    UserRole,
+    TeacherRole, ONE_DAY, SEVEN_DAYS,
 } from "@/libs/utils";
-import {canAccessRoute} from "@/modules/auth/domain/rbac/fieldGuard";
-import {AuthPayload} from "@/modules/auth/domain/entity/AuthPayload";
+
+import prisma from "@/libs/prisma";
+import { AuthPayload } from "@/modules/auth/domain/entity/AuthPayload";
+import {BcryptService} from "@/modules/auth/application/service/BcryptService";
 
 /* ============================================================
-   JWT PAYLOAD
+   HASH SERVICE
 ============================================================ */
 
+const hashService = new BcryptService();
+
+/* ============================================================
+   TYPE GUARD
+============================================================ */
 
 function isJwtPayload(payload: unknown): payload is AuthPayload {
-    if (typeof payload !== "object" || payload === null) return false;
+
+    if (typeof payload !== "object" || payload === null) {
+        return false;
+    }
 
     const record = payload as Record<string, unknown>;
 
-    const isValidRole =
+    const validRole =
         typeof record.role === "string" &&
         USER_ROLES.includes(record.role as UserRole);
 
-    const isValidTeacherRole =
+    const validTeacherRole =
         record.teacherRole === undefined ||
         (
             typeof record.teacherRole === "string" &&
@@ -44,13 +55,13 @@ function isJwtPayload(payload: unknown): payload is AuthPayload {
     return (
         typeof record.sub === "string" &&
         typeof record.username === "string" &&
-        isValidRole &&
-        isValidTeacherRole
+        validRole &&
+        validTeacherRole
     );
 }
 
 /* ============================================================
-   ROUTE HELPERS
+   PUBLIC ROUTE CHECK
 ============================================================ */
 
 function isPublicRoute(path: string) {
@@ -68,78 +79,109 @@ function isPublicRoute(path: string) {
 ============================================================ */
 
 export async function proxy(req: NextRequest) {
+
     const { pathname } = req.nextUrl;
 
     if (isPublicRoute(pathname)) {
         return NextResponse.next();
     }
 
-    const accessToken = req.cookies.get("accessToken")?.value;
-    const refreshToken = req.cookies.get("refresh_token")?.value;
+    const accessToken =
+        req.cookies.get("accessToken")?.value;
+
+    console.log("ACCESS TOKEN:", accessToken);
+
+    const refreshToken =
+        req.cookies.get("refreshToken")?.value;
 
     let user: AuthPayload | null = null;
-    let response: NextResponse | null = null;
 
-    /* =============================
-       VERIFY ACCESS TOKEN
-    ============================= */
+    const response = NextResponse.next();
+
+    /* ================= ACCESS TOKEN ================= */
 
     if (accessToken) {
-        try {
-            const decoded = await verifyAccessToken(accessToken);
 
-            if (isJwtPayload(decoded)) {
-                user = mapToAuthPayload(decoded);
-            }
-        } catch {
-            user = null;
+        const decoded =
+            await verifyAccessToken(accessToken);
+
+        if (isJwtPayload(decoded)) {
+            user = mapToAuthPayload(decoded);
         }
     }
 
-
-    /* =============================
-       AUTO REFRESH
-    ============================= */
+    /* ================= AUTO REFRESH ================= */
 
     if (!user && refreshToken) {
-        try {
-            const decoded = await verifyRefreshToken(refreshToken);
 
-            if (!isJwtPayload(decoded)) {
-                return NextResponse.redirect(new URL("/login", req.url));
-            }
+        const decoded =
+            await verifyRefreshToken(refreshToken);
 
-            const payload = mapToAuthPayload(decoded);
-
-            const newAccessToken = await generateAccessToken(payload);
-
-            response = NextResponse.next();
-
-            // ✅ Extend access token
-            response.cookies.set("accessToken", newAccessToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-                maxAge: ACCESS_TOKEN_EXPIRE, // 15 menit
-            });
-
-            // ✅ IMPORTANT: Extend refresh token (SLIDING SESSION)
-            response.cookies.set("refresh_token", refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "lax",
-                path: "/",
-                maxAge: REFRESH_TOKEN_EXPIRE, // 1 hari idle timeout
-            });
-
-            user = payload;
-
-        } catch {
-            return NextResponse.redirect(new URL("/login", req.url));
+        if (!isJwtPayload(decoded)) {
+            return NextResponse.redirect(
+                new URL("/login", req.url)
+            );
         }
-    }
 
+        /* ===== Validate refresh token in DB ===== */
+
+        const sessions =
+            await prisma.authSession.findMany({
+                where: {
+                    userId: decoded.sub,
+                    revoked: false,
+                    expiresAt: { gt: new Date() },
+                },
+            });
+
+        let validSession = false;
+
+        for (const session of sessions) {
+
+            const match =
+                await hashService.compare(
+                    refreshToken,
+                    session.tokenHash
+                );
+
+            if (match) {
+                validSession = true;
+                break;
+            }
+        }
+
+        if (!validSession) {
+            return NextResponse.redirect(
+                new URL("/login", req.url)
+            );
+        }
+
+        /* ===== Generate new access token ===== */
+
+        const payload =
+            mapToAuthPayload(decoded);
+
+        const newAccessToken =
+            await generateAccessToken(payload);
+
+        response.cookies.set("accessToken", newAccessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: ONE_DAY,
+        });
+
+        response.cookies.set("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: SEVEN_DAYS,
+        });
+
+        user = payload;
+    }
 
     if (!user) {
         return NextResponse.redirect(
@@ -147,12 +189,12 @@ export async function proxy(req: NextRequest) {
         );
     }
 
-    /* ============================================================
-       DASHBOARD ROUTE GUARD
-    ============================================================ */
+    /* ================= DASHBOARD GUARD ================= */
 
     if (pathname.startsWith("/dashboard")) {
-        const allowed = canAccessRoute(user.role, pathname);
+
+        const allowed =
+            canAccessRoute(user.role, pathname);
 
         if (!allowed) {
             return NextResponse.redirect(
@@ -160,14 +202,13 @@ export async function proxy(req: NextRequest) {
             );
         }
 
-        return NextResponse.next();
+        return response;
     }
 
-    /* ============================================================
-       API RBAC POLICY ENGINE
-    ============================================================ */
+    /* ================= API POLICY ================= */
 
     if (pathname.startsWith("/api")) {
+
         const allowed = evaluatePolicy({
             path: pathname,
             method: req.method,
@@ -182,11 +223,11 @@ export async function proxy(req: NextRequest) {
         }
     }
 
-    return NextResponse.next();
+    return response;
 }
 
 /* ============================================================
-   APPLY PROXY
+   MATCHER
 ============================================================ */
 
 export const config = {

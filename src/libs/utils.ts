@@ -9,9 +9,9 @@ export const ONE_DAY = 24 * 60 * 60 * 1000;
 export const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 export const FIFTEEN_MINUTES = 15 * 60 * 1000;
 
-export const ACCESS_TOKEN_EXPIRE = ONE_DAY;
-export const REFRESH_TOKEN_EXPIRE = SEVEN_DAYS;
-export const ACCOUNT_LOCK_DURATION = FIFTEEN_MINUTES;
+export const ACCESS_TOKEN_EXPIRE = "1d";
+export const REFRESH_TOKEN_EXPIRE = "7d";
+export const ACCOUNT_LOCK_DURATION = "15m";
 export const MAX_FAILED_ATTEMPTS = 5;
 export const RESET_PASSWORD_EXPIRE = FIFTEEN_MINUTES;
 // =====================================================

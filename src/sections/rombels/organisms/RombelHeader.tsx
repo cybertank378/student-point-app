@@ -2,7 +2,6 @@
 "use client";
 
 import { useState } from "react";
-import { FiPlus } from "react-icons/fi";
 
 import Button from "@/shared-ui/component/Button";
 import RombelFormModal from "@/sections/rombels/organisms/RombelFormModal";
@@ -11,6 +10,7 @@ import { useRombelApi } from "@/modules/rombel/presentation/hooks/useRombelApi";
 import { useAcademicYearApi } from "@/modules/academic-year/presentation/hooks/useAcademicYearApi";
 
 import type { CreateRombelDTO } from "@/modules/rombel/domain/dto/CreateRombelDTO";
+import {HiPlusCircle} from "react-icons/hi";
 
 type Grade = "VII" | "VIII" | "IX";
 
@@ -81,7 +81,7 @@ export default function RombelHeader({ api }: Props) {
 
                 <Button
                     onClick={() => setOpen(true)}
-                    leftIcon={FiPlus}
+                    leftIcon={HiPlusCircle}
                 >
                     Tambah Rombel
                 </Button>

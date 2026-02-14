@@ -67,7 +67,7 @@ export class AuthController {
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
                 path: "/",
-                maxAge: ACCESS_TOKEN_EXPIRE, // 15 menit
+                maxAge: ONE_DAY, // 15 menit
             });
 
             // 🔥 REFRESH TOKEN COOKIE
@@ -76,7 +76,7 @@ export class AuthController {
                 secure: process.env.NODE_ENV === "production",
                 sameSite: "lax",
                 path: "/",
-                maxAge: REFRESH_TOKEN_EXPIRE, // 7 hari
+                maxAge: SEVEN_DAYS, // 7 hari
             });
 
             return response;

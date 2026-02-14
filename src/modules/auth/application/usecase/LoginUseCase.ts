@@ -99,6 +99,8 @@ export class LoginUseCase {
             await this.token.generateAccessToken(
                 payload,
             );
+        console.log("ACCESS TOKEN:", accessToken);
+
 
         const refreshToken =
             await this.token.generateRefreshToken(
