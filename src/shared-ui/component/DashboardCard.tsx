@@ -1,5 +1,5 @@
 //Files: src/shared-ui/component/DashboardCard.tsx
-import { IconType } from "react-icons";
+import type { IconType } from "react-icons";
 
 interface Props {
     title: string;

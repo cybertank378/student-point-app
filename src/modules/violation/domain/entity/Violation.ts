@@ -1,6 +1,6 @@
 //Files: src/modules/violation/domain/entity/Violation.ts
 
-import { ViolationLevel } from "@/generated/prisma";
+import type { ViolationLevel } from "@/generated/prisma";
 
 /**
  * Domain Entity: Violation (MASTER)

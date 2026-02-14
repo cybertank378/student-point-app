@@ -2,12 +2,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { UserRole } from "@/libs/utils";
+import type { UserRole } from "@/libs/utils";
 import {
     getRolePermissions, rbacConfig,
-    SidebarNode,
+    type SidebarNode,
 } from "@/modules/auth/domain/rbac/rbacConfig";
-import {Permission} from "@/modules/auth/domain/rbac/permissions";
+import type {Permission} from "@/modules/auth/domain/rbac/permissions";
 
 /* ============================================================
    RECURSIVE FILTER

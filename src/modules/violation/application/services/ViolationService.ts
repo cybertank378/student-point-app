@@ -4,7 +4,7 @@ import {ListViolationUseCase} from "@/modules/violation/application/usecases/Lis
 import {CreateViolationUseCase} from "@/modules/violation/application/usecases/CreateViolationUseCase";
 import {UpdateViolationUseCase} from "@/modules/violation/application/usecases/UpdateViolationUseCase";
 import {DeleteViolationUseCase} from "@/modules/violation/application/usecases/DeleteViolationUseCase";
-import {ViolationInterface} from "@/modules/violation/domain/interfaces/ViolationInterface";
+import type {ViolationInterface} from "@/modules/violation/domain/interfaces/ViolationInterface";
 import {GetViolationByIdUseCase} from "@/modules/violation/application/usecases/GetViolationByIdUseCase";
 
 export class ViolationService {

@@ -1,9 +1,12 @@
 //Files: src/modules/user/infrastructure/http/UserController.ts
 
-import {CreateUserSchema, UpdateUserSchema} from "@/modules/user/infrastructure/validators/user.validator";
-import {NextRequest} from "next/server";
-import {UserService} from "@/modules/user/application/services/UserServices";
-import {handleZodError} from "@/modules/shared/errors/handleZodError";
+import {
+  CreateUserSchema,
+  UpdateUserSchema,
+} from "@/modules/user/infrastructure/validators/user.validator";
+import type { NextRequest } from "next/server";
+import type { UserService } from "@/modules/user/application/services/UserServices";
+import { handleZodError } from "@/modules/shared/errors/handleZodError";
 
 /**
  * UserController
@@ -18,131 +21,102 @@ import {handleZodError} from "@/modules/shared/errors/handleZodError";
  *   - HTTP <-> service mapping
  */
 export class UserController {
-    constructor(
-        private readonly service: UserService,
-    ) {}
+  constructor(private readonly service: UserService) {}
 
-    /**
-     * ======================================
-     * ============ LIST USERS ==============
-     * ======================================
-     * GET /api/users
-     */
-    async getAll() {
-        const result = await this.service.list();
+  /**
+   * ======================================
+   * ============ LIST USERS ==============
+   * ======================================
+   * GET /api/users
+   */
+  async getAll() {
+    const result = await this.service.list();
 
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json(result.getValue());
+    if (result.isFailure) {
+      return Response.json({ error: result.getError() }, { status: 400 });
     }
 
-    /**
-     * ======================================
-     * ============ GET BY ID ===============
-     * ======================================
-     * GET /api/users/:id
-     */
-    async getById(id: string) {
-        const result = await this.service.getById(id);
+    return Response.json(result.getValue());
+  }
 
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 404 },
-            );
-        }
+  /**
+   * ======================================
+   * ============ GET BY ID ===============
+   * ======================================
+   * GET /api/users/:id
+   */
+  async getById(id: string) {
+    const result = await this.service.getById(id);
 
-        return Response.json(result.getValue());
+    if (result.isFailure) {
+      return Response.json({ error: result.getError() }, { status: 404 });
     }
 
-    /**
-     * ======================================
-     * ============== CREATE ===============
-     * ======================================
-     * POST /api/users
-     */
-    async create(req: NextRequest) {
-        try {
-            const body = CreateUserSchema.parse(
-                await req.json(),
-            );
+    return Response.json(result.getValue());
+  }
 
-            const result =
-                await this.service.create(body);
+  /**
+   * ======================================
+   * ============== CREATE ===============
+   * ======================================
+   * POST /api/users
+   */
+  async create(req: NextRequest) {
+    try {
+      const body = CreateUserSchema.parse(await req.json());
 
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
+      const result = await this.service.create(body);
 
-            return Response.json(
-                result.getValue(),
-                { status: 201 },
-            );
-        } catch (error) {
-            return handleZodError(error);
-        }
+      if (result.isFailure) {
+        return Response.json({ error: result.getError() }, { status: 400 });
+      }
+
+      return Response.json(result.getValue(), { status: 201 });
+    } catch (error) {
+      return handleZodError(error);
+    }
+  }
+
+  /**
+   * ======================================
+   * ============== UPDATE ===============
+   * ======================================
+   * PUT /api/users/:id
+   */
+  async update(id: string, req: NextRequest) {
+    try {
+      const body = UpdateUserSchema.parse(await req.json());
+
+      const result = await this.service.update({
+        id,
+        ...body,
+      });
+
+      if (result.isFailure) {
+        return Response.json({ error: result.getError() }, { status: 400 });
+      }
+
+      return Response.json(result.getValue());
+    } catch (error) {
+      return handleZodError(error);
+    }
+  }
+
+  /**
+   * ======================================
+   * ============== DELETE ===============
+   * ======================================
+   * DELETE /api/users/:id
+   *
+   * Soft delete (isActive = false)
+   */
+  async delete(id: string) {
+    const result = await this.service.delete(id);
+
+    if (result.isFailure) {
+      return Response.json({ error: result.getError() }, { status: 400 });
     }
 
-    /**
-     * ======================================
-     * ============== UPDATE ===============
-     * ======================================
-     * PUT /api/users/:id
-     */
-    async update(
-        id: string,
-        req: NextRequest,
-    ) {
-        try {
-            const body = UpdateUserSchema.parse(
-                await req.json(),
-            );
-
-            const result =
-                await this.service.update({
-                    id,
-                    ...body,
-                });
-
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
-
-            return Response.json(result.getValue());
-        } catch (error) {
-            return handleZodError(error);
-        }
-    }
-
-    /**
-     * ======================================
-     * ============== DELETE ===============
-     * ======================================
-     * DELETE /api/users/:id
-     *
-     * Soft delete (isActive = false)
-     */
-    async delete(id: string) {
-        const result = await this.service.delete(id);
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json({ success: true });
-    }
+    return Response.json({ success: true });
+  }
 }

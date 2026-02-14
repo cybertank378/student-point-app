@@ -5,25 +5,19 @@ import { AcademicYear } from "@/modules/academic-year/domain/entity/AcademicYear
 /**
  * Mapper: Prisma → Domain
  */
-export class AcademicYearMapper {
-    static toDomain(
-        row: PrismaAcademicYear,
-    ): AcademicYear {
-        return new AcademicYear(
-            row.id,
-            row.name,
-            row.startDate,
-            row.endDate,
-            row.isActive,
-            row.createdAt,
-        );
-    }
+export const AcademicYearMapper = {
+  toDomain(row: PrismaAcademicYear): AcademicYear {
+    return new AcademicYear(
+      row.id,
+      row.name,
+      row.startDate,
+      row.endDate,
+      row.isActive,
+      row.createdAt,
+    );
+  },
 
-    static toDomainList(
-        rows: PrismaAcademicYear[],
-    ): AcademicYear[] {
-        return rows.map((row) =>
-            AcademicYearMapper.toDomain(row),
-        );
-    }
-}
+  toDomainList(rows: PrismaAcademicYear[]): AcademicYear[] {
+    return rows.map(AcademicYearMapper.toDomain);
+  },
+};

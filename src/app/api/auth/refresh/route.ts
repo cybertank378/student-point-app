@@ -7,10 +7,10 @@
  * =====================================================
  */
 
-import { NextRequest } from "next/server";
-import {buildAuthController} from "@/app/api/auth/authFactory";
+import type { NextRequest } from "next/server";
+import { buildAuthController } from "@/app/api/auth/authFactory";
 
 export async function POST(req: NextRequest) {
-    const controller = buildAuthController();
-    return controller.refresh(req);
+  const controller = buildAuthController();
+  return controller.refresh(req);
 }

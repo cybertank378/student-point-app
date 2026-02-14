@@ -1,21 +1,28 @@
 //Files: src/modules/user/domain/mapper/UserMapper.ts
+import type { User as PrismaUser } from "@/generated/prisma";
+import { User } from "@/modules/user/domain/entity/User";
 
-import { User as PrismaUser } from "@/generated/prisma";
-import {User} from "@/modules/user/domain/entity/User";
+/**
+ * Mapper: Prisma → Domain
+ * Tidak ada logic bisnis
+ */
+export const UserMapper = {
+  toDomain(row: PrismaUser): User {
+    return new User(
+      row.id,
+      row.username,
+      row.password,
+      row.role,
+      row.isActive,
+      row.failedAttempts,
+      row.lockUntil,
+      row.mustChangePassword,
+      row.createdAt,
+      row.updatedAt,
+    );
+  },
 
-export class UserMapper {
-    static toDomain(data: PrismaUser): User {
-        return new User(
-            data.id,
-            data.username,
-            data.password,
-            data.role,
-            data.isActive,
-            data.failedAttempts,
-            data.lockUntil,
-            data.mustChangePassword,
-            data.createdAt,
-            data.updatedAt,
-        );
-    }
-}
+  toDomainList(rows: PrismaUser[]): User[] {
+    return rows.map(UserMapper.toDomain);
+  },
+};

@@ -1,7 +1,5 @@
 //Files: src/modules/violation/domain/rules/ViolationLevelRule.ts
-
-// src/modules/violation/domain/rules/ViolationLevelRule.ts
-import { ViolationLevel } from "@/generated/prisma";
+import type { ViolationLevel } from "@/generated/prisma";
 
 export function resolveViolationLevel(point: number): ViolationLevel {
     if (point >= 10 && point <= 30) return "LIGHT";

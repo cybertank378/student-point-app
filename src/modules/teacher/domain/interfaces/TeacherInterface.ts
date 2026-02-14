@@ -1,8 +1,8 @@
 //Files: src/modules/teacher/domain/interfaces/TeacherInterface.ts
 
-import {CreateTeacherDTO} from "@/modules/teacher/domain/dto/CreateTeacherDTO";
-import {UpdateTeacherDTO} from "@/modules/teacher/domain/dto/UpdateTeacherDTO";
-import {Teacher} from "@/modules/teacher/domain/entity/Teacher";
+import type {CreateTeacherDTO} from "@/modules/teacher/domain/dto/CreateTeacherDTO";
+import type {UpdateTeacherDTO} from "@/modules/teacher/domain/dto/UpdateTeacherDTO";
+import type {Teacher} from "@/modules/teacher/domain/entity/Teacher";
 
 export interface TeacherInterface {
     findAll(): Promise<Teacher[]>;

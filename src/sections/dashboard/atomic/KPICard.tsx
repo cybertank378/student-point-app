@@ -1,6 +1,6 @@
 //Files: src/sections/dashboard/atomic/KPICard.tsx
 
-import React from "react";
+import type React from "react";
 
 export type Accent = "indigo" | "amber" | "rose" | "sky";
 

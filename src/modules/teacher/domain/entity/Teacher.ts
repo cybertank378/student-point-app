@@ -1,7 +1,7 @@
 //Files: src/modules/teacher/domain/entity/Teacher.ts
 
 
-import {TeacherRole} from "@/libs/utils";
+import type {TeacherRole} from "@/libs/utils";
 
 export class Teacher {
     constructor(

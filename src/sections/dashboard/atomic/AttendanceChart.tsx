@@ -1,7 +1,7 @@
 //Files: src/sections/dashboard/atomic/AttendanceChart.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import type { ApexOptions } from "apexcharts";
 import SelectField from "@/shared-ui/component/SelectField";

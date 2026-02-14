@@ -1,31 +1,34 @@
 //Files: src/shared-ui/component/Form/FormControl.tsx
-import {ReactNode} from "react";
-import clsx from "clsx";
+"use client";
 
-interface Props {
-    children: ReactNode;
-    error?: boolean;
-    success?: boolean;
-    disabled?: boolean;
-    className?: string;
+import clsx from "clsx";
+import type { HTMLAttributes, ReactNode } from "react";
+
+interface Props extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  error?: boolean;
+  success?: boolean;
+  disabled?: boolean;
 }
 
 export default function FormControl({
-                                        children,
-                                        error,
-                                        success,
-                                        disabled,
-                                        className,
-                                    }: Props) {
-    return (
-        <div
-            className={clsx(
-                "flex flex-col gap-1",
-                disabled && "opacity-60",
-                className
-            )}
-        >
-            {children}
-        </div>
-    );
+  children,
+  className,
+  error,
+  success,
+  disabled,
+  ...props
+}: Props) {
+  return (
+    <div
+      className={clsx(
+        "flex flex-col w-full gap-1",
+        disabled && "opacity-70",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </div>
+  );
 }

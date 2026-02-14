@@ -1,8 +1,8 @@
 //Files: src/modules/user/presentation/hooks/useUserApi.ts
 
 import {useState} from "react";
-import {User} from "@/modules/user/domain/entity/User";
-import {ApiError, safeJson, toApiError, parseError} from "@/modules/shared/errors/ApiError";
+import type {User} from "@/modules/user/domain/entity/User";
+import {type ApiError, safeJson, toApiError, parseError} from "@/modules/shared/errors/ApiError";
 
 /**
  * =====================================================

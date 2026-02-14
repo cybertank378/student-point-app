@@ -1,4 +1,3 @@
-import React from "react";
 import LoginSection from "@/sections/auth/pages/LoginSection";
 
 export default function LoginPage() {

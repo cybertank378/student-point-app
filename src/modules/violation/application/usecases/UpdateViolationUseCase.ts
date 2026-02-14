@@ -2,9 +2,9 @@
 
 
 import { Result } from "@/modules/shared/core/Result";
-import { UpdateViolationDTO } from "@/modules/violation/domain/dto/UpdateViolationDTO";
-import { Violation } from "@/modules/violation/domain/entity/Violation";
-import { ViolationInterface } from "@/modules/violation/domain/interfaces/ViolationInterface";
+import type { UpdateViolationDTO } from "@/modules/violation/domain/dto/UpdateViolationDTO";
+import type { Violation } from "@/modules/violation/domain/entity/Violation";
+import type { ViolationInterface } from "@/modules/violation/domain/interfaces/ViolationInterface";
 import { resolveViolationLevel } from "@/modules/violation/domain/rules/ViolationLevelRule";
 
 export class UpdateViolationUseCase {

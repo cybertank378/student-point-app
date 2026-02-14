@@ -1,8 +1,5 @@
 //Files: src/modules/auth/domain/interfaces/TokenServiceInterface.ts
-
-
-
-import {AuthPayload} from "@/modules/auth/domain/entity/AuthPayload";
+import type AuthPayload from "@/modules/auth/domain/entity/AuthPayload";
 
 export interface TokenServiceInterface {
     generateAccessToken(payload: AuthPayload): Promise<string>;

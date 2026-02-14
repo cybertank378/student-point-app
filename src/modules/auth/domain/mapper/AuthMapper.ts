@@ -1,12 +1,9 @@
 //Files: src/modules/auth/domain/mapper/AuthMapper.ts
-// src/modules/auth/domain/mapper/AuthMapper.ts
-// src/modules/auth/domain/mapper/AuthMapper.ts
-
 import type {
-    User as PrismaUser,
-    AuthSession as PrismaAuthSession,
-    PasswordResetToken as PrismaResetToken,
-    TeacherRole as PrismaTeacherRole,
+  User as PrismaUser,
+  AuthSession as PrismaAuthSession,
+  PasswordResetToken as PrismaResetToken,
+  TeacherRole as PrismaTeacherRole,
 } from "@/generated/prisma";
 
 import { AuthUser } from "@/modules/auth/domain/entity/AuthUser";
@@ -17,52 +14,70 @@ import { PasswordResetToken } from "@/modules/auth/domain/entity/PasswordResetTo
  * User with teacher relation
  */
 export type UserWithRelations = PrismaUser & {
-    teacher?: {
-        roles: PrismaTeacherRole[];
-    } | null;
+  teacher?: {
+    roles: PrismaTeacherRole[];
+  } | null;
 };
 
-export class AuthMapper {
-    static toDomainUser(data: UserWithRelations): AuthUser {
-        const teacherRole: PrismaTeacherRole | undefined =
-            data.teacher?.roles?.length
-                ? data.teacher.roles[0]
-                : undefined;
+/**
+ * Mapper: Prisma → Domain
+ * Tidak ada logic bisnis
+ */
+export const AuthMapper = {
+  /* ================= USER ================= */
 
-        return new AuthUser(
-            data.id,
-            data.username,
-            data.password,
-            data.role,
-            teacherRole, // sekarang type-safe
-            data.isActive,
-            data.failedAttempts,
-            data.lockUntil,
-            data.mustChangePassword,
-        );
-    }
+  toDomainUser(row: UserWithRelations): AuthUser {
+    const teacherRole: PrismaTeacherRole | undefined = row.teacher?.roles
+      ?.length
+      ? row.teacher.roles[0]
+      : undefined;
 
-    static toDomainSession(
-        data: PrismaAuthSession
-    ): AuthSession {
-        return new AuthSession(
-            data.id,
-            data.userId,
-            data.tokenHash,
-            data.expiresAt,
-            data.revoked,
-        );
-    }
+    return new AuthUser(
+      row.id,
+      row.username,
+      row.password,
+      row.role,
+      teacherRole,
+      row.isActive,
+      row.failedAttempts,
+      row.lockUntil,
+      row.mustChangePassword,
+    );
+  },
 
-    static toDomainResetToken(
-        data: PrismaResetToken
-    ): PasswordResetToken {
-        return new PasswordResetToken(
-            data.id,
-            data.userId,
-            data.tokenHash,
-            data.expiresAt,
-            data.used,
-        );
-    }
-}
+  toDomainUserList(rows: UserWithRelations[]): AuthUser[] {
+    return rows.map(AuthMapper.toDomainUser);
+  },
+
+  /* ================= SESSION ================= */
+
+  toDomainSession(row: PrismaAuthSession): AuthSession {
+    return new AuthSession(
+      row.id,
+      row.userId,
+      row.tokenHash,
+      row.expiresAt,
+      row.revoked,
+    );
+  },
+
+  toDomainSessionList(rows: PrismaAuthSession[]): AuthSession[] {
+    return rows.map(AuthMapper.toDomainSession);
+  },
+
+  /* ================= RESET TOKEN ================= */
+
+  toDomainResetToken(row: PrismaResetToken): PasswordResetToken {
+    return new PasswordResetToken(
+      row.id,
+      row.userId,
+      row.tokenHash,
+      row.expiresAt,
+      row.used,
+    );
+  },
+
+  toDomainResetTokenList(rows: PrismaResetToken[]): PasswordResetToken[] {
+    return rows.map(AuthMapper.toDomainResetToken);
+  },
+};

@@ -1,6 +1,6 @@
 //Files: src/modules/auth/domain/rbac/fieldGuard.ts
-import { UserRole } from "@/libs/utils";
-import {Permission} from "@/modules/auth/domain/rbac/permissions";
+import type { UserRole } from "@/libs/utils";
+import type {Permission} from "@/modules/auth/domain/rbac/permissions";
 import {getRolePermissions, rbacConfig} from "@/modules/auth/domain/rbac/rbacConfig";
 
 /* ============================================================

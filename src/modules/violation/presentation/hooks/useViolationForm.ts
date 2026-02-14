@@ -4,83 +4,80 @@
 
 import { useMemo, useState } from "react";
 import { CreateViolationSchema } from "@/modules/violation/infrastructur/validators/violationMaster.validator";
-import { ViolationLevel } from "@/generated/prisma";
+import type { ViolationLevel } from "@/generated/prisma";
 
 export interface ViolationFormState {
-    name: string;
-    point: number;
-    level: ViolationLevel;
+  name: string;
+  point: number;
+  level: ViolationLevel;
 }
 
-export function useViolationForm(
-    initial?: Partial<ViolationFormState>
-) {
-    const [form, setForm] = useState<ViolationFormState>({
-        name: initial?.name ?? "",
-        point: initial?.point ?? 0,
-        level: initial?.level ?? "LIGHT",
+export function useViolationForm(initial?: Partial<ViolationFormState>) {
+  const [form, setForm] = useState<ViolationFormState>({
+    name: initial?.name ?? "",
+    point: initial?.point ?? 0,
+    level: initial?.level ?? "LIGHT",
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const isValid = useMemo(() => {
+    const result = CreateViolationSchema.safeParse({
+      name: form.name,
+      point: form.point,
     });
 
-    const [errors, setErrors] =
-        useState<Record<string, string>>({});
+    return result.success;
+  }, [form]);
 
-    const isValid = useMemo(() => {
-        const result = CreateViolationSchema.safeParse({
-            name: form.name,
-            point: form.point,
-        });
+  const validate = () => {
+    const result = CreateViolationSchema.safeParse({
+      name: form.name,
+      point: form.point,
+    });
 
-        return result.success;
-    }, [form]);
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
 
-    const validate = () => {
-        const result = CreateViolationSchema.safeParse({
-            name: form.name,
-            point: form.point,
-        });
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as string;
+        fieldErrors[field] = issue.message;
+      });
 
-        if (!result.success) {
-            const fieldErrors: Record<string, string> = {};
+      setErrors(fieldErrors);
+      return false;
+    }
 
-            result.error.issues.forEach((issue) => {
-                const field = issue.path[0] as string;
-                fieldErrors[field] = issue.message;
-            });
+    setErrors({});
+    return true;
+  };
 
-            setErrors(fieldErrors);
-            return false;
-        }
+  const onChange = (
+    field: keyof ViolationFormState,
+    value: string | number,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-        setErrors({});
-        return true;
-    };
+  const reset = () => {
+    setForm({
+      name: "",
+      point: 0,
+      level: "LIGHT",
+    });
+    setErrors({});
+  };
 
-    const onChange = (
-        field: keyof ViolationFormState,
-        value: string | number
-    ) => {
-        setForm((prev) => ({
-            ...prev,
-            [field]: value,
-        }));
-    };
-
-    const reset = () => {
-        setForm({
-            name: "",
-            point: 0,
-            level: "LIGHT",
-        });
-        setErrors({});
-    };
-
-    return {
-        form,
-        errors,
-        isValid,
-        validate,
-        onChange,
-        reset,
-        setForm,
-    };
+  return {
+    form,
+    errors,
+    isValid,
+    validate,
+    onChange,
+    reset,
+    setForm,
+  };
 }

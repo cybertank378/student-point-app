@@ -1,27 +1,26 @@
 //Files: src/app/layout.tsx
-
-// src/app/layout.tsx
+//Files: src/app/layout.tsx
 import "@/styles/globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
   title: {
-    default: "Student Point App",
-    template: "%s | Student Point App",
+    default: "Manajemen Poin Siswa",
+    template: "%s | Manajemen Poin Siswa",
   },
   description:
-    "Aplikasi manajemen poin pelanggaran dan prestasi siswa untuk sekolah.",
+    "Aplikasi manajemen poin pelanggaran dan prestasi siswa untuk mendukung monitoring dan pembinaan di sekolah.",
   keywords: [
-    "student point",
+    "manajemen poin siswa",
     "sistem poin siswa",
-    "manajemen pelanggaran",
-    "manajemen prestasi",
+    "pelanggaran siswa",
+    "prestasi siswa",
     "dashboard sekolah",
   ],
-  applicationName: "Student Point App",
-  authors: [{ name: "Tim Student Point App" }],
-  creator: "Tim Student Point App",
+  applicationName: "Manajemen Poin Siswa",
+  authors: [{ name: "Tim Pengembang Manajemen Poin Siswa" }],
+  creator: "Tim Pengembang Manajemen Poin Siswa",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

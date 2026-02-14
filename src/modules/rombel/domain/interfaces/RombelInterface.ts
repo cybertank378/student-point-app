@@ -1,8 +1,8 @@
 //Files: src/modules/rombel/domain/interfaces/RombelInterface.ts
 
-import {Rombel} from "@/modules/rombel/domain/entity/Rombel";
-import {CreateRombelDTO} from "@/modules/rombel/domain/dto/CreateRombelDTO";
-import {UpdateRombelDTO} from "@/modules/rombel/domain/dto/UpdateRombelDTO";
+import type {Rombel} from "@/modules/rombel/domain/entity/Rombel";
+import type {CreateRombelDTO} from "@/modules/rombel/domain/dto/CreateRombelDTO";
+import type {UpdateRombelDTO} from "@/modules/rombel/domain/dto/UpdateRombelDTO";
 
 export interface RombelInterface {
     findAll(): Promise<Rombel[]>;

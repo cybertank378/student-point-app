@@ -1,9 +1,9 @@
 //Files: src/modules/user/infrastructure/repo/UserRepository.ts
-import {User} from "@/modules/user/domain/entity/User";
-import {UpdateUserDTO} from "@/modules/user/domain/dto/UpdateUserDTO";
+import type {User} from "@/modules/user/domain/entity/User";
+import type {UpdateUserDTO} from "@/modules/user/domain/dto/UpdateUserDTO";
 import prisma from "@/libs/prisma";
-import {CreateUserDTO} from "@/modules/user/domain/dto/CreateUserDTO";
-import {UserInterface} from "@/modules/user/domain/interfaces/UserInterface";
+import type {CreateUserDTO} from "@/modules/user/domain/dto/CreateUserDTO";
+import type {UserInterface} from "@/modules/user/domain/interfaces/UserInterface";
 import {UserMapper} from "@/modules/user/domain/mapper/UserMapper";
 
 export class UserRepository implements UserInterface {

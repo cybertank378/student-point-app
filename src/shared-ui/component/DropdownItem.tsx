@@ -1,6 +1,11 @@
 //Files: src/shared-ui/component/DropdownItem.tsx
+// Files: src/shared-ui/component/DropdownItem.tsx
 
-import { IconType } from "react-icons";
+"use client";
+
+import type { IconType } from "react-icons";
+import Button from "@/shared-ui/component/Button";
+import clsx from "clsx";
 
 interface DropdownItemProps {
     icon: IconType;
@@ -16,21 +21,24 @@ export function DropdownItem({
                                  onClick,
                              }: DropdownItemProps) {
     return (
-        <button
+        <Button
+            variant="text"
+            color="secondary"
+            size="md"
+            fullWidth
             onClick={onClick}
-            className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+            leftIcon={Icon}
+            className={clsx(
+                "justify-between px-4 py-2.5 text-sm hover:bg-gray-50"
+            )}
         >
-            <div className="flex items-center gap-3">
-                <Icon size={16} className="text-gray-500" />
-                <span>{label}</span>
-            </div>
+            <span>{label}</span>
 
             {badge && (
                 <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
           {badge}
         </span>
             )}
-        </button>
+        </Button>
     );
 }
-

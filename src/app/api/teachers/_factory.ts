@@ -2,7 +2,7 @@
 
 import { TeacherRepository } from "@/modules/teacher/infrastructure/repo/TeacherRepository";
 import { TeacherService } from "@/modules/teacher/application/services/TeacherService";
-import {TeacherController} from "@/modules/teacher/infrastructure/http/http/TeacherController";
+import {TeacherController} from "@/modules/teacher/infrastructure/http/TeacherController";
 
 export function createTeacherController() {
     const repo = new TeacherRepository();

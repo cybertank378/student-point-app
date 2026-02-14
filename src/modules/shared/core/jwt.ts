@@ -2,10 +2,10 @@
 import {
     SignJWT,
     jwtVerify,
-    JWTPayload,
+    type JWTPayload,
     errors,
 } from "jose";
-import {ACCESS_TOKEN_EXPIRE, ONE_DAY, SEVEN_DAYS} from "@/libs/utils";
+import {ACCESS_TOKEN_EXPIRE} from "@/libs/utils";
 
 /* =====================================================
    SECRET SETUP

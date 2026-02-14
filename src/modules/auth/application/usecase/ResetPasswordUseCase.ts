@@ -1,7 +1,7 @@
 //Files: src/modules/auth/application/usecases/ResetPasswordUseCase.ts
 
-import {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
-import {AuthRepositoryInterface} from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
+import type {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
+import type {AuthRepositoryInterface} from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
 
 export class ResetPasswordUseCase {
     constructor(

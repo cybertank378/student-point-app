@@ -1,27 +1,24 @@
 //Files: src/proxy.ts
-import { NextRequest, NextResponse } from "next/server";
-import {
-    verifyAccessToken,
-    verifyRefreshToken,
-    generateAccessToken,
-} from "@/modules/shared/core/jwt";
-
-import { evaluatePolicy } from "@/modules/auth/domain/rbac/policyEngine";
-import { canAccessRoute } from "@/modules/auth/domain/rbac/fieldGuard";
-
-import {
-    USER_ROLES,
-    TEACHER_ROLES,
-    mapToAuthPayload,
-    ACCESS_TOKEN_EXPIRE,
-    REFRESH_TOKEN_EXPIRE,
-    UserRole,
-    TeacherRole, ONE_DAY, SEVEN_DAYS,
-} from "@/libs/utils";
-
+import { type NextRequest, NextResponse } from "next/server";
 import prisma from "@/libs/prisma";
-import { AuthPayload } from "@/modules/auth/domain/entity/AuthPayload";
-import {BcryptService} from "@/modules/auth/application/service/BcryptService";
+import {
+  mapToAuthPayload,
+  ONE_DAY,
+  SEVEN_DAYS,
+  TEACHER_ROLES,
+  type TeacherRole,
+  USER_ROLES,
+  type UserRole,
+} from "@/libs/utils";
+import { BcryptService } from "@/modules/auth/application/service/BcryptService";
+import type AuthPayload from "@/modules/auth/domain/entity/AuthPayload";
+import { canAccessRoute } from "@/modules/auth/domain/rbac/fieldGuard";
+import { evaluatePolicy } from "@/modules/auth/domain/rbac/policyEngine";
+import {
+  generateAccessToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+} from "@/modules/shared/core/jwt";
 
 /* ============================================================
    HASH SERVICE
@@ -34,30 +31,27 @@ const hashService = new BcryptService();
 ============================================================ */
 
 function isJwtPayload(payload: unknown): payload is AuthPayload {
+  if (typeof payload !== "object" || payload === null) {
+    return false;
+  }
 
-    if (typeof payload !== "object" || payload === null) {
-        return false;
-    }
+  const record = payload as Record<string, unknown>;
 
-    const record = payload as Record<string, unknown>;
+  const validRole =
+    typeof record.role === "string" &&
+    USER_ROLES.includes(record.role as UserRole);
 
-    const validRole =
-        typeof record.role === "string" &&
-        USER_ROLES.includes(record.role as UserRole);
+  const validTeacherRole =
+    record.teacherRole === undefined ||
+    (typeof record.teacherRole === "string" &&
+      TEACHER_ROLES.includes(record.teacherRole as TeacherRole));
 
-    const validTeacherRole =
-        record.teacherRole === undefined ||
-        (
-            typeof record.teacherRole === "string" &&
-            TEACHER_ROLES.includes(record.teacherRole as TeacherRole)
-        );
-
-    return (
-        typeof record.sub === "string" &&
-        typeof record.username === "string" &&
-        validRole &&
-        validTeacherRole
-    );
+  return (
+    typeof record.sub === "string" &&
+    typeof record.username === "string" &&
+    validRole &&
+    validTeacherRole
+  );
 }
 
 /* ============================================================
@@ -65,13 +59,13 @@ function isJwtPayload(payload: unknown): payload is AuthPayload {
 ============================================================ */
 
 function isPublicRoute(path: string) {
-    return (
-        path.startsWith("/login") ||
-        path.startsWith("/403") ||
-        path.startsWith("/api/auth") ||
-        path.startsWith("/_next") ||
-        path.startsWith("/favicon")
-    );
+  return (
+    path.startsWith("/login") ||
+    path.startsWith("/403") ||
+    path.startsWith("/api/auth") ||
+    path.startsWith("/_next") ||
+    path.startsWith("/favicon")
+  );
 }
 
 /* ============================================================
@@ -79,151 +73,122 @@ function isPublicRoute(path: string) {
 ============================================================ */
 
 export async function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-    const { pathname } = req.nextUrl;
+  if (isPublicRoute(pathname)) {
+    return NextResponse.next();
+  }
 
-    if (isPublicRoute(pathname)) {
-        return NextResponse.next();
+  const accessToken = req.cookies.get("accessToken")?.value;
+
+  console.log("ACCESS TOKEN:", accessToken);
+
+  const refreshToken = req.cookies.get("refreshToken")?.value;
+
+  let user: AuthPayload | null = null;
+
+  const response = NextResponse.next();
+
+  /* ================= ACCESS TOKEN ================= */
+
+  if (accessToken) {
+    const decoded = await verifyAccessToken(accessToken);
+
+    if (isJwtPayload(decoded)) {
+      user = mapToAuthPayload(decoded);
+    }
+  }
+
+  /* ================= AUTO REFRESH ================= */
+
+  if (!user && refreshToken) {
+    const decoded = await verifyRefreshToken(refreshToken);
+
+    if (!isJwtPayload(decoded)) {
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    const accessToken =
-        req.cookies.get("accessToken")?.value;
+    /* ===== Validate refresh token in DB ===== */
 
-    console.log("ACCESS TOKEN:", accessToken);
+    const sessions = await prisma.authSession.findMany({
+      where: {
+        userId: decoded.sub,
+        revoked: false,
+        expiresAt: { gt: new Date() },
+      },
+    });
 
-    const refreshToken =
-        req.cookies.get("refreshToken")?.value;
+    let validSession = false;
 
-    let user: AuthPayload | null = null;
+    for (const session of sessions) {
+      const match = await hashService.compare(refreshToken, session.tokenHash);
 
-    const response = NextResponse.next();
-
-    /* ================= ACCESS TOKEN ================= */
-
-    if (accessToken) {
-
-        const decoded =
-            await verifyAccessToken(accessToken);
-
-        if (isJwtPayload(decoded)) {
-            user = mapToAuthPayload(decoded);
-        }
+      if (match) {
+        validSession = true;
+        break;
+      }
     }
 
-    /* ================= AUTO REFRESH ================= */
-
-    if (!user && refreshToken) {
-
-        const decoded =
-            await verifyRefreshToken(refreshToken);
-
-        if (!isJwtPayload(decoded)) {
-            return NextResponse.redirect(
-                new URL("/login", req.url)
-            );
-        }
-
-        /* ===== Validate refresh token in DB ===== */
-
-        const sessions =
-            await prisma.authSession.findMany({
-                where: {
-                    userId: decoded.sub,
-                    revoked: false,
-                    expiresAt: { gt: new Date() },
-                },
-            });
-
-        let validSession = false;
-
-        for (const session of sessions) {
-
-            const match =
-                await hashService.compare(
-                    refreshToken,
-                    session.tokenHash
-                );
-
-            if (match) {
-                validSession = true;
-                break;
-            }
-        }
-
-        if (!validSession) {
-            return NextResponse.redirect(
-                new URL("/login", req.url)
-            );
-        }
-
-        /* ===== Generate new access token ===== */
-
-        const payload =
-            mapToAuthPayload(decoded);
-
-        const newAccessToken =
-            await generateAccessToken(payload);
-
-        response.cookies.set("accessToken", newAccessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/",
-            maxAge: ONE_DAY,
-        });
-
-        response.cookies.set("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-            path: "/",
-            maxAge: SEVEN_DAYS,
-        });
-
-        user = payload;
+    if (!validSession) {
+      return NextResponse.redirect(new URL("/login", req.url));
     }
 
-    if (!user) {
-        return NextResponse.redirect(
-            new URL("/login", req.url)
-        );
-    }
+    /* ===== Generate new access token ===== */
 
-    /* ================= DASHBOARD GUARD ================= */
+    const payload = mapToAuthPayload(decoded);
 
-    if (pathname.startsWith("/dashboard")) {
+    const newAccessToken = await generateAccessToken(payload);
 
-        const allowed =
-            canAccessRoute(user.role, pathname);
+    response.cookies.set("accessToken", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: ONE_DAY,
+    });
 
-        if (!allowed) {
-            return NextResponse.redirect(
-                new URL("/403", req.url)
-            );
-        }
+    response.cookies.set("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: SEVEN_DAYS,
+    });
 
-        return response;
-    }
+    user = payload;
+  }
 
-    /* ================= API POLICY ================= */
+  if (!user) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
 
-    if (pathname.startsWith("/api")) {
+  /* ================= DASHBOARD GUARD ================= */
 
-        const allowed = evaluatePolicy({
-            path: pathname,
-            method: req.method,
-            role: user.role,
-        });
+  if (pathname.startsWith("/dashboard")) {
+    const allowed = canAccessRoute(user.role, pathname);
 
-        if (!allowed) {
-            return NextResponse.json(
-                { message: "Forbidden" },
-                { status: 403 }
-            );
-        }
+    if (!allowed) {
+      return NextResponse.redirect(new URL("/403", req.url));
     }
 
     return response;
+  }
+
+  /* ================= API POLICY ================= */
+
+  if (pathname.startsWith("/api")) {
+    const allowed = evaluatePolicy({
+      path: pathname,
+      method: req.method,
+      role: user.role,
+    });
+
+    if (!allowed) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+  }
+
+  return response;
 }
 
 /* ============================================================
@@ -231,5 +196,5 @@ export async function proxy(req: NextRequest) {
 ============================================================ */
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/api/:path*"],
+  matcher: ["/dashboard/:path*", "/api/:path*"],
 };

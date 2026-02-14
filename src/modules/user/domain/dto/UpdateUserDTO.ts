@@ -1,5 +1,5 @@
 //Files: src/modules/user/domain/dto/UpdateUserAuthDTO.ts
-import {Role, TeacherRole} from "@/generated/prisma";
+import type {Role, TeacherRole} from "@/generated/prisma";
 
 export interface UpdateUserDTO {
     id: string;

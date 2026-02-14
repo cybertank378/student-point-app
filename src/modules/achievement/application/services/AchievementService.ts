@@ -21,72 +21,62 @@ import type { Achievement } from "@/modules/achievement/domain/entity/Achievemen
  * - Tidak tahu HTTP / Prisma
  */
 export class AchievementService {
-    private readonly listUseCase: ListAchievementUseCase;
-    private readonly getByIdUseCase: GetAchievementByIdUseCase;
-    private readonly createUseCase: CreateAchievementUseCase;
-    private readonly updateUseCase: UpdateAchievementUseCase;
-    private readonly deleteUseCase: DeleteAchievementUseCase;
+  private readonly listUseCase: ListAchievementUseCase;
+  private readonly getByIdUseCase: GetAchievementByIdUseCase;
+  private readonly createUseCase: CreateAchievementUseCase;
+  private readonly updateUseCase: UpdateAchievementUseCase;
+  private readonly deleteUseCase: DeleteAchievementUseCase;
 
-    constructor(
-        private readonly repo: AchievementInterface,
-    ) {
-        this.listUseCase = new ListAchievementUseCase(repo);
-        this.getByIdUseCase = new GetAchievementByIdUseCase(repo);
-        this.createUseCase = new CreateAchievementUseCase(repo);
-        this.updateUseCase = new UpdateAchievementUseCase(repo);
-        this.deleteUseCase = new DeleteAchievementUseCase(repo);
-    }
+  constructor(repo: AchievementInterface) {
+    this.listUseCase = new ListAchievementUseCase(repo);
+    this.getByIdUseCase = new GetAchievementByIdUseCase(repo);
+    this.createUseCase = new CreateAchievementUseCase(repo);
+    this.updateUseCase = new UpdateAchievementUseCase(repo);
+    this.deleteUseCase = new DeleteAchievementUseCase(repo);
+  }
 
-    /**
-     * =====================
-     * LIST
-     * =====================
-     */
-    list(): Promise<Result<Achievement[]>> {
-        return this.listUseCase.execute();
-    }
+  /**
+   * =====================
+   * LIST
+   * =====================
+   */
+  list(): Promise<Result<Achievement[]>> {
+    return this.listUseCase.execute();
+  }
 
-    /**
-     * =====================
-     * GET BY ID
-     * =====================
-     */
-    getById(
-        id: string,
-    ): Promise<Result<Achievement>> {
-        return this.getByIdUseCase.execute(id);
-    }
+  /**
+   * =====================
+   * GET BY ID
+   * =====================
+   */
+  getById(id: string): Promise<Result<Achievement>> {
+    return this.getByIdUseCase.execute(id);
+  }
 
-    /**
-     * =====================
-     * CREATE
-     * =====================
-     */
-    create(
-        dto: CreateAchievementDTO,
-    ): Promise<Result<Achievement>> {
-        return this.createUseCase.execute(dto);
-    }
+  /**
+   * =====================
+   * CREATE
+   * =====================
+   */
+  create(dto: CreateAchievementDTO): Promise<Result<Achievement>> {
+    return this.createUseCase.execute(dto);
+  }
 
-    /**
-     * =====================
-     * UPDATE
-     * =====================
-     */
-    update(
-        dto: UpdateAchievementDTO,
-    ): Promise<Result<Achievement>> {
-        return this.updateUseCase.execute(dto);
-    }
+  /**
+   * =====================
+   * UPDATE
+   * =====================
+   */
+  update(dto: UpdateAchievementDTO): Promise<Result<Achievement>> {
+    return this.updateUseCase.execute(dto);
+  }
 
-    /**
-     * =====================
-     * DELETE (SOFT)
-     * =====================
-     */
-    delete(
-        id: string,
-    ): Promise<Result<void>> {
-        return this.deleteUseCase.execute(id);
-    }
+  /**
+   * =====================
+   * DELETE (SOFT)
+   * =====================
+   */
+  delete(id: string): Promise<Result<void>> {
+    return this.deleteUseCase.execute(id);
+  }
 }

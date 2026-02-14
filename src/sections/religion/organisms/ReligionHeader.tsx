@@ -2,12 +2,11 @@
 "use client";
 
 import { useState } from "react";
-import { FiPlus } from "react-icons/fi";
 
 import Button from "@/shared-ui/component/Button";
 import ReligionFormModal from "@/sections/religion/organisms/ReligionFormModal";
 
-import { useReligionApi } from "@/modules/religion/presentation/hooks/useReligionApi";
+import type { useReligionApi } from "@/modules/religion/presentation/hooks/useReligionApi";
 import type { CreateReligionDTO } from "@/modules/religion/domain/dto/CreateReligionDTO";
 import {HiPlusCircle} from "react-icons/hi";
 

@@ -1,7 +1,7 @@
 //Files: src/modules/student/application/usecases/AssignStudentToRombelUseCase.ts
 
-import {StudentInterface} from "@/modules/student/domain/interfaces/StudentInterface";
-import {AssignStudentToRombelDTO} from "@/modules/student/domain/dto/AssignStudentToRombelDTO";
+import type {StudentInterface} from "@/modules/student/domain/interfaces/StudentInterface";
+import type {AssignStudentToRombelDTO} from "@/modules/student/domain/dto/AssignStudentToRombelDTO";
 import { Result } from "@/modules/shared/core/Result";
 
 export class AssignStudentToRombelUseCase {

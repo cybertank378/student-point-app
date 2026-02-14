@@ -1,3 +1,4 @@
+//Files: src/app/api/academic-years/route.ts
 import type { NextRequest } from "next/server";
 import { createAcademicYearController } from "./_factory";
 
@@ -11,9 +12,9 @@ const controller = createAcademicYearController();
  */
 
 export async function GET() {
-    return await  controller.getAll();
+  return await controller.getAll();
 }
 
 export async function POST(req: NextRequest) {
-    return await controller.create(req);
+  return await controller.create(req);
 }

@@ -1,8 +1,8 @@
 //Files: src/modules/auth/application/usecase/RefreshTokenUseCase.ts
 
-import {AuthRepositoryInterface} from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
-import {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
-import {TokenServiceInterface} from "@/modules/auth/domain/interfaces/TokenServiceInterface";
+import type { AuthRepositoryInterface } from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
+import type { HashServiceInterface } from "@/modules/auth/domain/interfaces/HashServiceInterface";
+import type { TokenServiceInterface } from "@/modules/auth/domain/interfaces/TokenServiceInterface";
 import {SEVEN_DAYS} from "@/libs/utils";
 
 export class RefreshTokenUseCase {

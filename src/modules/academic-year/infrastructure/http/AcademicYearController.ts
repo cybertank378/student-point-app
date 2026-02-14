@@ -1,139 +1,117 @@
 //Files: src/modules/academic-year/infrastructure/http/AcademicYearController.ts
 import type { NextRequest } from "next/server";
 
-import { AcademicYearService } from "@/modules/academic-year/application/services/AcademicYearService";
+import type { AcademicYearService } from "@/modules/academic-year/application/services/AcademicYearService";
 
 import {
-    CreateAcademicYearSchema,
-    UpdateAcademicYearSchema,
-    type CreateAcademicYearInput,
-    type UpdateAcademicYearInput,
+  CreateAcademicYearSchema,
+  UpdateAcademicYearSchema,
+  type CreateAcademicYearInput,
+  type UpdateAcademicYearInput,
 } from "@/modules/academic-year/infrastructure/validators/AcademicYearSchema";
 
 import { handleZodError } from "@/modules/shared/errors/handleZodError";
 import { serverLog } from "@/libs/serverLogger";
 
 export class AcademicYearController {
-    constructor(
-        private readonly service: AcademicYearService,
-    ) {}
+  constructor(private readonly service: AcademicYearService) {}
 
-    /* ========================= GET ALL ========================= */
+  /* ========================= GET ALL ========================= */
 
-    async getAll() {
-        const result = await this.service.getAll();
+  async getAll() {
+    const result = await this.service.getAll();
 
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json(result.getValue());
+    if (result.isFailure) {
+      return Response.json({ error: result.getError() }, { status: 400 });
     }
 
-    /* ========================= GET BY ID ========================= */
+    return Response.json(result.getValue());
+  }
 
-    async getById(id: string) {
-        const result = await this.service.getById(id);
+  /* ========================= GET BY ID ========================= */
 
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 404 },
-            );
-        }
+  async getById(id: string) {
+    const result = await this.service.getById(id);
 
-        return Response.json(result.getValue());
+    if (result.isFailure) {
+      return Response.json({ error: result.getError() }, { status: 404 });
     }
 
-    /* ========================= CREATE ========================= */
+    return Response.json(result.getValue());
+  }
 
-    async create(req: NextRequest) {
-        try {
-            const json = await req.json();
+  /* ========================= CREATE ========================= */
 
-            serverLog("Incoming Payload:", json);
+  async create(req: NextRequest) {
+    try {
+      const json = await req.json();
 
-            // 🔥 VALIDATE + TRANSFORM
-            const body: CreateAcademicYearInput = CreateAcademicYearSchema.parse(json);
+      serverLog("Incoming Payload:", json);
 
-            const result = await this.service.create(body);
+      // 🔥 VALIDATE + TRANSFORM
+      const body: CreateAcademicYearInput =
+        CreateAcademicYearSchema.parse(json);
 
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
+      const result = await this.service.create(body);
 
-            return Response.json(result.getValue(), {
-                status: 201,
-            });
-        } catch (error) {
-            return handleZodError(error);
-        }
+      if (result.isFailure) {
+        return Response.json({ error: result.getError() }, { status: 400 });
+      }
+
+      return Response.json(result.getValue(), {
+        status: 201,
+      });
+    } catch (error) {
+      return handleZodError(error);
+    }
+  }
+
+  /* ========================= UPDATE ========================= */
+
+  async update(id: string, req: NextRequest) {
+    try {
+      const json = await req.json();
+
+      const body: UpdateAcademicYearInput =
+        UpdateAcademicYearSchema.parse(json);
+
+      const result = await this.service.update({
+        id,
+        ...body,
+        isActive: false,
+      });
+
+      if (result.isFailure) {
+        return Response.json({ error: result.getError() }, { status: 400 });
+      }
+
+      return Response.json(result.getValue());
+    } catch (error) {
+      return handleZodError(error);
+    }
+  }
+
+  /* ========================= SET ACTIVE ========================= */
+
+  async setActive(id: string) {
+    const result = await this.service.setActive(id);
+
+    if (result.isFailure) {
+      return Response.json({ error: result.getError() }, { status: 400 });
     }
 
-    /* ========================= UPDATE ========================= */
+    return Response.json({ success: true });
+  }
 
-    async update(id: string, req: NextRequest) {
-        try {
-            const json = await req.json();
+  /* ========================= DELETE ========================= */
 
-            const body: UpdateAcademicYearInput =
-                UpdateAcademicYearSchema.parse(json);
+  async delete(id: string) {
+    const result = await this.service.delete(id);
 
-            const result =
-                await this.service.update({
-                    id,
-                    ...body,
-                    isActive: false
-                });
-
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
-
-            return Response.json(result.getValue());
-        } catch (error) {
-            return handleZodError(error);
-        }
+    if (result.isFailure) {
+      return Response.json({ error: result.getError() }, { status: 400 });
     }
 
-    /* ========================= SET ACTIVE ========================= */
-
-    async setActive(id: string) {
-        const result =
-            await this.service.setActive(id);
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json({ success: true });
-    }
-
-    /* ========================= DELETE ========================= */
-
-    async delete(id: string) {
-        const result =
-            await this.service.delete(id);
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json({ success: true });
-    }
+    return Response.json({ success: true });
+  }
 }

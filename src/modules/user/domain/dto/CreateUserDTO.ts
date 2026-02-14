@@ -1,6 +1,6 @@
 //Files: src/modules/user/domain/dto/CreateUserDTO.ts
 
-import {Role, TeacherRole} from "@/generated/prisma";
+import type {Role, TeacherRole} from "@/generated/prisma";
 
 export interface CreateUserDTO {
     username: string;

@@ -4,7 +4,7 @@ import {
     hashPassword,
     comparePassword,
 } from '@/modules/shared/core/bcrypt';
-import {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
+import type {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
 
 
 export class BcryptService implements HashServiceInterface

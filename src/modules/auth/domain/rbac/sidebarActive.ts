@@ -1,6 +1,6 @@
 //Files: src/modules/auth/domain/rbac/sidebarActive.ts
 
-import { SidebarMenuItem } from "./roleMenuPolicy";
+import type { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
 
 export function isMenuActive(
     item: SidebarMenuItem,

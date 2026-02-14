@@ -1,5 +1,5 @@
 //Files: src/modules/user/domain/entity/AuthUser.ts
-import { Role } from "@/generated/prisma";
+import type { Role } from "@/generated/prisma";
 
 export class User {
     constructor(

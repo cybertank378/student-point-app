@@ -1,21 +1,19 @@
 //Files: src/modules/user/application/usecase/GetUserByIdUseCase.ts
 
 import { Result } from "@/modules/shared/core/Result";
-import { User } from "@/modules/user/domain/entity/User";
-import { UserInterface } from "@/modules/user/domain/interfaces/UserInterface";
+import type { User } from "@/modules/user/domain/entity/User";
+import type { UserInterface } from "@/modules/user/domain/interfaces/UserInterface";
 
 export class GetUserByIdUseCase {
-    constructor(private readonly repo: UserInterface) {}
+  constructor(private readonly repo: UserInterface) {}
 
-    async execute(
-        id: string,
-    ): Promise<Result<User>> {
-        const user = await this.repo.findById(id);
+  async execute(id: string): Promise<Result<User>> {
+    const user = await this.repo.findById(id);
 
-        if (!user) {
-            return Result.fail("Pengguna tidak ditemukan");
-        }
-
-        return Result.ok(user);
+    if (!user) {
+      return Result.fail("Pengguna tidak ditemukan");
     }
+
+    return Result.ok(user);
+  }
 }

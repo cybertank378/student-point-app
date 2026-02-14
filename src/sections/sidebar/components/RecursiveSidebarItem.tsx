@@ -2,7 +2,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
+import type { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
 import { FaChevronRight } from "react-icons/fa";
 import clsx from "clsx";
 
@@ -12,7 +12,7 @@ interface Props {
     index: number;
     expandedIndex: number | null;
     setExpandedIndex: (index: number | null) => void;
-    collapsed?: boolean; // ✅ TAMBAHKAN INI
+    collapsed?: boolean;
 }
 
 export function RecursiveSidebarItem({
@@ -21,7 +21,7 @@ export function RecursiveSidebarItem({
                                          index,
                                          expandedIndex,
                                          setExpandedIndex,
-                                         collapsed = false, // default
+                                         collapsed = false,
                                      }: Props) {
     const pathname = usePathname();
     const router = useRouter();
@@ -48,6 +48,7 @@ export function RecursiveSidebarItem({
     return (
         <div>
             <button
+                type="button"
                 onClick={handleClick}
                 className={clsx(
                     "flex items-center justify-between w-full rounded-xl",
@@ -58,32 +59,27 @@ export function RecursiveSidebarItem({
                             level === 0 && isOpen && !isActive,
                         "hover:bg-[#383951] text-[#D8D8EE]":
                             !isActive && !(level === 0 && isOpen),
-                    }
+                    },
                 )}
                 style={{ paddingLeft }}
             >
                 <div className="flex items-center gap-2">
-                    {level === 0 && item.icon && (
-                        <item.icon size={18} />
-                    )}
+                    {level === 0 && item.icon && <item.icon size={18} />}
 
-                    {/* 🔥 HIDE LABEL IF COLLAPSED */}
                     {!collapsed && (
                         <>
                             {level > 0 && (
                                 <span
                                     className={clsx(
                                         "w-2 h-2 rounded-full",
-                                        isActive ? "bg-white" : "bg-[#B0B0C6]"
+                                        isActive ? "bg-white" : "bg-[#B0B0C6]",
                                     )}
                                 />
                             )}
 
                             <span
                                 className={clsx(
-                                    level > 0 && !isActive
-                                        ? "text-[#B0B0C6]"
-                                        : ""
+                                    level > 0 && !isActive ? "text-[#B0B0C6]" : "",
                                 )}
                             >
                 {item.label}
@@ -97,7 +93,7 @@ export function RecursiveSidebarItem({
                         size={12}
                         className={clsx(
                             "transition-transform duration-200",
-                            isOpen && "rotate-90"
+                            isOpen && "rotate-90",
                         )}
                     />
                 )}
@@ -113,7 +109,7 @@ export function RecursiveSidebarItem({
                             index={i}
                             expandedIndex={expandedIndex}
                             setExpandedIndex={setExpandedIndex}
-                            collapsed={collapsed} // ✅ teruskan ke child
+                            collapsed={collapsed}
                         />
                     ))}
                 </div>
@@ -121,6 +117,4 @@ export function RecursiveSidebarItem({
         </div>
     );
 }
-
-
 

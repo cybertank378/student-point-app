@@ -1,5 +1,4 @@
 //Files: src/modules/student/presentation/hooks/useStudentApi.ts
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -14,8 +13,6 @@ import {
     safeJson,
     toApiError,
 } from "@/modules/shared/errors/ApiError";
-import {usePagination} from "@/modules/shared/pagination/usePagination";
-import {usePaginatedApi} from "@/modules/shared/pagination/usePaginatedApi";
 
 /**
  * Response shape dari GET /api/students
@@ -32,15 +29,14 @@ export const useStudentApi = () => {
     const [error, setError] = useState<ApiError | null>(null);
 
     /**
-     * =========================
-     * FETCH STUDENTS
-     * =========================
+     * =====================================================
+     * GET    /api/students
+     * =====================================================
      */
     const fetchStudents = useCallback(
-        async (query?: StudentQueryDTO) => {
-            setLoading(true);
-
+        async (query?: StudentQueryDTO): Promise<void> => {
             try {
+                setLoading(true);
                 setError(null);
 
                 const params = query
@@ -50,6 +46,13 @@ export const useStudentApi = () => {
                     : "";
 
                 const res = await fetch(`/api/students${params}`);
+
+                if (!res.ok) {
+                    const apiError = await parseError(res);
+                    setError(apiError);
+                    return;
+                }
+
                 const data =
                     await safeJson<StudentListResponse>(res);
 
@@ -68,32 +71,10 @@ export const useStudentApi = () => {
         [],
     );
 
-    const pagination = usePagination(10);
-
-    const api = usePaginatedApi<Student, StudentQueryDTO>({
-        endpoint: "/api/students",
-        initialQuery: {
-            page: pagination.page,
-            limit: pagination.limit,
-        } as StudentQueryDTO,
-    });
-
-    return {
-        students: api.rows,
-        total: api.total,
-        loading: api.loading,
-        error: api.error,
-
-        pagination,
-
-        fetchStudents: (query: StudentQueryDTO) =>
-            api.fetchPage(query),
-    };
-
     /**
-     * =========================
-     * CREATE STUDENT
-     * =========================
+     * =====================================================
+     * POST   /api/students
+     * =====================================================
      */
     const createStudent = useCallback(
         async (
@@ -109,6 +90,12 @@ export const useStudentApi = () => {
                     },
                     body: JSON.stringify(payload),
                 });
+
+                if (!res.ok) {
+                    const apiError = await parseError(res);
+                    setError(apiError);
+                    return null;
+                }
 
                 const created =
                     await safeJson<Student>(res);
@@ -126,9 +113,9 @@ export const useStudentApi = () => {
     );
 
     /**
-     * =========================
-     * UPDATE STUDENT
-     * =========================
+     * =====================================================
+     * PUT    /api/students/:id
+     * =====================================================
      */
     const updateStudent = useCallback(
         async (
@@ -148,6 +135,12 @@ export const useStudentApi = () => {
                     },
                 );
 
+                if (!res.ok) {
+                    const apiError = await parseError(res);
+                    setError(apiError);
+                    return null;
+                }
+
                 const updated =
                     await safeJson<Student>(res);
 
@@ -164,12 +157,12 @@ export const useStudentApi = () => {
     );
 
     /**
-     * =========================
-     * DELETE STUDENT (SOFT)
-     * =========================
+     * =====================================================
+     * DELETE /api/students/:id
+     * =====================================================
      */
     const deleteStudent = useCallback(
-        async (id: string) => {
+        async (id: string): Promise<void> => {
             try {
                 setError(null);
 
@@ -179,7 +172,8 @@ export const useStudentApi = () => {
                 );
 
                 if (!res.ok) {
-                    setError(await parseError(res));
+                    const apiError = await parseError(res);
+                    setError(apiError);
                     return;
                 }
 
@@ -194,15 +188,15 @@ export const useStudentApi = () => {
     );
 
     /**
-     * =========================
-     * ASSIGN STUDENT → ROMBEL
-     * =========================
+     * =====================================================
+     * POST   /api/students/assign-rombel
+     * =====================================================
      */
     const assignToRombel = useCallback(
         async (
             studentId: string,
             rombelId: string,
-        ) => {
+        ): Promise<void> => {
             try {
                 setError(null);
 
@@ -221,7 +215,8 @@ export const useStudentApi = () => {
                 );
 
                 if (!res.ok) {
-                    setError(await parseError(res));
+                    const apiError = await parseError(res);
+                    setError(apiError);
                     return;
                 }
 
@@ -239,15 +234,15 @@ export const useStudentApi = () => {
     );
 
     /**
-     * =========================
-     * BATCH ASSIGN → ROMBEL
-     * =========================
+     * =====================================================
+     * POST   /api/students/batch-assign-rombel
+     * =====================================================
      */
     const batchAssignToRombel = useCallback(
         async (
             studentIds: string[],
             rombelId: string,
-        ) => {
+        ): Promise<void> => {
             try {
                 setError(null);
 
@@ -266,7 +261,8 @@ export const useStudentApi = () => {
                 );
 
                 if (!res.ok) {
-                    setError(await parseError(res));
+                    const apiError = await parseError(res);
+                    setError(apiError);
                     return;
                 }
 
@@ -284,12 +280,104 @@ export const useStudentApi = () => {
     );
 
     /**
+     * =====================================================
+     * POST   /api/students/assign-academic-year
+     * =====================================================
+     */
+    const assignAcademicYear = useCallback(
+        async (
+            studentId: string,
+            rombelId: string,
+        ): Promise<void> => {
+            try {
+                setError(null);
+
+                const res = await fetch(
+                    "/api/students/assign-academic-year",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            studentId,
+                            rombelId,
+                        }),
+                    },
+                );
+
+                if (!res.ok) {
+                    const apiError = await parseError(res);
+                    setError(apiError);
+                    return;
+                }
+
+                await fetchStudents();
+            } catch (err) {
+                setError(
+                    toApiError(
+                        err,
+                        "Failed to assign academic year",
+                    ),
+                );
+            }
+        },
+        [fetchStudents],
+    );
+
+    /**
+     * =====================================================
+     * POST   /api/students/batch-assign-academic-year
+     * =====================================================
+     */
+    const batchAssignAcademicYear = useCallback(
+        async (
+            studentIds: string[],
+            rombelId: string,
+        ): Promise<void> => {
+            try {
+                setError(null);
+
+                const res = await fetch(
+                    "/api/students/batch-assign-academic-year",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            studentIds,
+                            rombelId,
+                        }),
+                    },
+                );
+
+                if (!res.ok) {
+                    const apiError = await parseError(res);
+                    setError(apiError);
+                    return;
+                }
+
+                await fetchStudents();
+            } catch (err) {
+                setError(
+                    toApiError(
+                        err,
+                        "Failed to batch assign academic year",
+                    ),
+                );
+            }
+        },
+        [fetchStudents],
+    );
+
+    /**
      * =========================
      * AUTO FETCH ON MOUNT
      * =========================
      */
     useEffect(() => {
-        fetchStudents();
+        void fetchStudents();
     }, [fetchStudents]);
 
     return {
@@ -304,5 +392,7 @@ export const useStudentApi = () => {
         deleteStudent,
         assignToRombel,
         batchAssignToRombel,
+        assignAcademicYear,
+        batchAssignAcademicYear,
     };
 };

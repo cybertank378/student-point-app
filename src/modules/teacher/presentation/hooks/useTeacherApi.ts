@@ -10,245 +10,236 @@ import type { UpdateTeacherDTO } from "@/modules/teacher/domain/dto/UpdateTeache
 import type { AssignTeacherRoleDTO } from "@/modules/teacher/domain/dto/AssignTeacherRoleDTO";
 
 import {
-    type ApiError,
-    parseError,
-    safeJson,
-    toApiError,
+  type ApiError,
+  parseError,
+  safeJson,
+  toApiError,
 } from "@/modules/shared/errors/ApiError";
 
 export const useTeacherApi = () => {
-    const [teachers, setTeachers] = useState<Teacher[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<ApiError | null>(null);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
 
-    /**
-     * =========================
-     * FETCH ALL TEACHERS
-     * =========================
-     */
-    const fetchTeachers = useCallback(async () => {
-        setLoading(true);
-        try {
-            setError(null);
+  /**
+   * =========================
+   * FETCH ALL TEACHERS
+   * =========================
+   */
+  const fetchTeachers = useCallback(async () => {
+    setLoading(true);
+    try {
+      setError(null);
 
-            const res = await fetch("/api/teachers");
-            const list = await safeJson<Teacher[]>(res);
+      const res = await fetch("/api/teachers");
+      const list = await safeJson<Teacher[]>(res);
 
-            setTeachers(list ?? []);
-        } catch (err) {
-            const apiErr = toApiError(err, "Gagal mengambil data guru");
-            setError(apiErr);
-            setTeachers([]);
-        } finally {
-            setLoading(false);
+      setTeachers(list ?? []);
+    } catch (err) {
+      const apiErr = toApiError(err, "Gagal mengambil data guru");
+      setError(apiErr);
+      setTeachers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * =========================
+   * GET TEACHER BY ID
+   * =========================
+   */
+  const getTeacherById = useCallback(
+    async (id: string | null | undefined): Promise<Teacher | null> => {
+      if (!id) return null;
+
+      try {
+        setError(null);
+
+        const res = await fetch(`/api/teachers/${id}`);
+        if (!res.ok) {
+          const apiErr = await parseError(res);
+          setError(apiErr);
+          return null;
         }
-    }, []);
 
-    /**
-     * =========================
-     * GET TEACHER BY ID
-     * =========================
-     */
-    const getTeacherById = useCallback(
-        async (id: string | null | undefined): Promise<Teacher | null> => {
-            if (!id) return null;
+        return await safeJson<Teacher>(res);
+      } catch (err) {
+        const apiErr = toApiError(err, "Gagal mengambil data guru");
+        setError(apiErr);
+        return null;
+      }
+    },
+    [],
+  );
 
-            try {
-                setError(null);
+  /**
+   * =========================
+   * CREATE TEACHER
+   * =========================
+   */
+  const createTeacher = useCallback(
+    async (payload: CreateTeacherDTO): Promise<Teacher | null> => {
+      try {
+        setError(null);
 
-                const res = await fetch(`/api/teachers/${id}`);
-                if (!res.ok) {
-                    const apiErr = await parseError(res);
-                    setError(apiErr);
-                    return null;
-                }
+        const res = await fetch("/api/teachers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-                return await safeJson<Teacher>(res);
-            } catch (err) {
-                const apiErr = toApiError(err, "Gagal mengambil data guru");
-                setError(apiErr);
-                return null;
-            }
-        },
-        [],
-    );
+        const created = await safeJson<Teacher>(res);
+        await fetchTeachers();
 
-    /**
-     * =========================
-     * CREATE TEACHER
-     * =========================
-     */
-    const createTeacher = useCallback(
-        async (payload: CreateTeacherDTO): Promise<Teacher | null> => {
-            try {
-                setError(null);
+        return created ?? null;
+      } catch (err) {
+        const apiErr = toApiError(err, "Gagal menambahkan guru");
+        setError(apiErr);
+        return null;
+      }
+    },
+    [fetchTeachers],
+  );
 
-                const res = await fetch("/api/teachers", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
+  /**
+   * =========================
+   * UPDATE TEACHER
+   * =========================
+   */
+  const updateTeacher = useCallback(
+    async (payload: UpdateTeacherDTO): Promise<Teacher | null> => {
+      try {
+        setError(null);
 
-                const created = await safeJson<Teacher>(res);
-                await fetchTeachers();
+        const res = await fetch(`/api/teachers/${payload.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-                return created ?? null;
-            } catch (err) {
-                const apiErr = toApiError(err, "Gagal menambahkan guru");
-                setError(apiErr);
-                return null;
-            }
-        },
-        [fetchTeachers],
-    );
+        const updated = await safeJson<Teacher>(res);
+        await fetchTeachers();
 
-    /**
-     * =========================
-     * UPDATE TEACHER
-     * =========================
-     */
-    const updateTeacher = useCallback(
-        async (payload: UpdateTeacherDTO): Promise<Teacher | null> => {
-            try {
-                setError(null);
+        return updated ?? null;
+      } catch (err) {
+        const apiErr = toApiError(err, "Gagal mengubah data guru");
+        setError(apiErr);
+        return null;
+      }
+    },
+    [fetchTeachers],
+  );
 
-                const res = await fetch(`/api/teachers/${payload.id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                });
+  /**
+   * =========================
+   * DELETE TEACHER
+   * =========================
+   */
+  const deleteTeacher = useCallback(
+    async (id: string): Promise<void> => {
+      if (!id) return;
 
-                const updated = await safeJson<Teacher>(res);
-                await fetchTeachers();
+      try {
+        setError(null);
 
-                return updated ?? null;
-            } catch (err) {
-                const apiErr = toApiError(err, "Gagal mengubah data guru");
-                setError(apiErr);
-                return null;
-            }
-        },
-        [fetchTeachers],
-    );
+        const res = await fetch(`/api/teachers/${id}`, {
+          method: "DELETE",
+        });
 
-    /**
-     * =========================
-     * DELETE TEACHER
-     * =========================
-     */
-    const deleteTeacher = useCallback(
-        async (id: string): Promise<void> => {
-            if (!id) return;
+        if (!res.ok) {
+          const apiErr = await parseError(res);
+          setError(apiErr);
+        }
 
-            try {
-                setError(null);
+        await fetchTeachers();
+      } catch (err) {
+        const apiErr = toApiError(err, "Gagal menghapus guru");
+        setError(apiErr);
+      }
+    },
+    [fetchTeachers],
+  );
 
-                const res = await fetch(`/api/teachers/${id}`, {
-                    method: "DELETE",
-                });
+  /**
+   * =========================
+   * ASSIGN TEACHER ROLES
+   * =========================
+   */
+  const assignTeacherRole = useCallback(
+    async (payload: AssignTeacherRoleDTO): Promise<Teacher | null> => {
+      try {
+        setError(null);
 
-                if (!res.ok) {
-                    const apiErr = await parseError(res);
-                    setError(apiErr);
-                }
+        const res = await fetch(`/api/teachers/${payload.teacherId}/roles`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ roles: payload.roles }),
+        });
 
-                await fetchTeachers();
-            } catch (err) {
-                const apiErr = toApiError(err, "Gagal menghapus guru");
-                setError(apiErr);
-            }
-        },
-        [fetchTeachers],
-    );
+        const updated = await safeJson<Teacher>(res);
+        await fetchTeachers();
 
-    /**
-     * =========================
-     * ASSIGN TEACHER ROLES
-     * =========================
-     */
-    const assignTeacherRole = useCallback(
-        async (payload: AssignTeacherRoleDTO): Promise<Teacher | null> => {
-            try {
-                setError(null);
+        return updated ?? null;
+      } catch (err) {
+        const apiErr = toApiError(err, "Gagal assign role guru");
+        setError(apiErr);
+        return null;
+      }
+    },
+    [fetchTeachers],
+  );
 
-                const res = await fetch(
-                    `/api/teachers/${payload.teacherId}/roles`,
-                    {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ roles: payload.roles }),
-                    },
-                );
+  /**
+   * =========================
+   * ASSIGN HOMEROOM (WALI KELAS)
+   * =========================
+   */
+  const assignHomeroom = useCallback(
+    async (teacherId: string, classId: string): Promise<void> => {
+      try {
+        setError(null);
 
-                const updated = await safeJson<Teacher>(res);
-                await fetchTeachers();
+        const res = await fetch(`/api/teachers/${teacherId}/assign-homeroom`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ classId }),
+        });
 
-                return updated ?? null;
-            } catch (err) {
-                const apiErr = toApiError(err, "Gagal assign role guru");
-                setError(apiErr);
-                return null;
-            }
-        },
-        [fetchTeachers],
-    );
+        if (!res.ok) {
+          const apiErr = await parseError(res);
+          setError(apiErr);
+        }
 
-    /**
-     * =========================
-     * ASSIGN HOMEROOM (WALI KELAS)
-     * =========================
-     */
-    const assignHomeroom = useCallback(
-        async (
-            teacherId: string,
-            classId: string,
-        ): Promise<void> => {
-            try {
-                setError(null);
+        await fetchTeachers();
+      } catch (err) {
+        const apiErr = toApiError(err, "Gagal assign wali kelas");
+        setError(apiErr);
+      }
+    },
+    [fetchTeachers],
+  );
 
-                const res = await fetch(
-                    `/api/teachers/${teacherId}/assign-homeroom`,
-                    {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ classId }),
-                    },
-                );
+  /**
+   * =========================
+   * AUTO FETCH ON MOUNT
+   * =========================
+   */
+  useEffect(() => {
+    void fetchTeachers();
+  }, [fetchTeachers]);
 
-                if (!res.ok) {
-                    const apiErr = await parseError(res);
-                    setError(apiErr);
-                }
+  return {
+    teachers,
+    loading,
+    error,
 
-                await fetchTeachers();
-            } catch (err) {
-                const apiErr = toApiError(err, "Gagal assign wali kelas");
-                setError(apiErr);
-            }
-        },
-        [fetchTeachers],
-    );
-
-    /**
-     * =========================
-     * AUTO FETCH ON MOUNT
-     * =========================
-     */
-    useEffect(() => {
-        fetchTeachers();
-    }, [fetchTeachers]);
-
-    return {
-        teachers,
-        loading,
-        error,
-
-        fetchTeachers,
-        getTeacherById,
-        createTeacher,
-        updateTeacher,
-        deleteTeacher,
-        assignTeacherRole,
-        assignHomeroom,
-    };
+    fetchTeachers,
+    getTeacherById,
+    createTeacher,
+    updateTeacher,
+    deleteTeacher,
+    assignTeacherRole,
+    assignHomeroom,
+  };
 };

@@ -6,7 +6,7 @@ import type { ViolationInterface } from "@/modules/violation/domain/interfaces/V
 import type { CreateViolationDTO } from "@/modules/violation/domain/dto/CreateViolationDTO";
 import type { UpdateViolationDTO } from "@/modules/violation/domain/dto/UpdateViolationDTO";
 import type { Violation } from "@/modules/violation/domain/entity/Violation";
-import {ViolationLevel} from "@/generated/prisma";
+import type {ViolationLevel} from "@/generated/prisma";
 
 export class ViolationRepository implements ViolationInterface {
     async findAll(): Promise<Violation[]> {

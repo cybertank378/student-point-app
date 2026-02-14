@@ -1,6 +1,6 @@
 //Files: src/shared-ui/component/Card.tsx
 
-import React from "react";
+import type React from "react";
 
 interface Props {
     children: React.ReactNode;

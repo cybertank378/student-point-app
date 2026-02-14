@@ -26,7 +26,7 @@ export class RombelService {
     private readonly deleteUseCase: DeleteRombelUseCase;
 
     constructor(
-        private readonly repo: RombelInterface,
+        repo: RombelInterface,
     ) {
         this.listUseCase = new ListRombelUseCase(repo);
         this.getByIdUseCase = new GetRombelByIdUseCase(repo);

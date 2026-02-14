@@ -3,10 +3,10 @@
 
 import { useState } from "react";
 import {
-    type ApiError,
-    parseError,
-    safeJson,
-    toApiError,
+  type ApiError,
+  parseError,
+  safeJson,
+  toApiError,
 } from "@/modules/shared/errors/ApiError";
 
 /**
@@ -15,28 +15,22 @@ import {
  * =====================================================
  */
 export interface UserAuth {
-    accessToken: string;
-    mustChangePassword: boolean;
+  accessToken: string;
+  mustChangePassword: boolean;
 }
 
-
-export type UserRole =
-    | "ADMIN"
-    | "TEACHER"
-    | "STUDENT"
-    | "PARENT";
+export type UserRole = "ADMIN" | "TEACHER" | "STUDENT" | "PARENT";
 
 export interface LoginPayload {
-    username: string;
-    password: string;
+  username: string;
+  password: string;
 }
 
 export interface LoginResponse {
-    accessToken: string;
-    role: UserRole;
-    mustChangePassword: boolean;
+  accessToken: string;
+  role: UserRole;
+  mustChangePassword: boolean;
 }
-
 
 /**
  * =====================================================
@@ -48,253 +42,230 @@ export interface LoginResponse {
  * - Semua error sudah dalam bentuk ApiError
  */
 export const useAuthApi = () => {
-    /**
-     * =====================================================
-     * STATE MANAGEMENT
-     * =====================================================
-     */
-    const [userAuth, setUserAuth] = useState<UserAuth[]>([]);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<ApiError | null>(null);
+  /**
+   * =====================================================
+   * STATE MANAGEMENT
+   * =====================================================
+   */
+  const [userAuth, setUserAuth] = useState<UserAuth[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<ApiError | null>(null);
 
-    /**
-     * Reset error helper
-     */
-    const clearError = () => setError(null);
+  /**
+   * Reset error helper
+   */
+  const clearError = () => setError(null);
 
-    /**
-     * =====================================================
-     * LOGIN
-     * =====================================================
-     */
-    const login = async (payload: LoginPayload): Promise<LoginResponse> => {
-        setLoading(true);
-        clearError();
+  /**
+   * =====================================================
+   * LOGIN
+   * =====================================================
+   */
+  const login = async (payload: LoginPayload): Promise<LoginResponse> => {
+    setLoading(true);
+    clearError();
 
-        try {
-            const res = await fetch(
-                "/api/auth/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(payload),
-                    credentials: "include", // penting untuk cookie refresh token
-                },
-            );
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        credentials: "include", // penting untuk cookie refresh token
+      });
 
-            const data =
-                await safeJson<LoginResponse>(res);
+      return await safeJson<LoginResponse>(res);
+    } catch (err: unknown) {
+      const apiError = toApiError(err, "Login gagal");
 
-            return data;
-        } catch (err: unknown) {
-            const apiError = toApiError(
-                err,
-                "Login gagal",
-            );
+      setError(apiError);
+      throw apiError;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            setError(apiError);
-            throw apiError;
-        } finally {
-            setLoading(false);
-        }
-    };
+  /**
+   * =====================================================
+   * REFRESH TOKEN
+   * =====================================================
+   */
+  const refresh = async (): Promise<void> => {
+    setLoading(true);
+    clearError();
 
-    /**
-     * =====================================================
-     * REFRESH TOKEN
-     * =====================================================
-     */
-    const refresh = async (): Promise<void> => {
-        setLoading(true);
-        clearError();
+    try {
+      const res = await fetch("/api/auth/refresh", {
+        method: "POST",
+        credentials: "include",
+      });
 
-        try {
-            const res = await fetch("/api/auth/refresh", {
-                method: "POST",
-                credentials: "include",
-            });
+      const data = await safeJson<{ accessToken: string }>(res);
 
-            const data =
-                await safeJson<{ accessToken: string }>(
-                    res,
-                );
+      setUserAuth((prev) =>
+        prev.map((u) => ({
+          ...u,
+          accessToken: data.accessToken,
+        })),
+      );
+    } catch (err: unknown) {
+      const apiError = toApiError(err, "Refresh failed");
+      setError(apiError);
+      throw apiError;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            setUserAuth((prev) =>
-                prev.map((u) => ({
-                    ...u,
-                    accessToken: data.accessToken,
-                })),
-            );
-        } catch (err: unknown) {
-            const apiError = toApiError(
-                err,
-                "Refresh failed",
-            );
-            setError(apiError);
-            throw apiError;
-        } finally {
-            setLoading(false);
-        }
-    };
+  /**
+   * =====================================================
+   * LOGOUT
+   * =====================================================
+   */
+  const logout = async (): Promise<void> => {
+    setLoading(true);
+    clearError();
 
-    /**
-     * =====================================================
-     * LOGOUT
-     * =====================================================
-     */
-    const logout = async (): Promise<void> => {
-        setLoading(true);
-        clearError();
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
 
-        try {
-            const res = await fetch("/api/auth/logout", {
-                method: "POST",
-                credentials: "include",
-            });
+      if (!res.ok) {
+        const apiError = await parseError(res);
+        setError(apiError);
+        return;
+      }
+      setUserAuth([]);
+    } catch (err: unknown) {
+      const apiError = toApiError(err, "Logout failed");
+      setError(apiError);
+      throw apiError;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            if (!res.ok) {
-                throw await parseError(res);
-            }
+  /**
+   * =====================================================
+   * CHANGE PASSWORD
+   * =====================================================
+   */
+  const changePassword = async (
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> => {
+    setLoading(true);
+    clearError();
 
-            setUserAuth([]);
-        } catch (err: unknown) {
-            const apiError = toApiError(
-                err,
-                "Logout failed",
-            );
-            setError(apiError);
-            throw apiError;
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+        }),
+      });
 
-    /**
-     * =====================================================
-     * CHANGE PASSWORD
-     * =====================================================
-     */
-    const changePassword = async (
-        oldPassword: string,
-        newPassword: string,
-    ): Promise<void> => {
-        setLoading(true);
-        clearError();
+      if (!res.ok) {
+        const apiError = await parseError(res);
+        setError(apiError);
+        return;
+      }
+    } catch (err: unknown) {
+      const apiError = toApiError(err, "Change password failed");
+      setError(apiError);
+      throw apiError;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            const res = await fetch("/api/auth/change-password", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    oldPassword,
-                    newPassword,
-                }),
-            });
+  /**
+   * =====================================================
+   * REQUEST RESET PASSWORD
+   * =====================================================
+   */
+  const requestResetPassword = async (username: string): Promise<void> => {
+    setLoading(true);
+    clearError();
 
-            if (!res.ok) {
-                throw await parseError(res);
-            }
-        } catch (err: unknown) {
-            const apiError = toApiError(
-                err,
-                "Change password failed",
-            );
-            setError(apiError);
-            throw apiError;
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+      const res = await fetch("/api/auth/request-reset", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username }),
+      });
 
-    /**
-     * =====================================================
-     * REQUEST RESET PASSWORD
-     * =====================================================
-     */
-    const requestResetPassword = async (
-        username: string,
-    ): Promise<void> => {
-        setLoading(true);
-        clearError();
+      if (!res.ok) {
+        const apiError = await parseError(res);
+        setError(apiError);
+        return;
+      }
+    } catch (err: unknown) {
+      const apiError = toApiError(err, "Request reset failed");
+      setError(apiError);
+      throw apiError;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            const res = await fetch("/api/auth/request-reset", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ username }),
-            });
+  /**
+   * =====================================================
+   * RESET PASSWORD
+   * =====================================================
+   */
+  const resetPassword = async (
+    token: string,
+    newPassword: string,
+  ): Promise<void> => {
+    setLoading(true);
+    clearError();
 
-            if (!res.ok) {
-                throw await parseError(res);
-            }
-        } catch (err: unknown) {
-            const apiError = toApiError(
-                err,
-                "Request reset failed",
-            );
-            setError(apiError);
-            throw apiError;
-        } finally {
-            setLoading(false);
-        }
-    };
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          newPassword,
+        }),
+      });
 
-    /**
-     * =====================================================
-     * RESET PASSWORD
-     * =====================================================
-     */
-    const resetPassword = async (
-        token: string,
-        newPassword: string,
-    ): Promise<void> => {
-        setLoading(true);
-        clearError();
+      if (!res.ok) {
+        const apiError = await parseError(res);
+        setError(apiError);
+        return;
+      }
+    } catch (err: unknown) {
+      const apiError = toApiError(err, "Reset password failed");
+      setError(apiError);
+      throw apiError;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            const res = await fetch("/api/auth/reset-password", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    token,
-                    newPassword,
-                }),
-            });
-
-            if (!res.ok) {
-                throw await parseError(res);
-            }
-        } catch (err: unknown) {
-            const apiError = toApiError(
-                err,
-                "Reset password failed",
-            );
-            setError(apiError);
-            throw apiError;
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return {
-        userAuth,
-        loading,
-        error,
-        clearError,
-        login,
-        refresh,
-        logout,
-        changePassword,
-        requestResetPassword,
-        resetPassword,
-    };
+  return {
+    userAuth,
+    loading,
+    error,
+    clearError,
+    login,
+    refresh,
+    logout,
+    changePassword,
+    requestResetPassword,
+    resetPassword,
+  };
 };
-

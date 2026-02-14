@@ -1,4 +1,4 @@
-import { UserRole } from "@/libs/utils";
+import type { UserRole } from "@/libs/utils";
 import {rbacConfig} from "@/modules/auth/domain/rbac/rbacConfig";
 import {canAccess} from "@/modules/auth/domain/rbac/fieldGuard";
 

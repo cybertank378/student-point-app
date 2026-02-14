@@ -1,8 +1,8 @@
 //Files: src/modules/auth/domain/interfaces/AuthRepositoryInterface.ts
 
-import {AuthUser} from "@/modules/auth/domain/entity/AuthUser";
-import {AuthSession} from "@/modules/auth/domain/entity/AuthSession";
-import {PasswordResetToken} from "@/modules/auth/domain/entity/PasswordResetToken";
+import type {AuthUser} from "@/modules/auth/domain/entity/AuthUser";
+import type {AuthSession} from "@/modules/auth/domain/entity/AuthSession";
+import type {PasswordResetToken} from "@/modules/auth/domain/entity/PasswordResetToken";
 
 export interface AuthRepositoryInterface {
     findByUsername(username: string): Promise<AuthUser | null>;

@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import type * as React from "react";
 
 export type EmployeeCardIconProps = React.SVGProps<SVGSVGElement> & {
   /** Warna stroke SVG. Default: currentColor (ikut warna teks parent) */
@@ -8,10 +8,10 @@ export type EmployeeCardIconProps = React.SVGProps<SVGSVGElement> & {
 };
 
 export const EmployeeCardIcon: React.FC<EmployeeCardIconProps> = ({
-                                                                    strokeColor = "currentColor",
-                                                                    className,
-                                                                    ...rest
-                                                                  }) => {
+  strokeColor = "currentColor",
+  className,
+  ...rest
+}) => {
   return (
     <svg
       width={39}
@@ -69,11 +69,11 @@ export type CompanyLogoIconProps = React.SVGProps<SVGSVGElement> & {
 };
 
 export const CompanyLogoIcon: React.FC<CompanyLogoIconProps> = ({
-                                                                  title = "PT Payment Terbaik Indonesia",
-                                                                  width = 40,
-                                                                  height = 44,
-                                                                  ...rest
-                                                                }) => {
+  title = "PT Payment Terbaik Indonesia",
+  width = 40,
+  height = 44,
+  ...rest
+}) => {
   return (
     <svg
       viewBox="0 0 331.56 362.96"

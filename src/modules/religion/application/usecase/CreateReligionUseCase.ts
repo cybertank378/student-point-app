@@ -3,7 +3,7 @@
 import { Result } from "@/modules/shared/core/Result";
 import type { Religion } from "@/modules/religion/domain/entity/Religion";
 import type { CreateReligionDTO } from "@/modules/religion/domain/dto/CreateReligionDTO";
-import {ReligionInterface} from "@/modules/religion/domain/interfaces/ReligionInterface";
+import type {ReligionInterface} from "@/modules/religion/domain/interfaces/ReligionInterface";
 
 export class CreateReligionUseCase {
     constructor(

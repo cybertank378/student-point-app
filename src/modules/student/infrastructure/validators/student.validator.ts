@@ -135,3 +135,25 @@ export const BatchAssignRombelSchema = z.object({
     rombelId: z.string().regex(UUID_REGEX),
 });
 
+/**
+ * ==============================
+ * ASSIGN STUDENT → ACADEMIC YEAR
+ * ==============================
+ */
+export const AssignAcademicYearSchema = z.object({
+    studentId: z.string().regex(UUID_REGEX),
+    rombelId: z.string().regex(UUID_REGEX),
+});
+
+/**
+ * ==============================
+ * BATCH ASSIGN → ACADEMIC YEAR
+ * ==============================
+ */
+export const BatchAssignAcademicYearSchema = z.object({
+    studentIds: z
+        .array(z.string().regex(UUID_REGEX))
+        .min(1, "Minimal 1 siswa"),
+
+    rombelId: z.string().regex(UUID_REGEX),
+});

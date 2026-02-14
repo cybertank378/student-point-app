@@ -13,8 +13,6 @@ import {UpdateTeacherUseCase} from "@/modules/teacher/application/usecase/Update
 import {DeleteTeacherUseCase} from "@/modules/teacher/application/usecase/DeleteTeacherUseCase";
 import {AssignTeacherRoleUseCase} from "@/modules/teacher/application/usecase/AssignTeacherRoleUseCase";
 import {AssignHomeroomUseCase} from "@/modules/teacher/application/usecase/AssignHomeroomUseCase";
-
-
 export class TeacherService {
     private readonly listUC: ListTeacherUseCase;
     private readonly getUC: GetTeacherByIdUseCase;

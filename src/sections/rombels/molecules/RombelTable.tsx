@@ -15,7 +15,7 @@ import { Modal } from "@/shared-ui/component/Modal";
 import Button from "@/shared-ui/component/Button";
 import Loading from "@/shared-ui/component/Loading";
 
-import { useRombelApi } from "@/modules/rombel/presentation/hooks/useRombelApi";
+import type { useRombelApi } from "@/modules/rombel/presentation/hooks/useRombelApi";
 import { useAcademicYearApi } from "@/modules/academic-year/presentation/hooks/useAcademicYearApi";
 
 import type { Rombel } from "@/modules/rombel/domain/entity/Rombel";
