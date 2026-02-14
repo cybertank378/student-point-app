@@ -154,26 +154,16 @@ export const rbacConfig = {
                     permission: PERMISSIONS.RELIGION_READ,
                 },
 
-                // ======================================================
-                // =================== MENU BARU ========================
-                // ========= Master Disiplin (Digabung Disini) =========
-                // ======================================================
-
-                {
-                    label: "Pelanggaran",
-                    path: "/dashboard/violation-categories",
-                    permission: PERMISSIONS.VIOLATION_READ,
-                },
                 {
                     label: "Aturan & Poin",
-                    path: "/dashboard/violation-rules",
+                    path: "/dashboard/violations",
                     permission: PERMISSIONS.VIOLATION_READ,
-                },
+                }
             ],
         },
 
         {
-            label: "Manajemen",
+            label: "Manajemen Pengguna",
             children: [
                 {
                     label: "Siswa",
@@ -199,26 +189,11 @@ export const rbacConfig = {
         },
 
         {
-            label: "Disiplin",
-            children: [
-                {
-                    label: "Pelanggaran",
-                    path: "/dashboard/violations",
-                    permission: PERMISSIONS.VIOLATION_READ,
-                },
-                {
-                    label: "Prestasi",
-                    path: "/dashboard/achievements",
-                    permission: PERMISSIONS.ACHIEVEMENT_READ,
-                },
-            ],
+            label: "Prestasi",
+            path: "/dashboard/achievements",
+            permission: PERMISSIONS.ACHIEVEMENT_READ
+
         },
-
-
-
-        // ======================================================
-        // ===================== MENU BARU ======================
-        // ======================================================
 
         // ===== Konseling BK =====
         {
@@ -237,14 +212,19 @@ export const rbacConfig = {
             ],
         },
 
-        // ===== Administrasi BK =====
+        // ===== Proses Penanganan =====
         {
-            label: "Administrasi BK",
+            label: "Penanganan",
             children: [
                 {
                     label: "Surat Peringatan",
                     path: "/dashboard/warning-letters",
                     permission: PERMISSIONS.WARNING_LETTER_READ,
+                },
+                {
+                    label: "Kunjungan Guru BK",
+                    path: "/dashboard/parent-home-visits",
+                    permission: PERMISSIONS.PARENT_CALL_READ,
                 },
                 {
                     label: "Pemanggilan Orang Tua",

@@ -6,6 +6,7 @@ import {AuthUser} from "@/modules/auth/domain/entity/AuthUser";
 import {AuthMapper} from "@/modules/auth/domain/mapper/AuthMapper";
 import {PasswordResetToken} from "@/modules/auth/domain/entity/PasswordResetToken";
 import {AuthSession} from "@/modules/auth/domain/entity/AuthSession";
+import {FIFTEEN_MINUTES} from "@/libs/utils";
 
 export class AuthRepository implements AuthRepositoryInterface{
     async findByUsername(
@@ -54,7 +55,7 @@ export class AuthRepository implements AuthRepositoryInterface{
 
         const lockUntil =
             attempts >= 5
-                ? new Date(Date.now() + 15 * 60 * 1000)
+                ? new Date(Date.now() + FIFTEEN_MINUTES)
                 : user.lockUntil;
 
         await prisma.user.update({

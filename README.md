@@ -1,4 +1,4 @@
-# Student Point App
+npm# Student Point App
 
 Aplikasi **manajemen poin siswa** berbasis Next.js untuk membantu sekolah mencatat, memantau, dan menindaklanjuti **pelanggaran** serta **prestasi** siswa secara terstruktur.
 

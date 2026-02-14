@@ -1,5 +1,4 @@
 //Files: src/sections/academic-years/molecules/AcademicYearTable.tsx
-// Files: AcademicYearTable.tsx
 "use client";
 
 import { useState } from "react";
