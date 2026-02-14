@@ -7,5 +7,5 @@ export interface UpdateRombelDTO {
     id: string;
     grade: string;
     name: string;
-    academicYearId: string;
+    academicYearName: string;
 }

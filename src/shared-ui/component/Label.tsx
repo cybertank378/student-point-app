@@ -1,4 +1,4 @@
-// Files: src/shared-ui/component/ui/Label.tsx
+// Files: src/shared-ui/component/Label.tsx
 "use client";
 import clsx from "clsx";
 import type React from "react";

@@ -1,4 +1,4 @@
-//src/shared/component/ui/Table.tsx
+//src/shared/component/Table.tsx
 "use client";
 
 import clsx from "clsx";

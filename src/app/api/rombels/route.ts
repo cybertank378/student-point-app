@@ -14,9 +14,9 @@ const controller = createRombelController();
  */
 
 export async function GET(req: NextRequest) {
-    return controller.getAll(req);
+    return await controller.getAll(req);
 }
 
 export async function POST(req: NextRequest) {
-    return controller.create(req);
+    return await controller.create(req);
 }

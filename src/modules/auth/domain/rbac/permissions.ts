@@ -13,6 +13,9 @@ export const PERMISSIONS = {
 
     ACADEMIC_YEAR_MANAGE: "academicYear.manage",
 
+    ROMBEL_READ: "rombel.read",
+    ROMBEL_MANAGE: "rombel.manage",
+
     ATTENDANCE_READ: "attendance.read",
     ATTENDANCE_MANAGE: "attendance.manage",
 

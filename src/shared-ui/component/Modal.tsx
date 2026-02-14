@@ -4,10 +4,11 @@
 import clsx from "clsx";
 import type { FC, ReactNode, MouseEvent } from "react";
 import { useEffect } from "react";
-import Button from "./Button";
+import Button from "@/shared-ui/component/Button";
 
 interface ModalProps {
     title: string;
+    subtitle?: string; // ✅ TAMBAHKAN
     open: boolean;
     onClose: () => void;
     onSubmit?: () => void;
@@ -22,7 +23,7 @@ interface ModalProps {
 
     size?: "sm" | "md" | "lg" | "xl";
 
-    // 🔥 Tambahan agar fleksibel
+    // ✅ TAMBAHKAN INI
     submitColor?: "primary" | "secondary" | "error" | "warning" | "info" | "success";
     cancelColor?: "primary" | "secondary" | "error" | "warning" | "info" | "success";
 }
@@ -36,6 +37,7 @@ const sizeMap: Record<NonNullable<ModalProps["size"]>, string> = {
 
 export const Modal: FC<ModalProps> = ({
                                           title,
+                                          subtitle,
                                           open,
                                           onClose,
                                           onSubmit,
@@ -47,10 +49,9 @@ export const Modal: FC<ModalProps> = ({
                                           submitButtonClassName,
                                           cancelButtonClassName,
                                           size = "md",
-                                          submitColor = "primary",
-                                          cancelColor = "secondary",
+                                          submitColor = "primary",   // ✅ DEFAULT VALUE
+                                          cancelColor = "secondary", // ✅ DEFAULT VALUE
                                       }) => {
-    // Lock scroll body ketika modal terbuka
     useEffect(() => {
         if (!open) return;
 
@@ -77,14 +78,14 @@ export const Modal: FC<ModalProps> = ({
         >
             <div
                 className={clsx(
-                    "w-full rounded-2xl bg-white p-8 text-gray-900 shadow-xl",
+                    "w-full rounded-2xl bg-white p-8 shadow-xl",
                     "max-h-[90vh] overflow-y-auto",
                     sizeMap[size],
                     className
                 )}
             >
                 {/* Header */}
-                <div className="mb-6 flex items-start justify-between gap-4">
+                <div className="mb-6 text-center">
                     <h2
                         className={clsx(
                             "text-xl font-semibold text-gray-900",
@@ -94,35 +95,38 @@ export const Modal: FC<ModalProps> = ({
                         {title}
                     </h2>
 
-                    <div className="flex items-center gap-3">
-                        {/* Cancel Button */}
+                    {subtitle && (
+                        <p className="mt-2 text-sm text-gray-500">
+                            {subtitle}
+                        </p>
+                    )}
+                </div>
+
+                {/* Content */}
+                <div>{children}</div>
+
+                {/* Footer */}
+                {onSubmit && (
+                    <div className="mt-8 flex justify-center gap-4">
                         <Button
                             variant="outline"
                             color={cancelColor}
-                            size="md"
-                            className={cancelButtonClassName}
+                            className={clsx("min-w-[110px]", cancelButtonClassName)}
                             onClick={onClose}
                         >
                             {cancelText}
                         </Button>
 
-                        {/* Submit Button */}
-                        {onSubmit && (
-                            <Button
-                                variant="filled"
-                                color={submitColor}
-                                size="md"
-                                className={submitButtonClassName}
-                                onClick={onSubmit}
-                            >
-                                {submitText}
-                            </Button>
-                        )}
+                        <Button
+                            variant="filled"
+                            color={submitColor}
+                            className={clsx("min-w-[110px]", submitButtonClassName)}
+                            onClick={onSubmit}
+                        >
+                            {submitText}
+                        </Button>
                     </div>
-                </div>
-
-                {/* Content */}
-                <div>{children}</div>
+                )}
             </div>
         </div>
     );

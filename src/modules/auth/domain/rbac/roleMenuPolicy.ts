@@ -66,7 +66,7 @@ const ROLE_MENU: Record<UserRole, SidebarMenuItem[]> = {
             icon: MdManageAccounts,
             children: [
                 { label: "Tahun Ajaran", path: "/dashboard/academic-years", icon: MdMenuBook },
-                { label: "Kelas (Rombel)", path: "/dashboard/classes", icon: MdClass },
+                { label: "Kelas (Rombel)", path: "/dashboard/rombels", icon: MdClass },
                 { label: "Agama", path: "/dashboard/religions", icon: MdAccountBalance },
             ],
         },

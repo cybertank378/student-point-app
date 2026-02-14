@@ -7,11 +7,12 @@
 export class Rombel {
     constructor(
         public readonly id: string,
-        public readonly grade: String,          // 7 | 8 | 9
-        public readonly name: string,           // A, B, C
-        public readonly academicYearId: string, // FK AcademicYear
-        public readonly createdAt: Date,
+        public readonly grade: string,
+        public readonly name: string,
 
+        public readonly academicYearName: string, // 🔥 GANTI INI
+
+        public readonly createdAt: Date,
         public readonly studentCount: number,
     ) {}
 
