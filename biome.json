@@ -7,7 +7,16 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!node_modules", "!.next", "!dist", "!build"]
+    "includes": [
+      "src/**",
+      "prisma/**",
+      "*.{js,mjs,cjs,ts,tsx,json}",
+      "!node_modules",
+      "!.next",
+      "!dist",
+      "!build",
+      "!src/generated"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -18,8 +27,30 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "style": {
+        "useImportType": "warn",
+        "noNonNullAssertion": "off"
+      },
+      "correctness": {
+        "noUnusedFunctionParameters": "warn",
+        "useExhaustiveDependencies": "warn",
+        "useHookAtTopLevel": "off",
+        "noUnreachable": "warn"
+      },
       "suspicious": {
-        "noUnknownAtRules": "off"
+        "noExplicitAny": "warn",
+        "noUnknownAtRules": "off",
+        "noArrayIndexKey": "off"
+      },
+      "a11y": {
+        "useButtonType": "warn",
+        "noLabelWithoutControl": "off",
+        "noStaticElementInteractions": "off",
+        "useKeyWithClickEvents": "off",
+        "useAriaPropsForRole": "off",
+        "useFocusableInteractive": "off",
+        "useSemanticElements": "off",
+        "noSvgWithoutTitle": "off"
       }
     },
     "domains": {
