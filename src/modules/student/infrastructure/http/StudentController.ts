@@ -14,7 +14,7 @@ import {StudentService} from "@/modules/student/application/services/StudentServ
  * HTTP Adapter for Student module
  *
  * NOTE:
- * - RBAC ada di API route (withRBAC)
+ * - RbacConfig ada di API route (withRBAC)
  * - Controller hanya handle:
  *   - parsing
  *   - validation

@@ -12,7 +12,7 @@ const controller = createUserController();
  * DELETE /api/users/:id
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET(req: NextRequest) {

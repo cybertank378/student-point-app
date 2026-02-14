@@ -12,7 +12,7 @@ const controller = createAchievementController();
  * DELETE /api/achievements-master/:id
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET(req: NextRequest) {

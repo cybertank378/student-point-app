@@ -11,7 +11,7 @@ const controller = createAchievementController();
  * POST /api/achievements-master
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET() {

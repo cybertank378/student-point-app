@@ -10,7 +10,7 @@ const controller = createRombelController();
  * POST /api/rombels
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET(req: NextRequest) {

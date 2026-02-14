@@ -10,7 +10,7 @@ const controller = createViolationController();
  * POST /api/violations-master
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET() {

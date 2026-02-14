@@ -6,5 +6,5 @@
 export interface CreateRombelDTO {
     grade: string;          // 7 | 8 | 9
     name: string;           // A, B, C
-    academicYearName: string; // FK
+    academicYearId: string; // FK
 }

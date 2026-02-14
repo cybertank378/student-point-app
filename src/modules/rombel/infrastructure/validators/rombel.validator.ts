@@ -1,4 +1,5 @@
 //Files: src/modules/rombel/infrastructure/validators/rombel.validator.ts
+// src/modules/rombel/infrastructure/validators/rombel.validator.ts
 
 import { z } from "zod";
 
@@ -18,9 +19,8 @@ export const GradeSchema = z
  * ================================
  * ACADEMIC YEAR ID (FK)
  * ================================
- * Catatan:
- * - AcademicYear adalah ROOT ENTITY
- * - Validasi FK dilakukan di module yang MEMAKAI (rombel)
+ * - FK ke AcademicYear
+ * - Validasi relasi dilakukan di service / repository
  */
 export const AcademicYearIdSchema = z
     .string()
@@ -40,7 +40,7 @@ export const CreateRombelSchema = z.object({
         .min(1, "Nama rombel wajib diisi")
         .max(5, "Nama rombel maksimal 5 karakter"),
 
-    academicYearId: AcademicYearIdSchema,
+    academicYearId: AcademicYearIdSchema, // ✅ FIXED
 });
 
 /**
@@ -50,11 +50,15 @@ export const CreateRombelSchema = z.object({
  * PUT /api/rombels/:id
  *
  * NOTE:
- * - id diambil dari URL
+ * - id diambil dari URL param
  */
 export const UpdateRombelSchema = z.object({
     grade: GradeSchema,
-    name: z.string().min(1).max(5),
-    academicYearId: AcademicYearIdSchema,
-});
 
+    name: z
+        .string()
+        .min(1, "Nama rombel wajib diisi")
+        .max(5, "Nama rombel maksimal 5 karakter"),
+
+    academicYearId: AcademicYearIdSchema, // ✅ FIXED
+});

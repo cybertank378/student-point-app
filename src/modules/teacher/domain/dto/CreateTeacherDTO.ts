@@ -1,5 +1,6 @@
 //Files: src/modules/teacher/domain/domain/dto/CreateTeacherDTO.ts
-import {TeacherRoleLiteral} from "@/modules/teacher/domain/constants/TeacherRole";
+
+import {TeacherRole} from "@/libs/utils";
 
 export interface CreateTeacherDTO {
     userId: string;
@@ -7,5 +8,5 @@ export interface CreateTeacherDTO {
     name: string;
     phone?: string | null;
     email?: string | null;
-    roles: TeacherRoleLiteral[];
+    roles: TeacherRole[];
 }

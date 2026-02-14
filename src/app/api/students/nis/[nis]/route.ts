@@ -10,7 +10,7 @@ const controller = createStudentController();
  * GET /api/students/nis/:nis
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET(req: NextRequest) {

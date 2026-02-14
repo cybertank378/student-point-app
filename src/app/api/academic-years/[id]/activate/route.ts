@@ -7,7 +7,7 @@ import { createAcademicYearController } from "@/app/api/academic-years/_factory"
  * PATCH /api/academic-years/:id/activate
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function PATCH(

@@ -11,7 +11,7 @@ const controller = createTeacherController();
  * POST /api/teachers
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET() {

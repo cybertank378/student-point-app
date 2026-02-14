@@ -2,19 +2,73 @@
 "use client";
 
 import { useMemo } from "react";
-import { UserRole, TeacherRole } from "@/libs/utils";
-import { getRoleMenu } from "@/modules/auth/domain/rbac/roleMenuPolicy";
-import { getPermissions } from "@/modules/auth/domain/rbac/rolePermissionPolicy";
-import { filterMenuByPermission } from "@/modules/auth/domain/rbac/menuFilter";
-import { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
+import { UserRole } from "@/libs/utils";
+import {
+    getRolePermissions, rbacConfig,
+    SidebarNode,
+} from "@/modules/auth/domain/rbac/rbacConfig";
+import {Permission} from "@/modules/auth/domain/rbac/permissions";
 
-export function useSidebarMenu(
-    role: UserRole,
-    teacherRole?: TeacherRole
-): SidebarMenuItem[] {
-    return useMemo(() => {
-        const permissions = getPermissions(role, teacherRole);
-        const rawMenu = getRoleMenu(role);
-        return filterMenuByPermission(rawMenu, permissions);
-    }, [role, teacherRole]);
+/* ============================================================
+   RECURSIVE FILTER
+============================================================ */
+
+function filterMenu(
+    menu: readonly SidebarNode[],
+    permissions: Permission[]
+): SidebarNode[] {
+
+    return menu
+        .map((item) => {
+
+                        if (item.children) {
+
+                const filteredChildren = filterMenu(
+                    item.children,
+                    permissions
+                );
+
+                if (filteredChildren.length === 0) {
+                    return null;
+                }
+
+                return {
+                    ...item,
+                    children: filteredChildren,
+                };
+            }
+
+            // Leaf node
+            if (
+                item.permission &&
+                !permissions.includes(item.permission)
+            ) {
+                return null;
+            }
+
+            return item;
+        })
+        .filter(
+            (item): item is SidebarNode => item !== null
+        );
 }
+
+/* ============================================================
+   HOOK
+============================================================ */
+
+export function useSidebarMenu(role: UserRole) {
+
+    return useMemo(() => {
+
+        const permissions =
+            getRolePermissions(role);
+
+        return filterMenu(
+            rbacConfig.sidebar,
+            permissions
+        );
+
+    }, [role]);
+}
+

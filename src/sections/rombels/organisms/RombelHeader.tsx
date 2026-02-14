@@ -1,36 +1,44 @@
 //Files: src/sections/rombels/molecules/RombelHeader.tsx
-
 "use client";
 
 import { useState } from "react";
 import { FiPlus } from "react-icons/fi";
+
 import Button from "@/shared-ui/component/Button";
 import RombelFormModal from "@/sections/rombels/organisms/RombelFormModal";
-import {useRombelApi} from "@/modules/rombel/presentation/hooks/useRombelApi";
+
+import { useRombelApi } from "@/modules/rombel/presentation/hooks/useRombelApi";
+import { useAcademicYearApi } from "@/modules/academic-year/presentation/hooks/useAcademicYearApi";
+
+import type { CreateRombelDTO } from "@/modules/rombel/domain/dto/CreateRombelDTO";
+
+type Grade = "VII" | "VIII" | "IX";
 
 interface FormState {
-    grade: "VII" | "VIII" | "IX";
+    grade: Grade;
     name: string;
-    academicYearName: string;
+    academicYearId: string; // ✅ FIXED
 }
 
 interface Props {
     api: ReturnType<typeof useRombelApi>;
 }
 
-
 export default function RombelHeader({ api }: Props) {
+    const { createRombel } = api;
+    const { academicYears } = useAcademicYearApi(); // ✅ Needed for dropdown
+
     const [open, setOpen] = useState(false);
 
     const [form, setForm] = useState<FormState>({
         grade: "VII",
         name: "",
-        academicYearName: "2025",
+        academicYearId: "",
     });
 
     const handleChange = (
         field: keyof FormState,
-        value: string | number
+        value: string
     ) => {
         setForm((prev) => ({
             ...prev,
@@ -39,15 +47,23 @@ export default function RombelHeader({ api }: Props) {
     };
 
     const handleSubmit = async () => {
-        // Nanti bisa dihubungkan ke API
-        console.log("CREATE ROMBEL:", form);
+        if (!form.name || !form.academicYearId) return;
+
+        const payload: CreateRombelDTO = {
+            grade: form.grade,
+            name: form.name,
+            academicYearId: form.academicYearId,
+        };
+
+        await createRombel(payload);
 
         setOpen(false);
 
+        // Reset form
         setForm({
             grade: "VII",
             name: "",
-            academicYearName: "2025",
+            academicYearId: "",
         });
     };
 
@@ -76,9 +92,12 @@ export default function RombelHeader({ api }: Props) {
                 onClose={() => setOpen(false)}
                 onSubmit={handleSubmit}
                 form={form}
+                academicYears={academicYears} // ✅ FIX
                 onChange={handleChange}
                 title="Tambah Rombel"
+                subtitle="Lengkapi informasi rombel dengan benar."
             />
         </>
     );
 }
+

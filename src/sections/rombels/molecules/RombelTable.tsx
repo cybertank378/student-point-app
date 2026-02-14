@@ -1,4 +1,3 @@
-//Files: src/sections/rombels/molecules/RombelTable.tsx
 "use client";
 
 import { useState } from "react";
@@ -17,23 +16,23 @@ import Button from "@/shared-ui/component/Button";
 import Loading from "@/shared-ui/component/Loading";
 
 import { useRombelApi } from "@/modules/rombel/presentation/hooks/useRombelApi";
+import { useAcademicYearApi } from "@/modules/academic-year/presentation/hooks/useAcademicYearApi";
 
 import type { Rombel } from "@/modules/rombel/domain/entity/Rombel";
 import type { CreateRombelDTO } from "@/modules/rombel/domain/dto/CreateRombelDTO";
 import type { UpdateRombelDTO } from "@/modules/rombel/domain/dto/UpdateRombelDTO";
-import RombelFormModal from "@/sections/rombels/organisms/RombelFormModal";
-import {useAcademicYearApi} from "@/modules/academic-year/presentation/hooks/useAcademicYearApi";
 
+import RombelFormModal from "@/sections/rombels/organisms/RombelFormModal";
 
 type Grade = "VII" | "VIII" | "IX";
 
 /* =====================================
-   FORM TYPES (STRICT + SAFE)
+   FORM STATE
 ===================================== */
 type RombelFormState = {
     grade: Grade;
     name: string;
-    academicYearName: string;
+    academicYearId: string;
 };
 
 type RombelFormField = keyof RombelFormState;
@@ -52,6 +51,8 @@ export default function RombelTable({ api }: Props) {
         deleteRombel,
     } = api;
 
+    const { academicYears } = useAcademicYearApi(); // ✅ FIX
+
     const [editItem, setEditItem] = useState<Rombel | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [openForm, setOpenForm] = useState(false);
@@ -59,7 +60,7 @@ export default function RombelTable({ api }: Props) {
     const [form, setForm] = useState<RombelFormState>({
         grade: "VII",
         name: "",
-        academicYearName: "",
+        academicYearId: "",
     });
 
     const getLabel = (grade: Grade, name: string) => {
@@ -67,7 +68,7 @@ export default function RombelTable({ api }: Props) {
     };
 
     /* =====================================
-       TYPE SAFE FORM CHANGE HANDLER
+       FORM CHANGE
     ===================================== */
     const handleFormChange = <K extends RombelFormField>(
         field: K,
@@ -79,18 +80,6 @@ export default function RombelTable({ api }: Props) {
         }));
     };
 
-    /* =====================================
-       OPEN CREATE
-    ===================================== */
-    const handleOpenCreate = () => {
-        setEditItem(null);
-        setForm({
-            grade: "VII",
-            name: "",
-            academicYearName: "",
-        });
-        setOpenForm(true);
-    };
 
     /* =====================================
        EDIT
@@ -101,7 +90,7 @@ export default function RombelTable({ api }: Props) {
         setForm({
             grade: item.grade as Grade,
             name: item.name,
-            academicYearName: item.academicYearName ?? "",
+            academicYearId: item.academicYearName,
         });
 
         setOpenForm(true);
@@ -111,25 +100,35 @@ export default function RombelTable({ api }: Props) {
        SUBMIT
     ===================================== */
     const handleSubmit = async () => {
-        if (!form.name) return;
-
-        if (editItem) {
-            const payload: UpdateRombelDTO = {
-                id: editItem.id,
-                ...form,
-            };
-
-            await updateRombel(payload);
-        } else {
-            const payload: CreateRombelDTO = {
-                ...form,
-            };
-
-            await createRombel(payload);
+        if (!form.name || !form.grade || !form.academicYearId) {
+            return;
         }
 
-        setOpenForm(false);
-        setEditItem(null);
+        try {
+            if (editItem) {
+                const payload: UpdateRombelDTO = {
+                    id: editItem.id,
+                    grade: form.grade,
+                    name: form.name,
+                    academicYearId: form.academicYearId,
+                };
+
+                await updateRombel(payload);
+            } else {
+                const payload: CreateRombelDTO = {
+                    grade: form.grade,
+                    name: form.name,
+                    academicYearId: form.academicYearId,
+                };
+
+                await createRombel(payload);
+            }
+
+            setOpenForm(false);
+            setEditItem(null);
+        } catch (error) {
+            console.error("Gagal menyimpan rombel:", error);
+        }
     };
 
     /* =====================================
@@ -245,22 +244,19 @@ export default function RombelTable({ api }: Props) {
                 </tbody>
             </Table>
 
-            {/* FORM MODAL (USING RombelFormModal) */}
+            {/* FORM MODAL */}
             <RombelFormModal
                 open={openForm}
                 onClose={() => setOpenForm(false)}
                 onSubmit={handleSubmit}
-                title={
-                    editItem
-                        ? "Edit Rombel"
-                        : "Tambah Rombel"
-                }
+                title={editItem ? "Edit Rombel" : "Tambah Rombel"}
                 subtitle={
                     editItem
                         ? "Perbarui informasi kelas yang dipilih."
                         : "Lengkapi informasi rombel dengan benar."
                 }
                 form={form}
+                academicYears={academicYears} // ✅ FIX
                 onChange={handleFormChange}
             />
 
@@ -276,26 +272,17 @@ export default function RombelTable({ api }: Props) {
                 size="sm"
             >
                 <div className="space-y-6 text-center">
-
-                    {/* Icon Circle */}
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
                         <div className="h-6 w-6 rounded-full bg-red-500" />
                     </div>
 
-                    {/* Message */}
                     <p className="text-sm text-gray-600 leading-relaxed">
                         Apakah Anda yakin ingin menghapus data ini?
                         <br />
                         Data yang dihapus tidak dapat dikembalikan.
                     </p>
-
                 </div>
             </Modal>
-
         </>
     );
 }
-
-
-
-

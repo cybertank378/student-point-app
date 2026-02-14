@@ -1,6 +1,7 @@
 //Files: src/modules/teacher/domain/dto/UpdateTeacherDTO.ts
 
-import {TeacherRoleLiteral} from "@/modules/teacher/domain/constants/TeacherRole";
+
+import {TeacherRole} from "@/libs/utils";
 
 export interface UpdateTeacherDTO {
     id: string;
@@ -8,5 +9,5 @@ export interface UpdateTeacherDTO {
     name: string;
     phone?: string | null;
     email?: string | null;
-    roles: TeacherRoleLiteral[];
+    roles: TeacherRole[];
 }

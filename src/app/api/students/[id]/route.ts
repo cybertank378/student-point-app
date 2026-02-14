@@ -13,7 +13,7 @@ const controller = createStudentController();
  * DELETE /api/students/:id
  * =====================================================
  *
- * RBAC & Ownership handled in middleware / policy layer
+ * RbacConfig & Ownership handled in middleware / policy layer
  */
 
 export async function GET(req: NextRequest) {

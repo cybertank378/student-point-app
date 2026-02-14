@@ -1,6 +1,7 @@
 //Files: src/modules/teacher/domain/entity/Teacher.ts
 
-import {TeacherRoleLiteral} from "@/modules/teacher/domain/constants/TeacherRole";
+
+import {TeacherRole} from "@/libs/utils";
 
 export class Teacher {
     constructor(
@@ -10,7 +11,7 @@ export class Teacher {
         public name: string,
         public phone: string | null,
         public email: string | null,
-        public roles: TeacherRoleLiteral[],
+        public roles: TeacherRole[],
         public homeroomClassId: string | null,
     ) {}
 

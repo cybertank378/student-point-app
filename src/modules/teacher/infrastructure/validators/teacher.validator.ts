@@ -1,15 +1,17 @@
 //Files: src/modules/teacher/infrastructure/validators/teacher.validator.ts
 
 import { z } from "zod";
-import { TeacherRole } from "@/generated/prisma";
-import {TEACHER_ROLES} from "@/modules/teacher/domain/constants/TeacherRole";
-import {UUID_REGEX} from "@/modules/shared/http/getRouteParam";
-import {EMAIL_REGEX} from "valibot";
+import {EMAIL_REGEX, TEACHER_ROLES, UUID_REGEX} from "@/libs/utils";
 
 export const TeacherRoleEnum = z.enum(TEACHER_ROLES);
 
+export const UuidSchema = z.string().regex(UUID_REGEX, "Invalid UUID v4");
+
+/* ============================================================
+   OPTIONAL: BRANDED TYPE (STRONGER TYPE SAFETY)
+============================================================ */
 export const CreateTeacherSchema = z.object({
-    userId: z.string().uuid(),
+    userId: UuidSchema,
     nip: z.string().min(5),
     name: z.string().min(3),
     phone: z.string().optional(),
@@ -30,5 +32,5 @@ export const AssignTeacherRoleSchema = z.object({
 });
 
 export const AssignHomeroomSchema = z.object({
-    classId: z.string().regex(UUID_REGEX),
+    classId: UuidSchema,
 });

@@ -3,51 +3,43 @@
 // AUTH CONSTANTS
 // =====================================================
 
+import {AuthPayload} from "@/modules/auth/domain/entity/AuthPayload";
+
 export const ONE_DAY = 24 * 60 * 60 * 1000;
 export const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 export const FIFTEEN_MINUTES = 15 * 60 * 1000;
 
-export const ACCESS_TOKEN_EXPIRE = FIFTEEN_MINUTES;
+export const ACCESS_TOKEN_EXPIRE = ONE_DAY;
 export const REFRESH_TOKEN_EXPIRE = SEVEN_DAYS;
 export const ACCOUNT_LOCK_DURATION = FIFTEEN_MINUTES;
 export const MAX_FAILED_ATTEMPTS = 5;
 export const RESET_PASSWORD_EXPIRE = FIFTEEN_MINUTES;
-
 // =====================================================
 // ROLE TYPE
 // =====================================================
 
-export type UserRole =
-    | "ADMIN"
-    | "TEACHER"
-    | "STUDENT"
-    | "PARENT";
+export const USER_ROLES = [
+    "ADMIN",
+    "TEACHER",
+    "STUDENT",
+    "PARENT",
+] as const;
+
+export type UserRole = typeof USER_ROLES[number];
 
 
 // =====================================================
 // TEACHER ROLE
 // =====================================================
 
-export type TeacherRole =
-    | "SUBJECT_TEACHER"
-    | "HOMEROOM"
-    | "COUNSELOR"
-    | "DUTY_TEACHER";
+export const TEACHER_ROLES = [
+    "SUBJECT_TEACHER",
+    "HOMEROOM",
+    "COUNSELOR",
+    "DUTY_TEACHER",
+] as const;
 
-/**
- * =====================================================
- * PERMISSION TYPE
- * =====================================================
- */
-
-export type Permission =
-    | "DASHBOARD_VIEW"
-    | "USER_READ"
-    | "SETTINGS_READ"
-    | "STUDENT_READ"
-    | "VIOLATION_READ"
-    | "MY_VIOLATION_READ"
-    | "CHILD_REPORT_READ";
+export type TeacherRole = typeof TEACHER_ROLES[number];
 
 // =====================================================
 // GENERIC DASHBOARD REDIRECT
@@ -101,3 +93,17 @@ export function formatDateForInput(value: string | Date): string {
 
     return `${year}-${month}-${day}`;
 }
+
+
+export function mapToAuthPayload(decoded: AuthPayload): AuthPayload {
+    return {
+        sub: decoded.sub,
+        username: decoded.username,
+        role: decoded.role,
+        teacherRole: decoded.teacherRole,
+    };
+}
+
+
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

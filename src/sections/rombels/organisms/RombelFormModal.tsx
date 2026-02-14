@@ -1,4 +1,4 @@
-// Files: src/sections/rombels/molecules/RombelFormModal.tsx
+// src/sections/rombels/molecules/RombelFormModal.tsx
 "use client";
 
 import { Modal } from "@/shared-ui/component/Modal";
@@ -6,19 +6,28 @@ import TextField from "@/shared-ui/component/TextField";
 import SelectField from "@/shared-ui/component/SelectField";
 import { ChangeEvent } from "react";
 
+interface AcademicYearOption {
+    id: string;
+    name: string;
+}
+
 interface Props {
     open: boolean;
     onClose: () => void;
     onSubmit: () => void;
     title: string;
     subtitle: string;
+
     form: {
         grade: "VII" | "VIII" | "IX";
         name: string;
-        academicYearName: string;
+        academicYearId: string; // ✅ FIXED
     };
+
+    academicYears: AcademicYearOption[]; // ✅ dropdown data
+
     onChange: (
-        field: "grade" | "name" | "academicYearName",
+        field: "grade" | "name" | "academicYearId",
         value: string
     ) => void;
 }
@@ -30,6 +39,7 @@ export default function RombelFormModal({
                                             title,
                                             subtitle,
                                             form,
+                                            academicYears,
                                             onChange,
                                         }: Props) {
 
@@ -52,7 +62,7 @@ export default function RombelFormModal({
                 {/* FORM GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* Tingkat (SelectField) */}
+                    {/* Tingkat */}
                     <SelectField
                         label="Tingkat"
                         value={form.grade}
@@ -71,9 +81,7 @@ export default function RombelFormModal({
                         label="Nama Kelas"
                         placeholder="Contoh: A"
                         value={form.name}
-                        onChange={(
-                            e: ChangeEvent<HTMLInputElement>
-                        ) =>
+                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
                             onChange(
                                 "name",
                                 e.target.value.toUpperCase()
@@ -82,14 +90,29 @@ export default function RombelFormModal({
                         helperText="Gunakan huruf kapital"
                     />
 
-                    {/* Tahun Ajaran Aktif */}
-                    <TextField
-                        label="Tahun Ajaran (Aktif)"
-                        value={form.academicYearName}
-                        disabled
-                        helperText="Mengikuti tahun ajaran yang sedang aktif"
+                    {/* Tahun Ajaran (Select by ID, show Name) */}
+                    <SelectField
+                        label="Tahun Ajaran"
+                        value={form.academicYearId}
+                        onChange={(e) =>
+                            onChange(
+                                "academicYearId",
+                                e.target.value
+                            )
+                        }
+                        helperText="Pilih tahun ajaran"
                         className="md:col-span-2"
-                    />
+                    >
+                        <option value="">
+                            -- Pilih Tahun Ajaran --
+                        </option>
+
+                        {academicYears.map((year) => (
+                            <option key={year.id} value={year.id}>
+                                {year.name}
+                            </option>
+                        ))}
+                    </SelectField>
                 </div>
 
                 {/* PREVIEW CARD */}
@@ -104,7 +127,6 @@ export default function RombelFormModal({
                     </p>
 
                 </div>
-
             </div>
         </Modal>
     );

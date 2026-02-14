@@ -1,7 +1,7 @@
 //Files: src/modules/teacher/domain/dto/AssignTeacherRoleDTO.ts
-import {TeacherRoleLiteral} from "@/modules/teacher/domain/constants/TeacherRole";
+import {TeacherRole} from "@/libs/utils";
 
 export interface AssignTeacherRoleDTO {
     teacherId: string;
-    roles: TeacherRoleLiteral[];
+    roles: TeacherRole[];
 }

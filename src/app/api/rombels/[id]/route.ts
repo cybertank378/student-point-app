@@ -12,7 +12,7 @@ const controller = createRombelController();
  * DELETE /api/rombels/:id
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET(req: NextRequest) {

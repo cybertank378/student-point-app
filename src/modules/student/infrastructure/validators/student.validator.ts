@@ -2,7 +2,7 @@
 
 
 import { z } from "zod";
-import {UUID_REGEX} from "@/modules/shared/http/getRouteParam";
+import {UUID_REGEX} from "@/libs/utils";
 
 /**
  * ==============================

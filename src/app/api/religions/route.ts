@@ -10,7 +10,7 @@ const controller = createReligionController();
  * POST /api/religions
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET() {

@@ -10,7 +10,7 @@ const controller = createStudentController();
  * POST /api/students
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET(req: NextRequest) {

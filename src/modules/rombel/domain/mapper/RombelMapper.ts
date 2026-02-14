@@ -1,15 +1,19 @@
 //Files: src/modules/rombel/domain/mapper/RombelMapper.ts
-import type { Class as PrismaClass } from "@/generated/prisma";
+
+import { Prisma } from "@/generated/prisma";
 import { Rombel } from "@/modules/rombel/domain/entity/Rombel";
 
 /**
- * Shape hasil query yang include academicYear.name
+ * Prisma type dengan relation academicYear
  */
-type PrismaClassWithRelation = PrismaClass & {
-    academicYear: {
-        name: string;
-    };
-};
+type PrismaClassWithRelation =
+    Prisma.ClassGetPayload<{
+        include: {
+            academicYear: {
+                select: { name: true };
+            };
+        };
+    }>;
 
 /**
  * Mapper: Prisma -> Domain
@@ -25,7 +29,7 @@ export class RombelMapper {
             row.id,
             row.grade,
             row.name,
-            row.academicYear.name, // 🔥 pakai name
+            row.academicYear?.name ?? "", // 🔥 Aman & Tidak Memaksa
             row.createdAt,
             studentCount,
         );

@@ -11,7 +11,7 @@ const controller = createUserController();
  * POST /api/users
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET() {

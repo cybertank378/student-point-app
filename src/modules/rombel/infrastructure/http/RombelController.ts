@@ -1,4 +1,5 @@
 //Files: src/modules/rombel/infrastructure/http/RombelController.ts
+// src/modules/rombel/infrastructure/http/RombelController.ts
 
 import type { NextRequest } from "next/server";
 
@@ -6,26 +7,22 @@ import { RombelService } from "@/modules/rombel/application/services/RombelServi
 
 import type { CreateRombelDTO } from "@/modules/rombel/domain/dto/CreateRombelDTO";
 import type { UpdateRombelDTO } from "@/modules/rombel/domain/dto/UpdateRombelDTO";
-import {handleZodError} from "@/modules/shared/errors/handleZodError";
-import {CreateRombelSchema, UpdateRombelSchema} from "@/modules/rombel/infrastructure/validators/rombel.validator";
 
-/**
- * ======================================
- * HTTP CONTROLLER – ROMBEL
- * ======================================
- */
+import { handleZodError } from "@/modules/shared/errors/handleZodError";
+import {
+    CreateRombelSchema,
+    UpdateRombelSchema,
+} from "@/modules/rombel/infrastructure/validators/rombel.validator";
+
 export class RombelController {
     constructor(
         private readonly service: RombelService,
     ) {}
 
-
-    /**
-     * ======================================
-     * ============ LIST (GET ALL) ==========
-     * ======================================
-     * GET /api/rombels
-     */
+    /* ======================================
+       LIST (GET ALL)
+       GET /api/rombels
+    ====================================== */
     async getAll(req: NextRequest) {
         const result = await this.service.getAll();
 
@@ -39,13 +36,18 @@ export class RombelController {
         return Response.json(result.getValue());
     }
 
-    /**
-     * ======================================
-     * ============ GET BY ID ===============
-     * ======================================
-     * GET /api/rombels/:id
-     */
+    /* ======================================
+       GET BY ID
+       GET /api/rombels/:id
+    ====================================== */
     async getById(id: string) {
+        if (!id) {
+            return Response.json(
+                { error: "ID is required" },
+                { status: 400 },
+            );
+        }
+
         const result = await this.service.getById(id);
 
         if (result.isFailure) {
@@ -58,17 +60,14 @@ export class RombelController {
         return Response.json(result.getValue());
     }
 
-    /**
-     * ======================================
-     * ============== CREATE ===============
-     * ======================================
-     * POST /api/rombels
-     */
+    /* ======================================
+       CREATE
+       POST /api/rombels
+    ====================================== */
     async create(req: NextRequest) {
         try {
-            const body = CreateRombelSchema.parse(
-                await req.json(),
-            ) as CreateRombelDTO;
+            const body: CreateRombelDTO =
+                CreateRombelSchema.parse(await req.json());
 
             const result = await this.service.create(body);
 
@@ -88,24 +87,29 @@ export class RombelController {
         }
     }
 
-    /**
-     * ======================================
-     * ============== UPDATE ===============
-     * ======================================
-     * PUT /api/rombels/:id
-     */
+    /* ======================================
+       UPDATE
+       PUT /api/rombels/:id
+    ====================================== */
     async update(id: string, req: NextRequest) {
         try {
-            const body = UpdateRombelSchema.parse(
-                await req.json(),
-            ) as Omit<UpdateRombelDTO, "id">;
+            if (!id) {
+                return Response.json(
+                    { error: "ID is required" },
+                    { status: 400 },
+                );
+            }
 
-            const result = await this.service.update({
+            const body = UpdateRombelSchema.parse(await req.json());
+
+            const payload: UpdateRombelDTO = {
                 id,
                 grade: body.grade,
                 name: body.name,
                 academicYearId: body.academicYearId,
-            });
+            };
+
+            const result = await this.service.update(payload);
 
             if (result.isFailure) {
                 return Response.json(
@@ -120,15 +124,18 @@ export class RombelController {
         }
     }
 
-    /**
-     * ======================================
-     * ============== DELETE ===============
-     * ======================================
-     * DELETE /api/rombels/:id
-     *
-     * ❌ DITOLAK jika masih ada siswa
-     */
+    /* ======================================
+       DELETE
+       DELETE /api/rombels/:id
+    ====================================== */
     async delete(id: string) {
+        if (!id) {
+            return Response.json(
+                { error: "ID is required" },
+                { status: 400 },
+            );
+        }
+
         const result = await this.service.delete(id);
 
         if (result.isFailure) {

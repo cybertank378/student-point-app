@@ -1,87 +1,94 @@
 //Files: src/modules/auth/domain/rbac/policyEngine.ts
+import { UserRole } from "@/libs/utils";
+import {
+    getRolePermissions,
+    rbacConfig,
+} from "@/modules/auth/domain/rbac/rbacConfig";
+import { auditLog } from "@/modules/shared/audit/auditLogger";
 
-
-import {POLICY_CONFIG} from "@/modules/auth/domain/rbac/policy.config";
-import {Permission} from "@/modules/auth/domain/rbac/permissions";
-import {DASHBOARD_PAGE_POLICY} from "@/modules/auth/domain/rbac/dashboard.policy";
+/* ============================================================
+   POLICY INPUT
+============================================================ */
 
 interface PolicyInput {
     path: string;
     method: string;
-    permissions: Permission[];
+    role: UserRole;
 }
 
-function matchApiRoute(path: string) {
-    const configs = Object.values(
-        POLICY_CONFIG.api,
+/* ============================================================
+   MATCH API BASE ROUTE
+============================================================ */
+
+function matchApiRoute(
+    path: string
+): keyof typeof rbacConfig.api | undefined {
+    return (
+        Object.keys(rbacConfig.api) as Array<
+            keyof typeof rbacConfig.api
+        >
+    ).find(
+        (base) =>
+            path === base ||
+            path.startsWith(base + "/")
     );
-
-    for (const config of configs) {
-        if (
-            path === config.basePath ||
-            path.startsWith(
-                config.basePath + "/",
-            )
-        ) {
-            return config;
-        }
-    }
-
-    return null;
 }
+
+/* ============================================================
+   POLICY EVALUATION
+============================================================ */
 
 export function evaluatePolicy({
                                    path,
                                    method,
-                                   permissions,
+                                   role,
                                }: PolicyInput): boolean {
+    const permissions = getRolePermissions(role);
+    let allowed = false;
 
-    const normalizedMethod =
-        method.toUpperCase();
+    /* ================= DASHBOARD ================= */
 
-    /* =========================
-       DASHBOARD PAGE CHECK
-    ========================= */
     if (path.startsWith("/dashboard")) {
-        const specificPermission =
-            DASHBOARD_PAGE_POLICY[path];
-
-        if (specificPermission) {
-            return permissions.includes(
-                specificPermission as Permission,
-            );
-        }
-
-        return permissions.includes(
-            POLICY_CONFIG.dashboard
-                .basePermission,
-        );
-    }
-
-    /* =========================
-       API CHECK
-    ========================= */
-    if (path.startsWith("/api")) {
-        const config =
-            matchApiRoute(path);
-
-        if (!config) return false;
-
         const required =
-            config.permissions[
-                normalizedMethod as keyof typeof config.permissions
+            rbacConfig.dashboard[
+                path as keyof typeof rbacConfig.dashboard
                 ];
 
-        if (!required) return false;
-
-        return permissions.includes(
-            required,
-        );
+        if (required) {
+            allowed = permissions.includes(required);
+        }
     }
 
-    /* =========================
-       DEFAULT DENY
-    ========================= */
-    return false;
+    /* ================= API ================= */
+
+    else if (path.startsWith("/api")) {
+        const base = matchApiRoute(path);
+
+        if (base) {
+            const routePolicy = rbacConfig.api[base];
+
+            const required =
+                routePolicy[
+                    method.toUpperCase() as keyof typeof routePolicy
+                    ];
+
+            if (required) {
+                allowed = permissions.includes(required);
+            }
+        }
+    }
+
+    /* ================= AUDIT LOG ================= */
+
+    auditLog(allowed ? "ALLOW" : "DENY", {
+        role,
+        path,
+        method,
+    });
+
+    return allowed;
 }
+
+
+
 

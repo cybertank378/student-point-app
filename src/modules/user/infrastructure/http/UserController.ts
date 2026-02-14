@@ -11,7 +11,7 @@ import {handleZodError} from "@/modules/shared/errors/handleZodError";
  * HTTP Adapter for AuthUser module
  *
  * NOTE:
- * - RBAC handled at route level
+ * - RbacConfig handled at route level
  * - Controller hanya:
  *   - parsing
  *   - validation

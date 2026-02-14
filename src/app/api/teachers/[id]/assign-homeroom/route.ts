@@ -10,7 +10,7 @@ const controller = createTeacherController();
  * PUT /api/teachers/:id/assign-homeroom
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function PUT(req: NextRequest) {

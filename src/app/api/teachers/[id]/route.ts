@@ -12,7 +12,7 @@ const controller = createTeacherController();
  * DELETE /api/teachers/:id
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET(req: NextRequest) {

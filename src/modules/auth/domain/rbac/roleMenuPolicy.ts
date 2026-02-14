@@ -1,6 +1,4 @@
 //Files: src/modules/auth/domain/rbac/roleMenuPolicy.ts
-// Files: src/modules/auth/domain/rbac/roleMenuPolicy.ts
-
 import { IconType } from "react-icons";
 import {
     MdPeople,
@@ -30,7 +28,7 @@ export interface SidebarMenuItem {
     path?: string;
     icon?: IconType;
     permission?: Permission; // ✅ TAMBAHKAN INI
-    children?: SidebarMenuItem[];
+    children?: readonly SidebarMenuItem[];
 }
 
 /**

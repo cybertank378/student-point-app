@@ -12,7 +12,7 @@ const controller = createReligionController();
  * DELETE /api/religions/:id
  * =====================================================
  *
- * RBAC handled in middleware
+ * RbacConfig handled in middleware
  */
 
 export async function GET(req: NextRequest) {
