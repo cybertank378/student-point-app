@@ -1,14 +1,29 @@
 //Files: src/app/api/users/_factory.ts
-
-import { UserRepository } from "@/modules/user/infrastructure/repo/UserRepository";
-import { UserController } from "@/modules/user/infrastructure/http/UserController";
-import {UserService} from "@/modules/user/application/services/UserServices";
+import {UserRepository} from "@/modules/user/infrastructure/repo/UserRepository";
 import {BcryptService} from "@/modules/auth/application/service/BcryptService";
+import {UserService} from "@/modules/user/application/services/UserServices";
+import {UserController} from "@/modules/user/infrastructure/http/UserController";
+import {LocalFileStorageService} from "@/modules/user/infrastructure/repo/LocalFileStorageService";
 
+/**
+ * =====================================================
+ * DEPENDENCY INJECTION (COMPOSITION ROOT)
+ * =====================================================
+ */
 
-export function createUserController(): UserController {
-    const repo = new UserRepository();
-    const hash = new BcryptService();
-    const service = new UserService(repo, hash);
-    return new UserController(service);
-}
+// Infrastructure
+const userRepository = new UserRepository();
+const hashService = new BcryptService();
+const storage = new LocalFileStorageService();
+
+// Application Service
+const userService = new UserService(
+    userRepository,
+    hashService,
+    storage
+);
+
+// Controller
+export const userController = new UserController(
+    userService
+);

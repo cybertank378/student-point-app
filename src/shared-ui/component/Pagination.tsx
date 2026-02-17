@@ -30,69 +30,73 @@ export default function Pagination({
   const isNextDisabled = currentPage === totalPages;
 
   return (
-    <div className="flex items-center justify-between mt-6">
-      <p className="text-sm text-gray-500">
-        Showing {start} to {end} of {totalItems} entries
-      </p>
+      <div className="w-full flex items-center justify-between py-2">
+          {/* KIRI */}
+          <p className="text-sm text-gray-500">
+              Menampilkan {start} hingga {end} dari total {totalItems} data
+          </p>
 
-      <div className="flex items-center gap-2">
-        {/* PREV */}
-        <Button
-          shape="circle"
-          size="sm"
-          variant="outline"
-          color="primary"
-          iconOnly
-          disabled={isPrevDisabled}
-          onClick={() => onPageChangeAction(currentPage - 1)}
-          className={clsx(
-            "w-9 h-9 border",
-            isPrevDisabled &&
-              "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed",
-          )}
-          leftIcon={FaChevronLeft}
-        />
+          {/* KANAN */}
+          <div className="flex items-center gap-2">
+              {/* PREV */}
+              <Button
+                  shape="circle"
+                  size="sm"
+                  variant="outline"
+                  color="primary"
+                  iconOnly
+                  disabled={isPrevDisabled}
+                  onClick={() => onPageChangeAction(currentPage - 1)}
+                  className={clsx(
+                      "w-9 h-9 border",
+                      isPrevDisabled &&
+                      "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed",
+                  )}
+                  leftIcon={FaChevronLeft}
+              />
 
-        {/* PAGE NUMBERS */}
-        {Array.from({ length: totalPages }).map((_, i) => {
-          const page = i + 1;
-          const isActive = currentPage === page;
+              {/* PAGE NUMBERS */}
+              {Array.from({ length: totalPages }).map((_, i) => {
+                  const page = i + 1;
+                  const isActive = currentPage === page;
 
-          return (
-            <Button
-              key={page}
-              shape="circle"
-              size="sm"
-              variant={isActive ? "filled" : "outline"}
-              color="primary"
-              onClick={() => onPageChangeAction(page)}
-              className={clsx(
-                "w-9 h-9 border text-sm font-medium",
-                isActive && "shadow-md",
-              )}
-            >
-              {page}
-            </Button>
-          );
-        })}
+                  return (
+                      <Button
+                          key={page}
+                          shape="circle"
+                          size="sm"
+                          variant={isActive ? "filled" : "outline"}
+                          color="primary"
+                          onClick={() => onPageChangeAction(page)}
+                          className={clsx(
+                              "w-9 h-9 border text-sm font-medium",
+                              isActive && "shadow-md",
+                          )}
+                      >
+                          {page}
+                      </Button>
+                  );
+              })}
 
-        {/* NEXT */}
-        <Button
-          shape="circle"
-          size="sm"
-          variant="outline"
-          color="primary"
-          iconOnly
-          disabled={isNextDisabled}
-          onClick={() => onPageChangeAction(currentPage + 1)}
-          className={clsx(
-            "w-9 h-9 border",
-            isNextDisabled &&
-              "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed",
-          )}
-          rightIcon={FaChevronRight}
-        />
+              {/* NEXT */}
+              <Button
+                  shape="circle"
+                  size="sm"
+                  variant="outline"
+                  color="primary"
+                  iconOnly
+                  disabled={isNextDisabled}
+                  onClick={() => onPageChangeAction(currentPage + 1)}
+                  className={clsx(
+                      "w-9 h-9 border",
+                      isNextDisabled &&
+                      "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed",
+                  )}
+                  rightIcon={FaChevronRight}
+              />
+          </div>
       </div>
-    </div>
+
+
   );
 }

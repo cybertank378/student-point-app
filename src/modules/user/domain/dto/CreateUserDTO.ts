@@ -1,10 +1,9 @@
 //Files: src/modules/user/domain/dto/CreateUserDTO.ts
-
-import type {Role, TeacherRole} from "@/generated/prisma";
+import type {TeacherRole, UserRole} from "@/libs/utils";
 
 export interface CreateUserDTO {
-    username: string;
-    password: string;
-    role: Role;
-    teacherRoles?: TeacherRole[]; // hanya jika role = TEACHER
+    readonly role: Exclude<UserRole, "ADMIN">;
+    readonly referenceId: string;
+    readonly teacherRole?: TeacherRole;
 }
+

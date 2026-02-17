@@ -13,7 +13,7 @@ export default function FilterBar({ children, resultCount }: Props) {
   return (
     <div className="space-y-3">
       {/* FILTER CONTENT */}
-      <div className="flex gap-4 items-end flex-wrap">{children}</div>
+      <div className="flex items-end gap-2 flex-wrap">{children}</div>
 
       {/* RESULT BADGE */}
       {typeof resultCount === "number" && (

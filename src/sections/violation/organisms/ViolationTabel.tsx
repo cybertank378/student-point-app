@@ -1,15 +1,16 @@
 //Files: src/sections/violation/organisms/ViolationTabel.tsx
+//Files: src/sections/violation/organisms/ViolationTabel.tsx
 "use client";
 
-import { FiEdit, FiTrash2 } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiX } from "react-icons/fi";
 import { useEffect, useMemo, useState } from "react";
 
 import {
   Table,
+  TableCell,
   TableHead,
   TableHeaderCell,
   TableRow,
-  TableCell,
 } from "@/shared-ui/component/Table";
 
 import Button from "@/shared-ui/component/Button";
@@ -25,6 +26,10 @@ import type { useViolationMasterApi } from "@/modules/violation/presentation/hoo
 import { showErrorToast, showSuccessToast } from "@/shared-ui/component/Toast";
 
 import { Violation } from "@/modules/violation/domain/entity/Violation";
+import FilterBar from "@/shared-ui/component/FilterBar";
+import type { ViolationLevel } from "@/generated/prisma";
+import SelectField from "@/shared-ui/component/SelectField";
+import SearchField from "@/shared-ui/component/SearchField";
 
 interface Props {
   api: ReturnType<typeof useViolationMasterApi>;
@@ -35,28 +40,44 @@ export default function ViolationTabel({ api }: Props) {
 
   /* ================= LOCAL STATE ================= */
   const [localViolations, setLocalViolations] = useState<Violation[]>([]);
-
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
   const [editItem, setEditItem] = useState<Violation | null>(null);
-
   const [openForm, setOpenForm] = useState(false);
+
+  /* ================= FILTER ================= */
+  const [search, setSearch] = useState("");
+  const [filterLevel, setFilterLevel] = useState<ViolationLevel | "ALL">("ALL");
 
   /* ================= PAGINATION ================= */
   const [currentPage, setCurrentPage] = useState(1);
-
-  const itemsPerPage = 5;
-
-  const paginatedData = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-
-    return localViolations.slice(start, start + itemsPerPage);
-  }, [localViolations, currentPage]);
+  const itemsPerPage = 10;
 
   /* ================= SYNC API → LOCAL ================= */
   useEffect(() => {
     setLocalViolations(violations);
   }, [violations]);
+
+  /* ================= FILTERED DATA ================= */
+  const filteredData = useMemo(() => {
+    return localViolations.filter((v) => {
+      const matchSearch = v.name.toLowerCase().includes(search.toLowerCase());
+
+      const matchLevel = filterLevel === "ALL" ? true : v.level === filterLevel;
+
+      return matchSearch && matchLevel;
+    });
+  }, [localViolations, search, filterLevel]);
+
+  /* ================= RESET PAGE WHEN FILTER CHANGES ================= */
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterLevel]);
+
+  /* ================= PAGINATED DATA ================= */
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(start, start + itemsPerPage);
+  }, [filteredData, currentPage]);
 
   /* ================= FORM HOOK ================= */
   const { form, errors, isValid, validate, onChange, setForm } =
@@ -81,7 +102,6 @@ export default function ViolationTabel({ api }: Props) {
 
     const original = [...localViolations];
 
-    /* ===== Optimistic Update ===== */
     setLocalViolations((prev) =>
       prev.map((v) =>
         v.id === editItem.id
@@ -126,27 +146,91 @@ export default function ViolationTabel({ api }: Props) {
 
     try {
       await deleteViolation(deleteId);
-
       showSuccessToast("Pelanggaran berhasil dihapus");
     } catch {
       setLocalViolations(original);
-
       showErrorToast("Gagal menghapus pelanggaran");
     } finally {
       setDeleteId(null);
     }
   };
 
+  const hasSearch = search.trim().length > 0;
+
   return (
     <>
+      <FilterBar resultCount={hasSearch ? filteredData.length : undefined}>
+        <div className="flex flex-wrap items-center">
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            placeholder="Cari pelanggaran..."
+            debounce={400}
+            className="w-fit"
+          />
+
+          {search && (
+            <Button
+              type="button"
+              variant="text"
+              color="secondary"
+              onClick={() => setSearch("")}
+              iconOnly
+              className="text-gray-400 hover:text-gray-600 transition"
+            >
+              <FiX size={16} />
+            </Button>
+          )}
+        </div>
+
+        <div className="w-48">
+          <SelectField
+            value={filterLevel}
+            onChange={(e) =>
+              setFilterLevel(e.target.value as ViolationLevel | "ALL")
+            }
+          >
+            <option value="ALL">Semua Level</option>
+            <option value="LIGHT">Ringan</option>
+            <option value="MEDIUM">Sedang</option>
+            <option value="HEAVY">Berat</option>
+          </SelectField>
+        </div>
+
+        {(search || filterLevel !== "ALL") && (
+          <Button
+            variant="filled"
+            color="warning"
+            size="md"
+            leftIcon={FiX}
+            onClick={() => {
+              setSearch("");
+              setFilterLevel("ALL");
+            }}
+          >
+            Reset
+          </Button>
+        )}
+      </FilterBar>
+
       <Table wrapperClassName="rounded-xl shadow-sm overflow-hidden">
         <TableHead className="bg-gray-100 border-b h-16">
           <tr>
-            <TableHeaderCell>No</TableHeaderCell>
-            <TableHeaderCell>Nama</TableHeaderCell>
-            <TableHeaderCell>Poin</TableHeaderCell>
-            <TableHeaderCell>Level</TableHeaderCell>
-            <TableHeaderCell>Aksi</TableHeaderCell>
+            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+              No
+            </TableHeaderCell>
+            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+              Nama
+            </TableHeaderCell>
+            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+              Poin
+            </TableHeaderCell>
+            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+              Level
+            </TableHeaderCell>
+            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
+              Aksi
+            </TableHeaderCell>
           </tr>
         </TableHead>
 
@@ -181,7 +265,7 @@ export default function ViolationTabel({ api }: Props) {
                 </TableCell>
 
                 <TableCell>
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex gap-2">
                     <Button
                       variant="text"
                       color="primary"
@@ -204,16 +288,16 @@ export default function ViolationTabel({ api }: Props) {
           )}
         </tbody>
       </Table>
+        <div className="flex justify-end px-6 py-4 border-t">
+            <Pagination
+                currentPage={currentPage}
+                totalItems={filteredData.length}
+                itemsPerPage={itemsPerPage}
+                onPageChangeAction={setCurrentPage}
+            />
+        </div>
 
-      {/* ================= PAGINATION ================= */}
-      <Pagination
-        currentPage={currentPage}
-        totalItems={localViolations.length}
-        itemsPerPage={itemsPerPage}
-        onPageChangeAction={setCurrentPage}
-      />
 
-      {/* ================= EDIT MODAL ================= */}
       <ViolationFormModal
         open={openForm}
         onClose={() => setOpenForm(false)}
@@ -226,7 +310,6 @@ export default function ViolationTabel({ api }: Props) {
         submitDisabled={!isValid}
       />
 
-      {/* ================= DELETE MODAL ================= */}
       <Modal
         title="Konfirmasi Hapus"
         subtitle="Tindakan ini tidak dapat dibatalkan."

@@ -152,22 +152,22 @@ export default function RombelTable({ api }: Props) {
             <Table wrapperClassName="rounded-xl shadow-sm overflow-hidden">
                 <TableHead className="bg-gray-100 border-b h-16">
                     <tr>
-                        <TableHeaderCell className="w-12 text-xs uppercase">
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
                             No
                         </TableHeaderCell>
-                        <TableHeaderCell className="text-xs uppercase">
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
                             Kelas
                         </TableHeaderCell>
-                        <TableHeaderCell className="text-xs uppercase">
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
                             Tingkat
                         </TableHeaderCell>
-                        <TableHeaderCell className="text-xs uppercase">
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
                             Tahun Ajaran
                         </TableHeaderCell>
-                        <TableHeaderCell className="text-xs uppercase">
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
                             Jumlah Siswa
                         </TableHeaderCell>
-                        <TableHeaderCell className="text-xs uppercase">
+                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
                             Aksi
                         </TableHeaderCell>
                     </tr>

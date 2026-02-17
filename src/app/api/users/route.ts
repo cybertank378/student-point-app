@@ -1,23 +1,10 @@
-//Files: src/app/api/users/route.ts
+import {userController} from "@/app/api/users/_factory";
 
-import type { NextRequest } from "next/server";
-import { createUserController } from "./_factory";
 
-const controller = createUserController();
-
-/**
- * =====================================================
- * GET  /api/users
- * POST /api/users
- * =====================================================
- *
- * RbacConfig handled in middleware
- */
-
-export async function GET() {
-    return controller.getAll();
+export async function GET(request: Request) {
+    return userController.list(request);
 }
 
-export async function POST(req: NextRequest) {
-    return controller.create(req);
+export async function POST(request: Request) {
+    return userController.create(request);
 }

@@ -1,8 +1,3 @@
-// ==================================================
-// PRISMA SCHEMA
-// ==================================================
-// Docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -16,9 +11,6 @@ datasource db {
 // ENUMS
 /////////////////////////////////////////////////////
 
-// =====================
-// AUTH & USER
-// =====================
 enum Role {
   ADMIN
   TEACHER
@@ -26,19 +18,13 @@ enum Role {
   PARENT
 }
 
-// =====================
-// TEACHER
-// =====================
 enum TeacherRole {
-  SUBJECT_TEACHER // guru mapel
-  HOMEROOM // wali kelas
-  COUNSELOR // guru BK
-  DUTY_TEACHER // guru piket
+  SUBJECT_TEACHER
+  HOMEROOM
+  COUNSELOR
+  DUTY_TEACHER
 }
 
-// =====================
-// STUDENT
-// =====================
 enum StudentStatus {
   ACTIVE
   GRADUATED
@@ -51,44 +37,31 @@ enum Gender {
   FEMALE
 }
 
-// =====================
-// MASTER DATA
-// =====================
 enum ParentType {
   FATHER
   MOTHER
   GUARDIAN
 }
 
-// =====================
-// VIOLATION LEVEL
-// =====================
 enum ViolationLevel {
   LIGHT
   MEDIUM
   HEAVY
 }
 
-// ===========================
-// VIOLATION RESOLUTION STATUS
-// ===========================
 enum ViolationResolutionStatus {
-  OPEN // baru dicatat
-  IN_PROGRESS // sedang ditangani
-  RESOLVED // selesai
-  ESCALATED // naik ke orang tua / kepala sekolah
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  ESCALATED
 }
 
-// ===========================
-// VIOLATION ACTION TYPE
-// ===========================
-
 enum ViolationActionType {
-  WARNING // teguran lisan
-  WRITTEN_NOTICE // surat peringatan
-  COUNSELING // konseling
-  PARENT_CALL // panggil orang tua
-  SUSPENSION // skors
+  WARNING
+  WRITTEN_NOTICE
+  COUNSELING
+  PARENT_CALL
+  SUSPENSION
 }
 
 /////////////////////////////////////////////////////
@@ -99,43 +72,45 @@ model User {
   id           String       @id @default(uuid())
   username     String       @unique
   password     String
+  image        String?
   role         Role
   teacherRole  TeacherRole?
-  refreshToken String? // ✅ ADD THIS
+  refreshToken String?
 
-  isActive Boolean @default(true)
-
-  // 🔐 Security
+  isActive           Boolean   @default(true)
+  version            Int       @default(1)
   failedAttempts     Int       @default(0)
   lockUntil          DateTime?
   mustChangePassword Boolean   @default(false)
 
-  // 🔗 Relation ke domain user
   studentId String?
   parentId  String?
 
-  student Student? @relation(fields: [studentId], references: [id])
-  parent  Parent?  @relation(fields: [parentId], references: [id])
+  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent  Parent?  @relation(fields: [parentId], references: [id], onDelete: Cascade)
   teacher Teacher?
 
-  // 🔄 Sessions
-  sessions AuthSession[]
-
-  // 🔁 Reset password
+  sessions    AuthSession[]
   resetTokens PasswordResetToken[]
-
-  // 📜 Login audit
   loginAudits LoginAudit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([studentId])
+  @@unique([parentId])
+  @@unique([id, version])
   @@index([role])
   @@index([isActive])
+  @@index([createdAt])
+  @@index([role, isActive])
+  @@index([studentId])
+  @@index([parentId])
+  @@index([isActive, createdAt])
 }
 
 /////////////////////////////////////////////////////
-// REFRESH TOKEN SESSION
+// AUTH SESSION
 /////////////////////////////////////////////////////
 
 model AuthSession {
@@ -145,7 +120,7 @@ model AuthSession {
   expiresAt DateTime
   revoked   Boolean  @default(false)
 
-  device String? // optional device info
+  device String?
   ip     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -154,6 +129,7 @@ model AuthSession {
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([revoked])
 }
 
 /////////////////////////////////////////////////////
@@ -173,16 +149,17 @@ model PasswordResetToken {
 
   @@index([userId])
   @@index([expiresAt])
+  @@index([used])
 }
 
 /////////////////////////////////////////////////////
-// LOGIN AUDIT LOG
+// LOGIN AUDIT
 /////////////////////////////////////////////////////
 
 model LoginAudit {
   id         String  @id @default(uuid())
   userId     String?
-  identifier String // username / nis / nip yg dipakai login
+  identifier String
   success    Boolean
   ip         String?
   userAgent  String?
@@ -194,15 +171,16 @@ model LoginAudit {
   @@index([userId])
   @@index([identifier])
   @@index([createdAt])
+  @@index([success])
 }
 
 /////////////////////////////////////////////////////
-// ACADEMIC YEAR MODULE
+// ACADEMIC YEAR
 /////////////////////////////////////////////////////
 
 model AcademicYear {
   id        String   @id @default(uuid())
-  name      String   @unique // contoh: 2024/2025
+  name      String   @unique
   startDate DateTime @db.Date
   endDate   DateTime @db.Date
   isActive  Boolean  @default(false)
@@ -210,18 +188,19 @@ model AcademicYear {
   classes Class[]
 
   createdAt DateTime @default(now())
+
+  @@index([isActive])
 }
 
 /////////////////////////////////////////////////////
-// CLASS MODULE
+// CLASS
 /////////////////////////////////////////////////////
 
 model Class {
-  id             String @id @default(uuid())
-  grade          String
-  name           String
-  academicYearId String
-
+  id                String  @id @default(uuid())
+  grade             String
+  name              String
+  academicYearId    String
   homeroomTeacherId String? @unique
 
   academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
@@ -231,10 +210,12 @@ model Class {
   createdAt DateTime @default(now())
 
   @@unique([grade, name, academicYearId])
+  @@index([academicYearId])
+  @@index([grade])
 }
 
 /////////////////////////////////////////////////////
-// STUDENT MODULE
+// STUDENT
 /////////////////////////////////////////////////////
 
 model Student {
@@ -256,13 +237,21 @@ model Student {
 
   profile StudentProfile?
 
+  // 🔥 pivot relation
+  parents StudentParent[]
+
   users        User[]
-  parents      Parent[]
   violations   StudentViolation[]
   achievements StudentAchievement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([rombelId])
+  @@index([religionId])
+  @@index([status])
+  @@index([deletedAt])
+  @@index([name])
 }
 
 /////////////////////////////////////////////////////
@@ -303,7 +292,7 @@ model StudentProfile {
 }
 
 /////////////////////////////////////////////////////
-// MASTER DATA: RELIGION
+// RELIGION
 /////////////////////////////////////////////////////
 
 model Religion {
@@ -312,18 +301,19 @@ model Religion {
   name String
 
   students Student[]
+
+  @@index([name])
 }
 
 /////////////////////////////////////////////////////
-// PARENT MODULE
+// PARENT
 /////////////////////////////////////////////////////
 
 model Parent {
-  id        String @id @default(uuid())
-  studentId String
+  id String @id @default(uuid())
 
-  type      ParentType
   name      String
+  email     String?
   education String
   job       String
   income    String?
@@ -331,12 +321,42 @@ model Parent {
   phone     String
   address   String
 
-  student Student @relation(fields: [studentId], references: [id])
-  users   User[]
+  // 🔥 pivot relation
+  students StudentParent[]
+
+  users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([phone])
+  @@index([name])
 }
 
 /////////////////////////////////////////////////////
-// TEACHER MODULE
+// PIVOT TABLE STUDENT PARENT
+/////////////////////////////////////////////////////
+
+model StudentParent {
+  id        String     @id @default(uuid())
+  studentId String
+  parentId  String
+  role      ParentType
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, parentId]) // mencegah parent sama didaftarkan 2x
+  @@unique([studentId, role]) // 🔥 mencegah 2 FATHER / 2 MOTHER
+  @@index([studentId])
+  @@index([parentId])
+  @@index([role])
+}
+
+/////////////////////////////////////////////////////
+// TEACHER
 /////////////////////////////////////////////////////
 
 model Teacher {
@@ -356,15 +376,17 @@ model Teacher {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   ViolationResolution ViolationResolution[]
+
+  @@index([name])
 }
 
 /////////////////////////////////////////////////////
-// VIOLATION MODULE (MASTER)
+// VIOLATION
 /////////////////////////////////////////////////////
 
 model Violation {
   id        String         @id @default(uuid())
-  name      String         @unique // ← TAMBAHKAN INI
+  name      String         @unique
   point     Int
   level     ViolationLevel
   deletedAt DateTime?
@@ -372,6 +394,9 @@ model Violation {
   records StudentViolation[]
 
   createdAt DateTime @default(now())
+
+  @@index([level])
+  @@index([deletedAt])
 }
 
 /////////////////////////////////////////////////////
@@ -392,13 +417,16 @@ model ViolationResolution {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  studentViolation   StudentViolation     @relation(fields: [studentViolationId], references: [id])
-  handlerTeacher     Teacher              @relation(fields: [handlerTeacherId], references: [id])
-  ViolationActionLog ViolationActionLog[]
+  studentViolation StudentViolation     @relation(fields: [studentViolationId], references: [id])
+  handlerTeacher   Teacher              @relation(fields: [handlerTeacherId], references: [id])
+  logs             ViolationActionLog[]
+
+  @@index([handlerTeacherId])
+  @@index([status])
 }
 
 /////////////////////////////////////////////////////
-// VIOLATION HISTORY LOG
+// VIOLATION ACTION LOG
 /////////////////////////////////////////////////////
 
 model ViolationActionLog {
@@ -409,10 +437,13 @@ model ViolationActionLog {
   createdAt    DateTime            @default(now())
 
   resolution ViolationResolution @relation(fields: [resolutionId], references: [id])
+
+  @@index([resolutionId])
+  @@index([createdAt])
 }
 
 /////////////////////////////////////////////////////
-// STUDENT VIOLATION (TRANSACTION)
+// STUDENT VIOLATION
 /////////////////////////////////////////////////////
 
 model StudentViolation {
@@ -425,15 +456,17 @@ model StudentViolation {
   student   Student   @relation(fields: [studentId], references: [id])
   violation Violation @relation(fields: [violationId], references: [id])
 
-  createdAt           DateTime             @default(now())
-  ViolationResolution ViolationResolution?
+  createdAt DateTime @default(now())
+
+  resolution ViolationResolution?
 
   @@index([studentId])
+  @@index([violationId])
   @@index([occurredAt])
 }
 
 /////////////////////////////////////////////////////
-// ACHIEVEMENT MODULE (MASTER)
+// ACHIEVEMENT
 /////////////////////////////////////////////////////
 
 model Achievement {
@@ -445,10 +478,12 @@ model Achievement {
   records StudentAchievement[]
 
   createdAt DateTime @default(now())
+
+  @@index([deletedAt])
 }
 
 /////////////////////////////////////////////////////
-// STUDENT ACHIEVEMENT (TRANSACTION)
+// STUDENT ACHIEVEMENT
 /////////////////////////////////////////////////////
 
 model StudentAchievement {
@@ -464,5 +499,6 @@ model StudentAchievement {
   createdAt DateTime @default(now())
 
   @@index([studentId])
+  @@index([achievementId])
   @@index([achievedAt])
 }

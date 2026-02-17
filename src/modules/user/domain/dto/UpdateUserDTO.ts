@@ -1,11 +1,10 @@
-//Files: src/modules/user/domain/dto/UpdateUserAuthDTO.ts
-import type {Role, TeacherRole} from "@/generated/prisma";
+import type { TeacherRole, UserRole } from "@/libs/utils";
 
 export interface UpdateUserDTO {
-    id: string;
-    username?: string;
-    password?: string;
-    role?: Role;
-    teacherRoles?: TeacherRole[];
-    isActive?: boolean;
+    readonly id: string;
+    readonly password?: string;
+    readonly role: UserRole;
+    readonly teacherRole: TeacherRole | null;
+    readonly image?: string | null;
+    readonly isActive: boolean;
 }

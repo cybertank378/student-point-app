@@ -1,27 +1,33 @@
 // src/modules/shared/errors/ApiError.ts
+
 export interface ApiError {
-	/** Pesan yang bisa langsung ditampilkan ke user */
-	message: string;
+    /** Pesan yang bisa langsung ditampilkan ke user */
+    message: string;
 
-	/** Application / business error code (opsional) */
-	code?: number;
+    /** Application / business error code (opsional) */
+    code?: number;
 
-	/** HTTP status code (opsional) */
-	statusCode?: number;
+    /** HTTP status code (selalu ada) */
+    statusCode: number;
 
-	/** Payload mentah / detail lain dari server */
-	details?: unknown;
+    /** Zod field validation errors */
+    fieldErrors?: Record<string, string[]>;
+
+    /** Raw payload */
+    details?: unknown;
 }
 
 /**
- * Parse Response → ApiError (dipakai di semua hook)
+ * Parse Response → ApiError
  */
-export const parseError = async (res: Response): Promise<ApiError> => {
+export const parseError = async (
+    res: Response
+): Promise<ApiError> => {
     let data: unknown = null;
 
-    const contentType = res.headers.get("content-type");
-
     try {
+        const contentType = res.headers.get("content-type");
+
         if (contentType?.includes("application/json")) {
             data = await res.json();
         } else {
@@ -34,84 +40,127 @@ export const parseError = async (res: Response): Promise<ApiError> => {
 
     const record =
         data && typeof data === "object"
-            ? (data as Record<string, unknown>)
+            ? (data as Record<string, any>)
             : {};
 
-    const message =
-        typeof record.message === "string"
-            ? record.message
-            : typeof record.error === "string"
-                ? record.error
-                : `Request failed with status ${res.status}`;
+    /**
+     * Extract Zod fieldErrors if exists
+     */
+    const fieldErrors =
+        record?.details?.fieldErrors ??
+        record?.fieldErrors ??
+        undefined;
+
+    /**
+     * Determine message
+     */
+    let message: string;
+
+    if (fieldErrors && typeof fieldErrors === "object") {
+        const values = Object.values(
+            fieldErrors as Record<string, string[]>
+        );
+
+        const firstError =
+            values.length > 0 && Array.isArray(values[0])
+                ? values[0][0]
+                : undefined;
+
+        message =
+            typeof firstError === "string"
+                ? firstError
+                : "Validation error";
+    } else if (typeof record.message === "string") {
+        message = record.message;
+    } else if (typeof record.error === "string") {
+        message = record.error;
+    } else {
+        message = `Request failed with status ${res.status}`;
+    }
 
     return {
         message,
-        code: typeof record.code === "number" ? record.code : undefined,
-        statusCode:
-            typeof record.statusCode === "number"
-                ? record.statusCode
-                : res.status,
+        code:
+            typeof record.code === "number"
+                ? record.code
+                : undefined,
+        statusCode: res.status,
+        fieldErrors,
         details: data ?? undefined,
     };
 };
 
-
 /**
- * Helper internal: ekstrak message/code/statusCode dari unknown object
+ * Extract error-like object
  */
 type ErrorLike = {
-	message?: unknown;
-	code?: unknown;
-	statusCode?: unknown;
+    message?: unknown;
+    code?: unknown;
+    statusCode?: unknown;
+    fieldErrors?: unknown;
 };
 
 const extractFromUnknown = (
-	err: unknown,
-): Pick<ApiError, "message" | "code" | "statusCode"> | null => {
-	if (!err || typeof err !== "object") return null;
+    err: unknown
+): ApiError | null => {
+    if (!err || typeof err !== "object") return null;
 
-	const { message, code, statusCode } = err as ErrorLike;
+    const e = err as ErrorLike;
 
-	if (typeof message !== "string") return null;
+    if (typeof e.message !== "string") return null;
 
-	return {
-		message,
-		code: typeof code === "number" ? code : undefined,
-		statusCode: typeof statusCode === "number" ? statusCode : undefined,
-	};
+    return {
+        message: e.message,
+        code:
+            typeof e.code === "number"
+                ? e.code
+                : undefined,
+        statusCode:
+            typeof e.statusCode === "number"
+                ? e.statusCode
+                : 500,
+        fieldErrors:
+            typeof e.fieldErrors === "object"
+                ? (e.fieldErrors as Record<
+                    string,
+                    string[]
+                >)
+                : undefined,
+        details: err,
+    };
 };
 
 /**
- * Konversi unknown error → ApiError (buat dipakai di catch blok)
+ * Convert unknown → ApiError
  */
-export const toApiError = (err: unknown, fallbackMessage: string): ApiError => {
-	const extracted = extractFromUnknown(err);
-	if (extracted) {
-		return {
-			...extracted,
-			details: err,
-		};
-	}
+export const toApiError = (
+    err: unknown,
+    fallbackMessage: string
+): ApiError => {
+    const extracted = extractFromUnknown(err);
+    if (extracted) return extracted;
 
-	if (err instanceof Error) {
-		return {
-			message: err.message,
-			details: err,
-		};
-	}
+    if (err instanceof Error) {
+        return {
+            message: err.message,
+            statusCode: 500,
+            details: err,
+        };
+    }
 
-	return {
-		message: fallbackMessage,
-		details: err,
-	};
+    return {
+        message: fallbackMessage,
+        statusCode: 500,
+        details: err,
+    };
 };
 
 /**
- * Helper: parse JSON, sekaligus handle format:
- * - { _value: T }
- * - T langsung
+ * Safe JSON wrapper
  */
-export const safeJson = async <T>(res: Response): Promise<T> => {
+export const safeJson = async <T>(
+    res: Response
+): Promise<T> => {
     if (!res.ok) {
         throw await parseError(res);
     }
@@ -120,15 +169,22 @@ export const safeJson = async <T>(res: Response): Promise<T> => {
 
     if (!contentType?.includes("application/json")) {
         throw {
-            message: "Server returned non-JSON response",
+            message:
+                "Server returned non-JSON response",
             statusCode: res.status,
         } satisfies ApiError;
     }
 
     const json = (await res.json()) as unknown;
 
-    if (json && typeof json === "object" && "_value" in json) {
-        const wrapped = json as { _value: T | null | undefined };
+    if (
+        json &&
+        typeof json === "object" &&
+        "_value" in json
+    ) {
+        const wrapped = json as {
+            _value: T | null | undefined;
+        };
         return (wrapped._value as T) ?? ({} as T);
     }
 

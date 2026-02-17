@@ -81,8 +81,6 @@ export async function proxy(req: NextRequest) {
 
   const accessToken = req.cookies.get("accessToken")?.value;
 
-  console.log("ACCESS TOKEN:", accessToken);
-
   const refreshToken = req.cookies.get("refreshToken")?.value;
 
   let user: AuthPayload | null = null;

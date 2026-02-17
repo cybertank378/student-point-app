@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Scan folder src */
+@source "./src";
+
+/* Safelist pattern */
+@source inline("{bg,text,border}-{indigo,emerald,rose,amber,sky,violet,blue,green}-{100,500,600}");
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

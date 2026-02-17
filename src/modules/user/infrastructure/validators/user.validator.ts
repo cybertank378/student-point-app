@@ -2,8 +2,17 @@
 import { z } from "zod";
 
 /**
+ * UUID Schema
+ * - Tidak menggunakan overload deprecated
+ * - Compatible dengan Zod v4+
+ */
+export const UUIDSchema = z.string().uuid().brand<"UUID">();
+
+export type UUID = z.infer<typeof UUIDSchema>;
+
+/**
  * =====================================================
- * ENUMS (SYNC WITH PRISMA)
+ * ENUMS (SYNC WITH DOMAIN)
  * =====================================================
  */
 
@@ -23,37 +32,68 @@ export const RoleEnum = z.enum([
 
 /**
  * =====================================================
+ * LIST USER
+ * =====================================================
+ */
+
+export const ListUserSchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+    search: z.string().trim().optional(),
+});
+
+/**
+ * =====================================================
  * CREATE USER
  * =====================================================
  */
-export const CreateUserSchema = z.object({
-    username: z.string().min(4),
-    password: z.string().min(6),
 
-    // ✅ SINGLE ROLE
-    role: RoleEnum,
+export const CreateUserSchema = z
+    .object({
+        role: RoleEnum.refine(
+            (val) => val !== "ADMIN",
+            "Tidak dapat membuat ADMIN melalui endpoint ini."
+        ),
 
-    // ✅ ARRAY ONLY FOR TEACHER ROLE
-    teacherRoles: z
-        .array(TeacherRoleEnum)
-        .optional(),
-});
+        referenceId: UUIDSchema,
+
+        teacherRole: TeacherRoleEnum.optional(),
+    })
+    .superRefine((data, ctx) => {
+        if (data.role === "TEACHER" && !data.teacherRole) {
+            ctx.addIssue({
+                code: "custom", // ✅ Zod v4 correct usage
+                message: "Teacher wajib memiliki teacherRole.",
+                path: ["teacherRole"],
+            });
+        }
+    });
 
 /**
  * =====================================================
  * UPDATE USER
  * =====================================================
  */
+
 export const UpdateUserSchema = z.object({
-    username: z.string().min(4).optional(),
     password: z.string().min(6).optional(),
 
-    // ✅ SINGLE ROLE
-    role: RoleEnum.optional(),
+    role: RoleEnum,
 
-    teacherRoles: z
-        .array(TeacherRoleEnum)
-        .optional(),
+    teacherRole: TeacherRoleEnum.nullable(),
 
-    isActive: z.boolean().optional(),
+    image: z.string().trim().nullable().optional(),
+
+    // 🔥 HARUS optional, bukan nullable
+    referenceId: UUIDSchema.optional(),
+
+    isActive: z.boolean(),
+}).superRefine((data, ctx) => {
+    if (data.role === "TEACHER" && !data.teacherRole) {
+        ctx.addIssue({
+            code: "custom",
+            message: "Teacher wajib memiliki teacherRole.",
+            path: ["teacherRole"],
+        });
+    }
 });

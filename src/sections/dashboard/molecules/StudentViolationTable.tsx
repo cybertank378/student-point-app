@@ -10,12 +10,12 @@ import {
   TableRow,
 } from "@/shared-ui/component/Table";
 import { useState, useMemo, useEffect } from "react";
-import getInitials from "@/libs/utils";
 import Image from "next/image";
 import Pagination from "@/shared-ui/component/Pagination";
 import { FaSearch } from "react-icons/fa";
 import TextField from "@/shared-ui/component/TextField";
 import SelectField from "@/shared-ui/component/SelectField";
+import {getInitials} from "@/libs/utils";
 
 /* ================================
    DATA

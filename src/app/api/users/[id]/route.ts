@@ -1,9 +1,8 @@
 //Files: src/app/api/users/[id]/route.ts
-import type { NextRequest } from "next/server";
-import { createUserController } from "../_factory";
-import { getRouteParam } from "@/modules/shared/http/getRouteParam";
+// Files: src/app/api/users/[id]/route.ts
 
-const controller = createUserController();
+import { NextRequest } from "next/server";
+import { userController } from "@/app/api/users/_factory";
 
 /**
  * =====================================================
@@ -12,20 +11,36 @@ const controller = createUserController();
  * DELETE /api/users/:id
  * =====================================================
  *
- * RbacConfig handled in middleware
+ * Next 16+:
+ * params is Promise<{ id: string }>
  */
 
-export async function GET(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.getById(id);
+/* ================= GET ================= */
+
+export async function GET(
+    _request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params;
+    return userController.findById(id);
 }
 
-export async function PUT(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.update(id, req);
+/* ================= PUT ================= */
+
+export async function PUT(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params;
+    return userController.update(request, id);
 }
 
-export async function DELETE(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.delete(id);
+/* ================= DELETE ================= */
+
+export async function DELETE(
+    _request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
+    const { id } = await context.params;
+    return userController.delete(id);
 }

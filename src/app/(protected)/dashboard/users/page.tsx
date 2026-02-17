@@ -1,9 +1,7 @@
 //Files: src/app/(protected)/dashboard/users/page.tsx
 
+import UserSection from "@/sections/user/pages/UserSection";
+
 export default function UsersPage() {
-    return (
-        <div>
-            <h1 className='text-red'> Users Management Page</h1>
-        </div>
-    );
+  return <UserSection />;
 }

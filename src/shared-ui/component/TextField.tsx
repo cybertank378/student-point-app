@@ -30,9 +30,9 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
 }
 
 const sizeMap: Record<Size, string> = {
-  lg: "h-12 text-base px-4",
-  md: "h-10 text-sm px-3",
-  sm: "h-8 text-xs px-2",
+    lg: "h-12 text-base px-4",
+    md: "h-11 text-sm px-3", // 🔥 ubah dari h-10 ke h-11
+    sm: "h-9 text-xs px-2",
 };
 
 const variantMap: Record<Variant, string> = {

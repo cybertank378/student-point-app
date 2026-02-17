@@ -1,0 +1,54 @@
+{
+  "teachers": [
+    {
+      "id": "TCH-001",
+      "userId": "USR-101",
+      "nip": "198901012015041001",
+      "name": "Ahmad Fauzan",
+      "phone": "081234567890",
+      "email": "ahmad.fauzan@smp29.sch.id",
+      "roles": ["SUBJECT"],
+      "homeroomClassId": null
+    },
+    {
+      "id": "TCH-002",
+      "userId": "USR-102",
+      "nip": "198812152014042002",
+      "name": "Siti Aminah",
+      "phone": "081298765432",
+      "email": "siti.aminah@smp29.sch.id",
+      "roles": ["SUBJECT", "HOMEROOM"],
+      "homeroomClassId": "CLS-7A"
+    },
+    {
+      "id": "TCH-003",
+      "userId": "USR-103",
+      "nip": "198705202013031003",
+      "name": "Budi Santoso",
+      "phone": null,
+      "email": "budi.santoso@smp29.sch.id",
+      "roles": ["SUBJECT"],
+      "homeroomClassId": null
+    },
+    {
+      "id": "TCH-004",
+      "userId": "USR-104",
+      "nip": "199002112016021004",
+      "name": "Rina Marlina",
+      "phone": "081355566677",
+      "email": null,
+      "roles": ["HOMEROOM"],
+      "homeroomClassId": "CLS-8B"
+    },
+    {
+      "id": "TCH-005",
+      "userId": "USR-105",
+      "nip": "198611052012011005",
+      "name": "Dedi Kurniawan",
+      "phone": "081322233344",
+      "email": "dedi.kurniawan@smp29.sch.id",
+      "roles": ["SUBJECT"],
+      "homeroomClassId": null
+    }
+  ]
+}

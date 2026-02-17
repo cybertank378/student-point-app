@@ -1,5 +1,7 @@
 //Files: src/modules/shared/audit/auditLogger.ts
 
+import {serverLog} from "@/libs/serverLogger";
+
 export function auditLog(
     type: "ALLOW" | "DENY",
     data: {
@@ -9,7 +11,7 @@ export function auditLog(
     }
 ) {
     if (process.env.NODE_ENV !== "production") {
-        console.log(
+        serverLog(
             `[AUDIT][${type}]`,
             JSON.stringify(data)
         );
