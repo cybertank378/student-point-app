@@ -58,12 +58,20 @@ export function getInitials(name: string) {
     return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
 }
 
-export function dateFormater(date: Date): string {
+export function dateFormater(input: Date | string | null | undefined): string {
+    if (!input) return "-";
+
+    const date = input instanceof Date ? input : new Date(input);
+
+    if (isNaN(date.getTime())) return "-";
+
     const day = String(date.getUTCDate()).padStart(2, "0");
     const month = String(date.getUTCMonth() + 1).padStart(2, "0");
     const year = date.getUTCFullYear();
+
     return `${day}-${month}-${year}`;
 }
+
 
 export function parseDate(value: string | Date): Date {
     if (value instanceof Date) return value;

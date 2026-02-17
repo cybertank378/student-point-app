@@ -1,77 +1,121 @@
-// src/shared-ui/layout/AppSidebar.tsx
-// src/shared-ui/layout/AppSidebar.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import type { UserRole } from "@/libs/utils";
 import { useSidebarMenu } from "@/sections/sidebar/hooks/useSidebarMenu";
 import { RecursiveSidebarItem } from "@/sections/sidebar/components/RecursiveSidebarItem";
-import type { UserRole } from "@/libs/utils";
-import { MdMenu } from "react-icons/md";
-import Button from "@/shared-ui/component/Button";
+import { MdClose } from "react-icons/md";
 
 interface Props {
-  role: UserRole;
-  collapsed?: boolean;
-  onToggleSidebar?: () => void;
+    role: UserRole;
+    mobileOpen?: boolean;
+    onClose?: () => void;
 }
 
 export default function AppSidebar({
-  role,
-  collapsed = false,
-  onToggleSidebar,
-}: Props) {
-  const menu = useSidebarMenu(role);
+                                       role,
+                                       mobileOpen = false,
+                                       onClose,
+                                   }: Props) {
+    const menu = useSidebarMenu(role);
+    const pathname = usePathname();
 
-  // 🔥 Parent ke-2 otomatis expand
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(1);
+    const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  return (
-    <aside
-      className={`bg-[#282A42] text-[#D8D8EE] min-h-screen transition-all duration-300 ${
-        collapsed ? "w-[80px]" : "w-[260px]"
-      }`}
-    >
-      <div className="h-16 flex items-center justify-between px-4">
-        <div className="flex items-center">
-          <Image
-            src="/assets/images/logo/logo.png"
-            alt="Logo"
-            width={32}
-            height={32}
-          />
+    /* ================= AUTO OPEN ACTIVE PARENT ================= */
+    useEffect(() => {
+        const parentIndex = menu.findIndex((item) =>
+            item.children?.some((child) => child.path === pathname)
+        );
 
-          {!collapsed && (
-            <span className="ml-3 font-semibold">SMP Negeri 29</span>
-          )}
+        if (parentIndex !== -1) {
+            setExpandedIndex(parentIndex);
+        }
+    }, [pathname, menu]);
+
+    /* ================= AUTO CLOSE MOBILE ON ROUTE CHANGE ================= */
+    useEffect(() => {
+        if (mobileOpen && onClose) {
+            onClose();
+        }
+    }, [pathname]);
+
+    /* ================= SIDEBAR CONTENT ================= */
+    const SidebarContent = (
+        <div className="h-screen w-[259px] bg-slate-800 text-indigo-100 flex flex-col">
+            {/* HEADER */}
+            <div className="h-16 flex items-center justify-between px-4">
+                <Image
+                    src="/assets/images/logo/logo.png"
+                    alt="Logo"
+                    width={28}
+                    height={28}
+                />
+
+                {onClose && (
+                    <button
+                        onClick={onClose}
+                        className="md:hidden text-indigo-100"
+                    >
+                        <MdClose size={22} />
+                    </button>
+                )}
+            </div>
+
+            <div className="h-px bg-slate-700 opacity-50" />
+
+            {/* MENU */}
+            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+                {menu.map((item, index) => (
+                    <RecursiveSidebarItem
+                        key={item.label}
+                        item={item}
+                        index={index}
+                        expandedIndex={expandedIndex}
+                        setExpandedIndex={setExpandedIndex}
+                        collapsed={false}
+                    />
+                ))}
+            </nav>
         </div>
+    );
 
-        {onToggleSidebar && (
-          <Button
-            type="button"
-            variant="text"
-            color="secondary"
-            onClick={onToggleSidebar}
-            iconOnly
-            className="opacity-70 hover:opacity-100"
-          >
-            <MdMenu />
-          </Button>
-        )}
-      </div>
+    return (
+        <>
+            {/* ================= DESKTOP ================= */}
+            <aside className="hidden md:flex h-screen">
+                {SidebarContent}
+            </aside>
 
-      <nav className="px-3 space-y-1">
-        {menu.map((item, index) => (
-          <RecursiveSidebarItem
-            key={item.label}
-            item={item}
-            index={index}
-            expandedIndex={expandedIndex}
-            setExpandedIndex={setExpandedIndex}
-            collapsed={collapsed}
-          />
-        ))}
-      </nav>
-    </aside>
-  );
+            {/* ================= MOBILE ================= */}
+            <AnimatePresence>
+                {mobileOpen && (
+                    <>
+                        {/* Overlay */}
+                        <motion.div
+                            className="fixed inset-0 bg-black/40 z-40 md:hidden"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={onClose}
+                        />
+
+                        {/* Slide Panel */}
+                        <motion.aside
+                            className="fixed top-0 left-0 z-50 md:hidden"
+                            initial={{ x: -259 }}
+                            animate={{ x: 0 }}
+                            exit={{ x: -259 }}
+                            transition={{ type: "spring", stiffness: 260, damping: 25 }}
+                        >
+                            {SidebarContent}
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+        </>
+    );
 }

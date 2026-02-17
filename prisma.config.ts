@@ -8,7 +8,7 @@ export default defineConfig({
     },
     datasource: {
         // URL is defined here in v7, NOT in schema.prisma
-        url: env('POSTGRES_URL') ?? env('DATABASE_URL'),
+        url: env('DATABASE_URL'),
 
     },
 });

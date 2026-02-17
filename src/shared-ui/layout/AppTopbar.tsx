@@ -1,4 +1,3 @@
-//Files: src/shared-ui/layout/AppTopbar.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -6,176 +5,112 @@ import { useEffect, useRef, useState } from "react";
 import { useAuthApi } from "@/modules/auth/presentation/hooks/useAuthApi";
 import type { UserRole } from "@/libs/utils";
 import {
-  FiBell,
-  FiDollarSign,
-  FiFileText,
-  FiGlobe,
-  FiHelpCircle,
-  FiLogOut,
-  FiMoon,
-  FiSearch,
-  FiSettings,
-  FiStar,
-  FiUser,
+    FiBell,
+    FiSearch,
+    FiLogOut,
+    FiUser,
+    FiSettings,
+    FiFileText,
+    FiDollarSign,
+    FiHelpCircle,
 } from "react-icons/fi";
+import { MdMenu } from "react-icons/md";
 import Image from "next/image";
 import { DropdownItem } from "@/shared-ui/component/DropdownItem";
 import Button from "@/shared-ui/component/Button";
 
 interface Props {
-  role: UserRole;
-  username?: string;
+    role: UserRole;
+    username?: string;
+    onMenuClick?: () => void;
 }
 
-export default function AppTopbar({ role, username }: Props) {
-  const router = useRouter();
-  const { logout } = useAuthApi(); // ✅ dari hook
+export default function AppTopbar({
+                                      role,
+                                      username,
+                                      onMenuClick,
+                                  }: Props) {
+    const router = useRouter();
+    const { logout } = useAuthApi();
 
-  const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+    const [loading, setLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // ===== HANDLE LOGOUT =====
-  const handleLogout = async () => {
-    try {
-      setLoading(true);
-
-      await logout(); // ✅ gunakan hook
-
-      setIsOpen(false); // tutup dropdown
-      router.push("/login");
-      router.refresh(); // redirect
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ===== CLICK OUTSIDE CLOSE =====
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
+    const handleLogout = async () => {
+        try {
+            setLoading(true);
+            await logout();
+            router.push("/login");
+            router.refresh();
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(e.target as Node)
+            ) {
+                setIsOpen(false);
+            }
+        };
+        if (isOpen) document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, [isOpen]);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+    return (
+        <header className="sticky top-0 z-40 h-16 bg-white border-b border-gray-200 shadow-sm">
+            <div className="h-full px-4 md:px-8 flex items-center justify-between gap-3">
 
-  return (
-    <header className="sticky top-0 z-40 h-16 bg-white border-b border-gray-200 shadow-[0_1px_6px_rgba(0,0,0,0.05)]">
-      <div className="h-full px-8 flex items-center justify-between">
-        {/* LEFT */}
-        <div className="flex-1 max-w-md">
-          <div className="flex items-center gap-3 px-4 h-10 border border-gray-300 rounded-lg bg-white focus-within:border-indigo-500 transition-colors">
-            <FiSearch size={18} className="text-gray-500" />
+                {/* LEFT SIDE */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
 
-            <input
-              type="text"
-              placeholder="Search 8K"
-              className="flex-1 bg-transparent outline-none text-sm placeholder-gray-400"
-            />
-          </div>
-        </div>
+                    {/* Hamburger */}
+                    <button
+                        onClick={onMenuClick}
+                        className="md:hidden text-gray-600 shrink-0"
+                    >
+                        <MdMenu size={22} />
+                    </button>
 
-        {/* RIGHT */}
-        <div className="flex items-center gap-6">
-          <FiGlobe size={18} className="icon-style" />
-          <FiMoon size={18} className="icon-style" />
-          <FiStar size={18} className="icon-style" />
+                    {/* Search */}
+                    <div className="flex items-center gap-2 px-3 h-10 border border-gray-300 rounded-lg bg-white focus-within:border-indigo-500 transition-colors flex-1 min-w-0">
+                        <FiSearch size={16} className="text-gray-500 shrink-0" />
 
-          <div className="relative cursor-pointer">
-            <FiBell size={18} className="icon-style" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </div>
-
-          {/* ===== AVATAR ===== */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              type="button"
-              onClick={() => setIsOpen((prev) => !prev)}
-              className="relative w-9 h-9 rounded-full overflow-hidden focus:outline-none"
-            >
-              <Image
-                src="/assets/images/avatar.png"
-                alt="User Avatar"
-                width={36}
-                height={36}
-                className="rounded-full object-cover"
-              />
-            </button>
-
-            {isOpen && (
-              <div className="absolute right-2 mt-4 w-64 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden">
-                {/* USER HEADER */}
-                <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                    <Image
-                      src="/assets/images/avatar.png"
-                      alt="User"
-                      fill
-                      className="object-cover"
-                    />
-                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></span>
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-semibold text-gray-800">
-                      {username}
-                    </p>
-                    <p className="text-xs text-gray-500 capitalize">{role}</p>
-                  </div>
+                        <input
+                            type="text"
+                            placeholder="Search"
+                            className="flex-1 bg-transparent outline-none text-sm placeholder-gray-400 min-w-0"
+                        />
+                    </div>
                 </div>
 
-                {/* MENU */}
-                <div className="py-2">
-                  <DropdownItem icon={FiUser} label="My Profile" />
-                  <DropdownItem icon={FiSettings} label="Settings" />
-                  <DropdownItem
-                    icon={FiFileText}
-                    label="Billing Plan"
-                    badge="4"
-                  />
+                {/* RIGHT SIDE */}
+                <div className="flex items-center gap-3 shrink-0">
+                    <FiBell size={18} className="text-gray-600" />
+
+                    {/* Avatar */}
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            type="button"
+                            onClick={() => setIsOpen((prev) => !prev)}
+                            className="w-8 h-8 rounded-full overflow-hidden"
+                        >
+                            <Image
+                                src="/assets/images/avatar.png"
+                                alt="User Avatar"
+                                width={32}
+                                height={32}
+                                className="rounded-full object-cover"
+                            />
+                        </button>
+                    </div>
                 </div>
+            </div>
+        </header>
 
-                <div className="border-t border-gray-100" />
-
-                <div className="py-2">
-                  <DropdownItem icon={FiDollarSign} label="Pricing" />
-                  <DropdownItem icon={FiHelpCircle} label="FAQ" />
-                </div>
-
-                <div className="border-t border-gray-100" />
-
-                {/* LOGOUT */}
-                <div className="p-6">
-                  <Button
-                    type="button"
-                    onClick={handleLogout}
-                    loading={loading}
-                    variant="filled"
-                    color="error"
-                    leftIcon={FiLogOut}
-                    className="w-full"
-                  >
-                    {loading ? "Logging out..." : "Logout"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
-  );
+    );
 }

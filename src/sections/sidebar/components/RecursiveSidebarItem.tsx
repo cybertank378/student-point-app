@@ -1,4 +1,3 @@
-//Files: src/sections/sidebar/components/RecursiveSidebarItem.tsx
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
@@ -30,8 +29,11 @@ export function RecursiveSidebarItem({
     const isActive = item.path && pathname === item.path;
     const isOpen = expandedIndex === index;
 
+    const isIconOnly = collapsed;
+
     const handleClick = () => {
-        if (collapsed && item.path) {
+        // Icon only mode → langsung navigate
+        if (isIconOnly && item.path) {
             router.push(item.path);
             return;
         }
@@ -43,7 +45,7 @@ export function RecursiveSidebarItem({
         }
     };
 
-    const paddingLeft = collapsed ? 12 : 16 + level * 18;
+    const paddingLeft = isIconOnly ? 12 : 16 + level * 18;
 
     return (
         <div>
@@ -59,27 +61,27 @@ export function RecursiveSidebarItem({
                             level === 0 && isOpen && !isActive,
                         "hover:bg-[#383951] text-[#D8D8EE]":
                             !isActive && !(level === 0 && isOpen),
-                    },
+                    }
                 )}
                 style={{ paddingLeft }}
             >
                 <div className="flex items-center gap-2">
                     {level === 0 && item.icon && <item.icon size={18} />}
 
-                    {!collapsed && (
+                    {!isIconOnly && (
                         <>
                             {level > 0 && (
                                 <span
                                     className={clsx(
                                         "w-2 h-2 rounded-full",
-                                        isActive ? "bg-white" : "bg-[#B0B0C6]",
+                                        isActive ? "bg-white" : "bg-[#B0B0C6]"
                                     )}
                                 />
                             )}
 
                             <span
                                 className={clsx(
-                                    level > 0 && !isActive ? "text-[#B0B0C6]" : "",
+                                    level > 0 && !isActive ? "text-[#B0B0C6]" : ""
                                 )}
                             >
                 {item.label}
@@ -88,18 +90,18 @@ export function RecursiveSidebarItem({
                     )}
                 </div>
 
-                {hasChildren && level === 0 && !collapsed && (
+                {hasChildren && level === 0 && !isIconOnly && (
                     <FaChevronRight
                         size={12}
                         className={clsx(
                             "transition-transform duration-200",
-                            isOpen && "rotate-90",
+                            isOpen && "rotate-90"
                         )}
                     />
                 )}
             </button>
 
-            {hasChildren && isOpen && !collapsed && (
+            {hasChildren && isOpen && !isIconOnly && (
                 <div className="mt-1 space-y-1">
                     {item.children?.map((child, i) => (
                         <RecursiveSidebarItem
@@ -117,4 +119,3 @@ export function RecursiveSidebarItem({
         </div>
     );
 }
-
