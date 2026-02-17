@@ -2,17 +2,23 @@
   "name": "siswa-poin-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "biome lint .",
     "format": "biome format --write .",
+
     "postinstall": "prisma generate",
+
     "migrate:deploy": "prisma migrate deploy",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
+
     "lint:fix": "biome lint --write ."
   },
   "dependencies": {
