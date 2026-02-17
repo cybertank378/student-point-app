@@ -318,7 +318,7 @@ model Parent {
   job       String
   income    String?
   religion  String
-  phone     String
+  phone     String  @unique
   address   String
 
   // 🔥 pivot relation
@@ -471,15 +471,12 @@ model StudentViolation {
 
 model Achievement {
   id        String    @id @default(uuid())
-  name      String
+  name      String    @unique // ✅ wajib ada ini
   point     Int
   deletedAt DateTime?
+  createdAt DateTime  @default(now())
 
   records StudentAchievement[]
-
-  createdAt DateTime @default(now())
-
-  @@index([deletedAt])
 }
 
 /////////////////////////////////////////////////////
@@ -492,13 +489,10 @@ model StudentAchievement {
   achievementId String
   point         Int
   achievedAt    DateTime
+  createdAt     DateTime @default(now())
 
   student     Student     @relation(fields: [studentId], references: [id])
   achievement Achievement @relation(fields: [achievementId], references: [id])
 
-  createdAt DateTime @default(now())
-
-  @@index([studentId])
-  @@index([achievementId])
-  @@index([achievedAt])
+  @@unique([studentId, achievementId])
 }
