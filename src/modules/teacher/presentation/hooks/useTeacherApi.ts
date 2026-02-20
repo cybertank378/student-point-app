@@ -202,8 +202,8 @@ export const useTeacherApi = (autoFetch = false) => {
     );
 
     /* ============================================================
-     * UPDATE
-     * ============================================================ */
+ * UPDATE
+ * ============================================================ */
 
     const updateTeacher = useCallback(
         async (payload: UpdateTeacherDTO): Promise<TeacherRespDTO | null> => {
@@ -211,7 +211,7 @@ export const useTeacherApi = (autoFetch = false) => {
                 setError(null);
 
                 const res = await fetch(`/api/teachers/${payload.id}`, {
-                    method: "PATCH",
+                    method: "PUT", // ✅ Changed from PATCH → PUT
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(payload),
                 });
@@ -280,7 +280,7 @@ export const useTeacherApi = (autoFetch = false) => {
                 const res = await fetch(
                     `/api/teachers/${payload.teacherId}/roles`,
                     {
-                        method: "PATCH",
+                        method: "PUT",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ roles: payload.roles }),
                     }

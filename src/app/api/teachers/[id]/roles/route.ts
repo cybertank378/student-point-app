@@ -1,6 +1,7 @@
 //Files: src/app/api/teachers/[id]/roles/route.ts
-import { NextRequest } from "next/server";
+
 import {createTeacherController} from "@/app/api/teachers/_factory";
+import {NextRequest} from "next/server";
 
 /**
  * ============================================================
@@ -16,12 +17,13 @@ import {createTeacherController} from "@/app/api/teachers/_factory";
 const controller = createTeacherController();
 
 /**
- * PATCH /api/teachers/:id/role
+ * PUT /api/teachers/:id/role
  */
-export async function PATCH(
+export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
-) {
-    return controller.assignRole(params.id, request);
-}
+    context: { params: Promise<{ id: string }> }
+): Promise<Response> {
+    const { id } = await context.params;
 
+    return controller.assignRole(id, request);
+}

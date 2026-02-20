@@ -40,7 +40,7 @@ export async function GET(
 
 /**
  * ============================================================
- * PATCH /api/teachers/:id
+ * PUT /api/teachers/:id
  * ------------------------------------------------------------
  * Memperbarui data guru.
  *
@@ -51,14 +51,14 @@ export async function GET(
  * 200 → Updated teacher
  * 400 → Validation error
  */
-export async function PATCH(
-    request: Request,
+export async function PUT(
+    request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ): Promise<Response> {
     const { id } = await context.params;
-
     return controller.update(id, request);
 }
+
 /**
  * ============================================================
  * DELETE /api/teachers/:id

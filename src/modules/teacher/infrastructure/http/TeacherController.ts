@@ -17,6 +17,7 @@ import { TeacherPresenter } from "@/modules/teacher/presentation/presenters/Teac
 import { HttpResultHandler } from "@/modules/shared/http/HttpResultHandler";
 import { getQueryParam } from "@/modules/shared/http/QueryParams";
 import { Result } from "@/modules/shared/core/Result";
+import {NextRequest} from "next/server";
 
 export class TeacherController {
     constructor(private readonly service: TeacherService) {}
@@ -25,7 +26,7 @@ export class TeacherController {
        LIST
     ========================================================== */
 
-    async list(request: Request): Promise<Response> {
+    async list(request: NextRequest): Promise<Response> {
         try {
             const { searchParams } = new URL(request.url);
 
@@ -79,7 +80,7 @@ export class TeacherController {
        CREATE
     ========================================================== */
 
-    async create(req: Request): Promise<Response> {
+    async create(req: NextRequest): Promise<Response> {
         try {
             const body = CreateTeacherSchema.parse(await req.json());
             const result = await this.service.create(body);
@@ -102,7 +103,7 @@ export class TeacherController {
        UPDATE
     ========================================================== */
 
-    async update(id: string, req: Request): Promise<Response> {
+    async update(id: string, req: NextRequest): Promise<Response> {
         try {
             const body = UpdateTeacherSchema.parse(await req.json());
             const result = await this.service.update({ id, ...body });
@@ -134,7 +135,7 @@ export class TeacherController {
        ASSIGN ROLE
     ========================================================== */
 
-    async assignRole(id: string, req: Request): Promise<Response> {
+    async assignRole(id: string, req: NextRequest): Promise<Response> {
         try {
             const body = AssignTeacherRoleSchema.parse(await req.json());
 
@@ -161,7 +162,7 @@ export class TeacherController {
        ASSIGN HOMEROOM
     ========================================================== */
 
-    async assignHomeroom(req: Request): Promise<Response> {
+    async assignHomeroom(req: NextRequest): Promise<Response> {
         try {
             const dto = AssignHomeroomSchema.parse(await req.json());
             const result = await this.service.assignHomeroom(dto);
@@ -176,7 +177,7 @@ export class TeacherController {
        SEARCH
     ========================================================== */
 
-    async search(request: Request): Promise<Response> {
+    async search(request: NextRequest): Promise<Response> {
         try {
             const { searchParams } = new URL(request.url);
 
@@ -215,7 +216,7 @@ export class TeacherController {
        IMPORT / EXPORT
     ========================================================== */
 
-    async import(req: Request): Promise<Response> {
+    async import(req: NextRequest): Promise<Response> {
         try {
             const body = ImportTeacherSchema.parse(await req.json());
             const result = await this.service.import(body);
