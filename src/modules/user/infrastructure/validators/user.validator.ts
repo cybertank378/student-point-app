@@ -1,14 +1,14 @@
 //Files: src/modules/user/infrastructure/validators/user.validator.ts
 import { z } from "zod";
+import {UUID_REGEX} from "@/libs/utils";
 
 /**
  * UUID Schema
  * - Tidak menggunakan overload deprecated
  * - Compatible dengan Zod v4+
  */
-export const UUIDSchema = z.string().uuid().brand<"UUID">();
+export const UUIDSchema = z.string().regex(UUID_REGEX);
 
-export type UUID = z.infer<typeof UUIDSchema>;
 
 /**
  * =====================================================

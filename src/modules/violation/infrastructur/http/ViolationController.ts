@@ -1,136 +1,99 @@
-//Files: src/modules/violation/infrastructur/http/ViolationController.ts
+// Files: src/modules/violation/infrastructure/http/ViolationController.ts
 
-import type { NextRequest } from "next/server";
+import { HttpResultHandler } from "@/modules/shared/http/HttpResultHandler";
 import type { ViolationService } from "@/modules/violation/application/services/ViolationService";
-import {
-    CreateViolationSchema,
-    UpdateViolationSchema
-} from "@/modules/violation/infrastructur/validators/violationMaster.validator";
-import {handleZodError} from "@/modules/shared/errors/handleZodError";
+import type { BasePaginationParams } from "@/modules/shared/http/pagination/BasePagination";
+import { getQueryParam } from "@/modules/shared/http/QueryParams";
 
-
+/**
+ * ============================================================
+ * VIOLATION CONTROLLER
+ * ============================================================
+ *
+ * HTTP Adapter for Violation module.
+ *
+ * Responsibilities:
+ * - Parse HTTP request
+ * - Normalize query params
+ * - Delegate to service
+ * - Let HttpResultHandler handle response mapping
+ *
+ * No manual NextResponse.json here.
+ * ============================================================
+ */
 export class ViolationController {
-    constructor(
-        private readonly service: ViolationService,
-    ) {}
+    constructor(private readonly service: ViolationService) {}
 
-    /**
-     * ======================================
-     * ============ LIST (GET ALL) ===========
-     * ======================================
-     * GET /api/violations-master
-     */
-    async getAll() {
-        const result = await this.service.list();
+    /* =========================================================
+       LIST (PAGINATED)
+    ========================================================= */
 
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
+    async list(request: Request) {
+        const { searchParams } = new URL(request.url);
 
-        return Response.json(result.getValue());
+        const params: BasePaginationParams = {
+            page: getQueryParam(searchParams.get("page"))
+                ? Number(getQueryParam(searchParams.get("page")))
+                : undefined,
+            limit: getQueryParam(searchParams.get("limit"))
+                ? Number(getQueryParam(searchParams.get("limit")))
+                : undefined,
+            search: getQueryParam(searchParams.get("search")),
+            sortBy: getQueryParam(searchParams.get("sortBy")),
+            sortOrder: getQueryParam(
+                searchParams.get("sortOrder"),
+            ) as "asc" | "desc" | undefined,
+        };
+
+        const result = await this.service.list(params);
+
+        return HttpResultHandler.handle(result);
     }
 
-    /**
-     * ======================================
-     * ============ GET BY ID ===============
-     * ======================================
-     * GET /api/violations-master/:id
-     */
-    async getById(id: string) {
-        const result = await this.service.getById(id);
+    /* =========================================================
+       GET BY ID
+    ========================================================= */
 
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 404 },
-            );
-        }
+    async findById(id: string) {
+        const result = await this.service.findById(id);
 
-        return Response.json(result.getValue());
+        return HttpResultHandler.handle(result);
     }
 
-    /**
-     * ======================================
-     * ============== CREATE ===============
-     * ======================================
-     * POST /api/violations-master
-     */
-    async create(req: NextRequest) {
-        try {
-            const body = CreateViolationSchema.parse(
-                await req.json(),
-            );
+    /* =========================================================
+       CREATE
+    ========================================================= */
 
-            const result = await this.service.create(body);
+    async create(request: Request) {
+        const body = await request.json();
 
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
+        const result = await this.service.create(body);
 
-            return Response.json(result.getValue(), {
-                status: 201,
-            });
-        } catch (error) {
-            return handleZodError(error);
-        }
+        return HttpResultHandler.handle(result, 201);
     }
 
-    /**
-     * ======================================
-     * ============== UPDATE ===============
-     * ======================================
-     * PUT /api/violations-master/:id
-     */
-    async update(id: string, req: NextRequest) {
-        try {
-            const body = UpdateViolationSchema.parse(
-                await req.json(),
-            );
+    /* =========================================================
+       UPDATE
+    ========================================================= */
 
-            const result = await this.service.update({
-                id,
-                ...body,
-            });
+    async update(request: Request, id: string) {
+        const body = await request.json();
 
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
+        const result = await this.service.update({
+            id,
+            ...body,
+        });
 
-            return Response.json(result.getValue());
-        } catch (error) {
-            return handleZodError(error);
-        }
+        return HttpResultHandler.handle(result);
     }
 
-    /**
-     * ======================================
-     * ============== DELETE ===============
-     * ======================================
-     * DELETE /api/violations-master/:id
-     *
-     * - SOFT DELETE
-     * - DITOLAK jika violation sudah dipakai
-     */
+    /* =========================================================
+       DELETE
+    ========================================================= */
+
     async delete(id: string) {
         const result = await this.service.delete(id);
 
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError()},
-                { status: 400 },
-            );
-        }
-
-        return Response.json({ success: true });
+        return HttpResultHandler.handle(result);
     }
 }
-

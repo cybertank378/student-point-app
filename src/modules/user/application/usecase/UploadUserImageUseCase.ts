@@ -1,14 +1,15 @@
-//Files: src/modules/user/application/usecase/UploadUserImageUseCase.ts
+// Files: src/modules/user/application/usecase/UploadUserImageUseCase.ts
+
 import path from "path";
-import { Result } from "@/modules/shared/core/Result";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import type { UserInterface } from "@/modules/user/domain/interfaces/UserInterface";
 import type { FileStorageInterface } from "@/modules/user/domain/interfaces/FileStorageInterface";
 import { resolveUserUploadMeta } from "@/libs/utils";
 
 /**
- * =========================================================
- * UploadUserImageUseCase
- * =========================================================
+ * ============================================================
+ * UPLOAD USER IMAGE USE CASE
+ * ============================================================
  *
  * Responsible for:
  * - Validating user existence
@@ -17,30 +18,65 @@ import { resolveUserUploadMeta } from "@/libs/utils";
  * - Replacing old file automatically
  * - Delegating physical storage to FileStorageInterface
  *
- * NOTE:
- * This use case does NOT depend on:
- * - Prisma
- * - fs
- * - Any infrastructure detail
+ * Pattern:
+ *   execute({ userId, file }) -> Result<{ fileName: string }>
  *
- * Fully Clean Architecture compliant.
+ * Extends:
+ *   BaseUseCase<UploadUserImageRequest, { fileName: string }>
+ *
+ * Notes:
+ * - No direct Result handling (handled by BaseUseCase)
+ * - No infrastructure coupling
+ * - Fully Clean Architecture compliant
  */
-export class UploadUserImageUseCase {
+
+export interface UploadUserImageRequest {
+    userId: string;
+    file: File;
+}
+
+export class UploadUserImageUseCase extends BaseUseCase<
+    UploadUserImageRequest,
+    { fileName: string }
+> {
     constructor(
         private readonly repo: UserInterface,
         private readonly storage: FileStorageInterface
-    ) {}
+    ) {
+        super();
+    }
 
     /**
-     * Execute upload flow.
+     * ============================================================
+     * BUSINESS LOGIC
+     * ============================================================
      *
-     * @param userId - Authenticated user ID
-     * @param file - File object from request
+     * Steps:
+     * 1. Ensure user exists
+     * 2. Resolve folder & identity
+     * 3. Generate deterministic filename
+     * 4. Replace old file (safe delete)
+     * 5. Save new file
+     *
+     * Any thrown Error will be handled by BaseUseCase.execute()
      */
-    async execute(
-        userId: string,
-        file: File
-    ): Promise<Result<{ fileName: string }>> {
+    protected async handle(
+        request: UploadUserImageRequest
+    ): Promise<{ fileName: string }> {
+
+        const { userId, file } = request;
+
+        /* =========================================================
+           BASIC VALIDATION
+        ========================================================= */
+
+        if (!userId) {
+            throw new Error("User ID wajib diisi.");
+        }
+
+        if (!file) {
+            throw new Error("File tidak ditemukan.");
+        }
 
         /* =========================================================
            1️⃣ Ensure user exists
@@ -49,22 +85,11 @@ export class UploadUserImageUseCase {
         const user = await this.repo.findById(userId);
 
         if (!user) {
-            return Result.fail("User tidak ditemukan.");
+            throw new Error("User tidak ditemukan.");
         }
 
         /* =========================================================
-           2️⃣ Resolve folder & identity name
-           Folder based on role:
-             - student
-             - teacher
-             - parent
-             - admin
-
-           Identity based on:
-             - NIS (student)
-             - NIP (teacher)
-             - NIS anak (parent)
-             - username (admin)
+           2️⃣ Resolve folder & identity
         ========================================================= */
 
         const { roleFolder, identity } =
@@ -72,17 +97,13 @@ export class UploadUserImageUseCase {
 
         /* =========================================================
            3️⃣ Generate deterministic filename
-           Example:
-             1987654321.png
-             12345678.jpg
         ========================================================= */
 
         const ext = path.extname(file.name);
         const fileName = `${identity}${ext}`;
 
         /* =========================================================
-           4️⃣ Replace old file automatically
-           (Safe delete — ignore if not exist)
+           4️⃣ Replace old file automatically (safe delete)
         ========================================================= */
 
         await this.storage.delete(roleFolder, fileName);
@@ -93,8 +114,6 @@ export class UploadUserImageUseCase {
 
         await this.storage.save(roleFolder, fileName, file);
 
-        return Result.ok({ fileName });
+        return { fileName };
     }
 }
-
-

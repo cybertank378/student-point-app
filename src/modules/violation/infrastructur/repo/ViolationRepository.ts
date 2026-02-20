@@ -1,21 +1,80 @@
-//Files: src/modules/violation/infrastructur/repo/ViolationRepository.ts
+// Files: src/modules/violation/infrastructure/repo/ViolationRepository.ts
 
-import  prisma  from "@/libs/prisma";
+import prisma from "@/libs/prisma";
 import { ViolationMapper } from "@/modules/violation/domain/mapper/ViolationMapper";
 import type { ViolationInterface } from "@/modules/violation/domain/interfaces/ViolationInterface";
 import type { CreateViolationDTO } from "@/modules/violation/domain/dto/CreateViolationDTO";
 import type { UpdateViolationDTO } from "@/modules/violation/domain/dto/UpdateViolationDTO";
 import type { Violation } from "@/modules/violation/domain/entity/Violation";
-import type {ViolationLevel} from "@/generated/prisma";
+import type { ViolationLevel } from "@/generated/prisma";
+import type {
+    BasePaginationParams,
+    BasePaginationResponse,
+} from "@/modules/shared/http/pagination/BasePagination";
 
 export class ViolationRepository implements ViolationInterface {
-    async findAll(): Promise<Violation[]> {
-        const rows = await prisma.violation.findMany({
-            where: { deletedAt: null },
-            orderBy: { point: "asc" },
-        });
-        return ViolationMapper.toDomainList(rows);
+
+    /* =========================================================
+       FIND ALL WITH PAGINATION + SEARCH (B-TREE SAFE)
+    ========================================================= */
+
+    async findAll(
+        params: BasePaginationParams,
+    ): Promise<BasePaginationResponse<Violation>> {
+
+        const page = params.page && params.page > 0 ? params.page : 1;
+        const limit =
+            params.limit && params.limit > 0
+                ? Math.min(params.limit, 100)
+                : 10;
+
+        const skip = (page - 1) * limit;
+
+        /**
+         * =========================================================
+         * B-TREE SAFE SEARCH STRATEGY
+         * =========================================================
+         *
+         * - Avoid contains (LIKE %keyword%) → full scan
+         * - Use startsWith → index friendly
+         * - Ensure name column indexed in Prisma schema
+         */
+
+        const where = {
+            deletedAt: null,
+            ...(params.search && {
+                name: {
+                    startsWith: params.search, // B-tree friendly
+                    mode: "insensitive" as const,
+                },
+            }),
+        };
+
+        const [rows, total] = await prisma.$transaction([
+            prisma.violation.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: {
+                    [params.sortBy ?? "point"]:
+                        params.sortOrder ?? "asc",
+                },
+            }),
+            prisma.violation.count({ where }),
+        ]);
+
+        return {
+            data: ViolationMapper.toDomainList(rows),
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+        };
     }
+
+    /* =========================================================
+       FIND BY ID
+    ========================================================= */
 
     async findById(id: string): Promise<Violation | null> {
         const row = await prisma.violation.findFirst({
@@ -24,7 +83,13 @@ export class ViolationRepository implements ViolationInterface {
         return row ? ViolationMapper.toDomain(row) : null;
     }
 
-    async create(dto: CreateViolationDTO & { level: ViolationLevel }): Promise<Violation> {
+    /* =========================================================
+       CREATE
+    ========================================================= */
+
+    async create(
+        dto: CreateViolationDTO & { level: ViolationLevel },
+    ): Promise<Violation> {
         const row = await prisma.violation.create({
             data: {
                 name: dto.name,
@@ -35,7 +100,13 @@ export class ViolationRepository implements ViolationInterface {
         return ViolationMapper.toDomain(row);
     }
 
-    async update(dto: UpdateViolationDTO & { level: ViolationLevel }): Promise<Violation> {
+    /* =========================================================
+       UPDATE
+    ========================================================= */
+
+    async update(
+        dto: UpdateViolationDTO & { level: ViolationLevel },
+    ): Promise<Violation> {
         const row = await prisma.violation.update({
             where: { id: dto.id },
             data: {
@@ -47,12 +118,9 @@ export class ViolationRepository implements ViolationInterface {
         return ViolationMapper.toDomain(row);
     }
 
-    async isUsed(id: string): Promise<boolean> {
-        const count = await prisma.studentViolation.count({
-            where: { violationId: id },
-        });
-        return count > 0;
-    }
+    /* =========================================================
+       SOFT DELETE
+    ========================================================= */
 
     async softDelete(id: string): Promise<void> {
         await prisma.violation.update({
@@ -60,6 +128,15 @@ export class ViolationRepository implements ViolationInterface {
             data: { deletedAt: new Date() },
         });
     }
+
+    /* =========================================================
+       CHECK USAGE
+    ========================================================= */
+
+    async isUsed(id: string): Promise<boolean> {
+        const count = await prisma.studentViolation.count({
+            where: { violationId: id },
+        });
+        return count > 0;
+    }
 }
-
-

@@ -1,25 +1,60 @@
-//Files: src/modules/user/application/usecases/GetUserStatsUseCase.ts
+// Files: src/modules/user/application/usecases/GetUserStatsUseCase.ts
 
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import type { UserInterface } from "@/modules/user/domain/interfaces/UserInterface";
-import { Result } from "@/modules/shared/core/Result";
-import type {UserStatsResponseDTO} from "@/modules/user/domain/dto/UserStatsResponseDTO";
+import type { UserStatsResponseDTO } from "@/modules/user/domain/dto/UserStatsResponseDTO";
 
+/**
+ * ============================================================
+ * GET USER STATS USE CASE
+ * ============================================================
+ *
+ * Responsible for:
+ * - Retrieving aggregated user statistics
+ * - Returning structured UserStatsResponseDTO
+ *
+ * Pattern:
+ *   execute() -> Result<UserStatsResponseDTO>
+ *
+ * Extends:
+ *   BaseUseCase<void, UserStatsResponseDTO>
+ *
+ * Notes:
+ * - No try/catch inside this class
+ * - Infrastructure errors are handled by BaseUseCase
+ * - No console logging (should be handled globally)
+ */
+export class GetUserStatsUseCase extends BaseUseCase<
+    void,
+    UserStatsResponseDTO
+> {
+    constructor(private readonly userRepository: UserInterface) {
+        super();
+    }
 
-export class GetUserStatsUseCase {
-    constructor(private readonly userRepository: UserInterface) {}
+    /**
+     * ============================================================
+     * BUSINESS LOGIC
+     * ============================================================
+     *
+     * Steps:
+     * 1. Fetch aggregated statistics from a repository
+     * 2. Return DTO
+     *
+     * Any thrown error will be caught by BaseUseCase.execute()
+     * and converted into Result.fail()
+     */
+    protected async handle(): Promise<UserStatsResponseDTO> {
 
-    async execute(): Promise<Result<UserStatsResponseDTO>> {
-        try {
-            const stats = await this.userRepository.getUserStats();
-            console.log("GetUserStatsUseCase Result:", stats.totalStudentUsers);
+        const stats = await this.userRepository.getUserStats();
 
-            return Result.ok<UserStatsResponseDTO>(stats);
-        } catch (error) {
-            console.error("GetUserStatsUseCase Error:", error);
-
-            return Result.fail<UserStatsResponseDTO>(
-                "Failed to fetch user statistics"
-            );
+        /**
+         * Optional safety check (if the repository could return null)
+         */
+        if (!stats) {
+            throw new Error("Statistik user tidak tersedia.");
         }
+
+        return stats;
     }
 }

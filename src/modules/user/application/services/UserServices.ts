@@ -17,29 +17,36 @@
 // All business rules live inside UseCases.
 // ============================================================
 
-import type {UserInterface} from "@/modules/user/domain/interfaces/UserInterface";
-import type {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
-import type {FileStorageInterface} from "@/modules/user/domain/interfaces/FileStorageInterface";
+import type { UserInterface } from "@/modules/user/domain/interfaces/UserInterface";
+import type { HashServiceInterface } from "@/modules/auth/domain/interfaces/HashServiceInterface";
+import type { FileStorageInterface } from "@/modules/user/domain/interfaces/FileStorageInterface";
 
-import {UpdateUserUseCase} from "@/modules/user/application/usecase/UpdateUserUseCase";
-import {CreateUserUseCase} from "@/modules/user/application/usecase/CreateUserUseCase";
-import {DeleteUserUseCase} from "@/modules/user/application/usecase/DeleteUserUseCase";
-import {GetUserByIdUseCase} from "@/modules/user/application/usecase/GetUserByIdUseCase";
-import {ListUserUseCase} from "@/modules/user/application/usecase/ListUserUseCase";
-import {GetUserStatsUseCase} from "@/modules/user/application/usecase/GetUserStatsUseCase";
-import {SearchUserUseCase} from "@/modules/user/application/usecase/SearchUserUseCase";
-import {UploadUserImageUseCase} from "@/modules/user/application/usecase/UploadUserImageUseCase";
+import { CreateUserUseCase } from "@/modules/user/application/usecase/CreateUserUseCase";
+import { UpdateUserUseCase } from "@/modules/user/application/usecase/UpdateUserUseCase";
+import { DeleteUserUseCase } from "@/modules/user/application/usecase/DeleteUserUseCase";
+import { GetUserByIdUseCase } from "@/modules/user/application/usecase/GetUserByIdUseCase";
+import { ListUserUseCase } from "@/modules/user/application/usecase/ListUserUseCase";
+import { GetUserStatsUseCase } from "@/modules/user/application/usecase/GetUserStatsUseCase";
+import { SearchUserUseCase } from "@/modules/user/application/usecase/SearchUserUseCase";
+import {
+    UploadUserImageUseCase,
+    UploadUserImageRequest,
+} from "@/modules/user/application/usecase/UploadUserImageUseCase";
 
-import type {UpdateUserDTO} from "@/modules/user/domain/dto/UpdateUserDTO";
-import type {Result} from "@/modules/shared/core/Result";
-import type {UserEntity} from "@/modules/user/domain/entity/UserEntity";
+import type { CreateUserDTO } from "@/modules/user/domain/dto/CreateUserDTO";
+import type { UpdateUserDTO } from "@/modules/user/domain/dto/UpdateUserDTO";
+import type { UserEntity } from "@/modules/user/domain/entity/UserEntity";
+import type { Result } from "@/modules/shared/core/Result";
+import type { ListUserResponseDTO } from "@/modules/user/domain/dto/ListUserResponseDTO";
+import type { UserStatsResponseDTO } from "@/modules/user/domain/dto/UserStatsResponseDTO";
+import type {
+    UserSearchParams,
+    UserSearchResult,
+} from "@/modules/user/domain/interfaces/UserInterface";
 
 import prisma from "@/libs/prisma";
 
 export class UserService {
-    /* =========================================================
-       UseCase Instances
-    ========================================================= */
 
     private readonly createUserUseCase: CreateUserUseCase;
     private readonly updateUserUseCase: UpdateUserUseCase;
@@ -49,12 +56,6 @@ export class UserService {
     private readonly getUserStatsUseCase: GetUserStatsUseCase;
     private readonly searchUserUseCase: SearchUserUseCase;
     private readonly uploadUserImageUseCase: UploadUserImageUseCase;
-
-    /* =========================================================
-       Constructor
-       - Inject repository & infrastructure dependency
-       - Wire all use cases
-    ========================================================= */
 
     constructor(
         userRepository: UserInterface,
@@ -84,79 +85,55 @@ export class UserService {
     }
 
     /* =========================================================
-       CREATE USER
-       - Wrapped in transaction
-       - Guarantees atomic user creation
+       WRITE OPERATIONS
     ========================================================= */
 
-    create(
-        dto: Parameters<CreateUserUseCase["execute"]>[0]
-    ): Promise<Result<UserEntity>> {
-        return prisma.$transaction(async () => {
-            return await this.createUserUseCase.execute(dto);
-        });
+    create(dto: CreateUserDTO): Promise<Result<UserEntity>> {
+        return prisma.$transaction(() =>
+            this.createUserUseCase.execute(dto)
+        );
     }
 
-    /* =========================================================
-       UPDATE USER
-       - Business logic handled in UpdateUserUseCase
-       - No transaction required unless extended
-    ========================================================= */
-
-    update(dto: UpdateUserDTO) {
+    update(dto: UpdateUserDTO): Promise<Result<UserEntity>> {
         return this.updateUserUseCase.execute(dto);
     }
 
-    /* =========================================================
-       DELETE USER
-       - Wrapped in transaction
-       - Ensures referential integrity safety
-    ========================================================= */
-
     delete(id: string): Promise<Result<void>> {
-        return prisma.$transaction(async () => {
-            return await this.deleteUserUseCase.execute(id);
-        });
+        return prisma.$transaction(() =>
+            this.deleteUserUseCase.execute(id)
+        );
     }
 
-    /* =========================================================
-       UPLOAD USER IMAGE
-       ---------------------------------------------------------
-       Flow:
-       1. Validate user existence
-       2. Resolve dynamic folder + identity name
-       3. Replace old image automatically
-       4. Persist image physically via storage
-       5. Update user.image column
-       ---------------------------------------------------------
-       Fully transactional.
-    ========================================================= */
-
-    async uploadUserImage(
-        userId: string,
-        file: File
+    uploadUserImage(
+        request: UploadUserImageRequest
     ): Promise<Result<{ fileName: string }>> {
-        return await this.uploadUserImageUseCase.execute(userId, file);
+        return this.uploadUserImageUseCase.execute(request);
     }
 
-
     /* =========================================================
-       READ OPERATIONS (No transaction needed)
+       READ OPERATIONS
     ========================================================= */
 
-    findById(id: string) {
+    findById(id: string): Promise<Result<UserEntity>> {
         return this.getUserByIdUseCase.execute(id);
     }
 
-    list(params: Parameters<ListUserUseCase["execute"]>[0]) {
+    list(params: {
+        page?: number;
+        limit?: number;
+        search?: string;
+    }): Promise<Result<ListUserResponseDTO>> {
         return this.listUserUseCase.execute(params);
     }
 
-    getStats() {
-        return this.getUserStatsUseCase.execute();
+    getStats(): Promise<Result<UserStatsResponseDTO>> {
+        // BaseUseCase<void, T> → tetap butuh parameter
+        return this.getUserStatsUseCase.execute(undefined as void);
     }
 
-    search(params: Parameters<SearchUserUseCase["execute"]>[0]) {
+    search(
+        params: UserSearchParams
+    ): Promise<Result<UserSearchResult>> {
         return this.searchUserUseCase.execute(params);
     }
 }

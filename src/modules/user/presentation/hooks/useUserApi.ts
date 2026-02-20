@@ -1,14 +1,9 @@
 "use client";
 
 import {useCallback, useEffect, useState} from "react";
-import type { UserEntity } from "@/modules/user/domain/entity/UserEntity";
+import type {UserEntity} from "@/modules/user/domain/entity/UserEntity";
 
-import {
-    type ApiError,
-    safeJson,
-    toApiError,
-} from "@/modules/shared/errors/ApiError";
-import {serverLog} from "@/libs/serverLogger";
+import {type ApiError, safeJson, toApiError,} from "@/modules/shared/errors/ApiError";
 
 interface ListResponse {
     data: UserEntity[];
@@ -246,9 +241,7 @@ export function useUserApi(autoFetch = false) {
 
         try {
             const res = await fetch(`/api/users/${id}`);
-            const user = await safeJson<UserEntity>(res);
-
-            return user;
+            return await safeJson<UserEntity>(res);
         } catch (err) {
             const apiError = toApiError(err, "Gagal mengambil detail user.");
             setError(apiError);

@@ -1,31 +1,50 @@
-//Files: src/app/api/violations-master/[id]/route.ts
+// Files: src/app/api/violations-master/[id]/route.ts
+
 import type { NextRequest } from "next/server";
 import { createViolationController } from "../_factory";
-import { getRouteParam } from "@/modules/shared/http/getRouteParam";
-
-const controller = createViolationController();
 
 /**
- * =====================================================
- * GET    /api/violations-master/:id
- * PUT    /api/violations-master/:id
- * DELETE /api/violations-master/:id
- * =====================================================
+ * ============================================================
+ * NEXT.JS 15+ COMPATIBLE ROUTE HANDLER
+ * ============================================================
  *
- * RbacConfig handled in middleware
+ * IMPORTANT:
+ * In Next.js 15+, `params` is now a Promise.
+ *
+ * Therefore:
+ * - Do NOT destructure params directly
+ * - Await context.params first
+ *
+ * This prevents RouteHandlerConfig type errors.
+ * ============================================================
  */
 
-export async function GET(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.getById(id);
+export async function GET(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> },
+) {
+    const { id } = await context.params;
+
+    const controller = createViolationController();
+    return controller.findById(id);
 }
 
-export async function PUT(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.update(id, req);
+export async function PUT(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> },
+) {
+    const { id } = await context.params;
+
+    const controller = createViolationController();
+    return controller.update(request, id);
 }
 
-export async function DELETE(req: NextRequest) {
-    const id = getRouteParam(req);
+export async function DELETE(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> },
+) {
+    const { id } = await context.params;
+
+    const controller = createViolationController();
     return controller.delete(id);
 }

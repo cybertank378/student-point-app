@@ -1,13 +1,34 @@
-//Files: src/modules/user/application/usecase/UpdateUserUseCase.ts
-import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
-import type { UpdateUserDTO } from "@/modules/user/domain/dto/UpdateUserDTO";
-import type { UserEntity } from "@/modules/user/domain/entity/UserEntity";
-import type {
-    UserInterface,
-    UpdateUserData,
-} from "@/modules/user/domain/interfaces/UserInterface";
-import type { HashServiceInterface } from "@/modules/auth/domain/interfaces/HashServiceInterface";
+// Files: src/modules/user/application/usecase/UpdateUserUseCase.ts
 
+import {BaseUseCase} from "@/modules/shared/core/BaseUseCase";
+import type {UpdateUserDTO} from "@/modules/user/domain/dto/UpdateUserDTO";
+import type {UserEntity} from "@/modules/user/domain/entity/UserEntity";
+import type {UpdateUserData, UserInterface,} from "@/modules/user/domain/interfaces/UserInterface";
+import type {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
+
+/**
+ * ============================================================
+ * UPDATE USER USE CASE
+ * ============================================================
+ *
+ * Responsible for:
+ * - Validating user existence
+ * - Enforcing business rules
+ * - Handling password update logic
+ * - Handling account unlock logic
+ * - Updating user data
+ *
+ * Pattern:
+ *   execute(dto) -> Result<UserEntity>
+ *
+ * Extends:
+ *   BaseUseCase<UpdateUserDTO, UserEntity>
+ *
+ * Notes:
+ * - No try/catch (handled by BaseUseCase)
+ * - Throw Error for business rule violations
+ * - Fully isolated business orchestration
+ */
 export class UpdateUserUseCase extends BaseUseCase<
     UpdateUserDTO,
     UserEntity
@@ -20,11 +41,30 @@ export class UpdateUserUseCase extends BaseUseCase<
     }
 
     /**
-     * Business logic implementation.
-     * Throw error for failure.
-     * Return entity for success.
+     * ============================================================
+     * BUSINESS LOGIC
+     * ============================================================
+     *
+     * Steps:
+     * 1. Validate input
+     * 2. Ensure a user exists
+     * 3. Validate business rules
+     * 4. Resolve password update
+     * 5. Handle account unlocks logic
+     * 6. Persist update
+     *
+     * Any thrown Error will be caught by BaseUseCase.execute()
      */
     protected async handle(dto: UpdateUserDTO): Promise<UserEntity> {
+
+        /* =========================================================
+           BASIC VALIDATION
+        ========================================================= */
+
+        if (!dto.id) {
+            throw new Error("User ID wajib diisi.");
+        }
+
         const existing = await this.repo.findById(dto.id);
 
         if (!existing) {
@@ -72,19 +112,22 @@ export class UpdateUserUseCase extends BaseUseCase<
             updatedAt: new Date(),
         };
 
-        const updated = await this.repo.update(dto.id, updatePayload);
-
-        return updated;
+        return await this.repo.update(dto.id, updatePayload);
     }
 
     /* =========================================================
        PRIVATE METHODS
     ========================================================= */
 
+    /**
+     * Validate domain-specific business rules.
+     * Throws Error if the rule is violated.
+     */
     private validateBusinessRules(
         existing: UserEntity,
         dto: UpdateUserDTO
     ): void {
+
         // Rule 1: ADMIN accounts cannot be deactivated.
         if (existing.role === "ADMIN" && !dto.isActive) {
             throw new Error(
@@ -102,7 +145,7 @@ export class UpdateUserUseCase extends BaseUseCase<
             );
         }
 
-        // Rule 3: TEACHER must always have teacherRole.
+        // Rule 3: TEACHER must always have a teacherRole.
         if (
             dto.role === "TEACHER" &&
             dto.teacherRole == null
@@ -113,6 +156,16 @@ export class UpdateUserUseCase extends BaseUseCase<
         }
     }
 
+    /**
+     * Resolve password update logic.
+     *
+     * If a password is provided:
+     *   - Hash new password
+     *   - Mark mustChangePassword = true
+     *
+     * If not provided:
+     *   - Keep an existing password
+     */
     private async resolvePassword(
         existing: UserEntity,
         dto: UpdateUserDTO
@@ -120,6 +173,7 @@ export class UpdateUserUseCase extends BaseUseCase<
         hashedPassword: string;
         passwordChanged: boolean;
     }> {
+
         const newPassword = dto.password?.trim();
 
         if (newPassword) {
@@ -136,4 +190,3 @@ export class UpdateUserUseCase extends BaseUseCase<
         };
     }
 }
-

@@ -91,14 +91,8 @@ export interface UserInterface {
         total: number;
     }>;
 
-    /**
-     * 🔥 Advanced B-Tree Friendly Search
-     */
     search(params: UserSearchParams): Promise<UserSearchResult>;
 
-    /**
-     * Dashboard statistics
-     */
     getUserStats(): Promise<{
         totalActiveUsers: number;
         totalStudentUsers: number;
