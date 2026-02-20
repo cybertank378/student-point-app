@@ -12,8 +12,8 @@ import {NextRequest} from "next/server";
  * Endpoint: /api/teachers/:id
  *
  * Supported Methods:
- * - GET    → Get teacher by ID
- * - PUT    → Update teacher
+ * - GET → Get teacher by ID
+ * - PUT → Update teacher
  * - DELETE → Delete teacher
  */
 
@@ -31,9 +31,9 @@ const controller = createTeacherController();
  */
 export async function GET(
     _: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    {params}: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params;
+    const {id} = await params;
 
     return controller.getById(id);
 }
@@ -52,14 +52,13 @@ export async function GET(
  * 400 → Validation error
  */
 export async function PATCH(
-    request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
-) {
-    const { id } = await params;
+    request: Request,
+    context: { params: Promise<{ id: string }> }
+): Promise<Response> {
+    const { id } = await context.params;
 
     return controller.update(id, request);
 }
-
 /**
  * ============================================================
  * DELETE /api/teachers/:id
@@ -72,9 +71,9 @@ export async function PATCH(
  */
 export async function DELETE(
     _: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    {params}: { params: Promise<{ id: string }> }
 ) {
-    const { id } = await params;
+    const {id} = await params;
 
     return controller.delete(id);
 }

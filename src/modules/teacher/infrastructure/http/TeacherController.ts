@@ -1,5 +1,5 @@
 //Files: src/modules/teacher/infrastructure/http/http/TeacherController.ts
-import { NextRequest, NextResponse } from "next/server";
+
 import type { TeacherService } from "@/modules/teacher/application/services/TeacherService";
 
 import {
@@ -14,32 +14,18 @@ import {
 
 import { handleZodError } from "@/modules/shared/errors/handleZodError";
 import { TeacherPresenter } from "@/modules/teacher/presentation/presenters/TeacherPresenter";
-import {HttpResultHandler} from "@/modules/shared/http/HttpResultHandler";
-import {getQueryParam} from "@/modules/shared/http/QueryParams";
-import {serverLog} from "@/libs/serverLogger";
+import { HttpResultHandler } from "@/modules/shared/http/HttpResultHandler";
+import { getQueryParam } from "@/modules/shared/http/QueryParams";
+import { Result } from "@/modules/shared/core/Result";
 
-/**
- * ============================================================
- * TEACHER CONTROLLER
- * ============================================================
- *
- * HTTP Adapter untuk modul Teacher.
- *
- * Tanggung Jawab:
- * - Validasi request (Zod)
- * - Delegasi ke TeacherService
- * - Transform entity → response (Presenter)
- *
- * Tidak mengandung business logic.
- */
 export class TeacherController {
     constructor(private readonly service: TeacherService) {}
 
     /* ==========================================================
-       LIST (PAGINATION)
-       ========================================================== */
+       LIST
+    ========================================================== */
 
-    async list(request: NextRequest) {
+    async list(request: Request): Promise<Response> {
         try {
             const { searchParams } = new URL(request.url);
 
@@ -57,17 +43,15 @@ export class TeacherController {
 
             const value = result.getValue();
 
-            return NextResponse.json(
-                {
-                    data: TeacherPresenter.toResponseList(value.data),
-                    total: value.total,
-                    page: value.page,
-                    limit: value.limit,
-                    totalPages: Math.ceil(value.total / value.limit),
-                },
-                { status: 200 }
-            );
+            const transformed = {
+                data: TeacherPresenter.toResponseList(value.data),
+                total: value.total,
+                page: value.page,
+                limit: value.limit,
+                totalPages: Math.ceil(value.total / value.limit),
+            };
 
+            return HttpResultHandler.handle(Result.ok(transformed));
         } catch (error) {
             return handleZodError(error);
         }
@@ -75,42 +59,40 @@ export class TeacherController {
 
     /* ==========================================================
        GET BY ID
-       ========================================================== */
+    ========================================================== */
 
-    async getById(id: string) {
-
-        serverLog("ID:", id);
-
+    async getById(id: string): Promise<Response> {
         const result = await this.service.getById(id);
 
         if (!result.isSuccess) {
             return HttpResultHandler.handle(result);
         }
 
-        return NextResponse.json(
-            TeacherPresenter.toResponse(result.getValue()),
-            { status: 200 }
+        const transformed = TeacherPresenter.toResponse(
+            result.getValue()
         );
+
+        return HttpResultHandler.handle(Result.ok(transformed));
     }
 
     /* ==========================================================
        CREATE
-       ========================================================== */
+    ========================================================== */
 
-    async create(req: NextRequest) {
+    async create(req: Request): Promise<Response> {
         try {
             const body = CreateTeacherSchema.parse(await req.json());
             const result = await this.service.create(body);
 
             if (!result.isSuccess) {
-                return HttpResultHandler.handle(result);
+                return HttpResultHandler.handle(result, 400);
             }
 
-            return NextResponse.json(
-                TeacherPresenter.toResponse(result.getValue()),
-                { status: 201 }
+            const transformed = TeacherPresenter.toResponse(
+                result.getValue()
             );
 
+            return HttpResultHandler.handle(Result.ok(transformed), 201);
         } catch (error) {
             return handleZodError(error);
         }
@@ -118,9 +100,9 @@ export class TeacherController {
 
     /* ==========================================================
        UPDATE
-       ========================================================== */
+    ========================================================== */
 
-    async update(id: string, req: NextRequest) {
+    async update(id: string, req: Request): Promise<Response> {
         try {
             const body = UpdateTeacherSchema.parse(await req.json());
             const result = await this.service.update({ id, ...body });
@@ -129,11 +111,11 @@ export class TeacherController {
                 return HttpResultHandler.handle(result);
             }
 
-            return NextResponse.json(
-                TeacherPresenter.toResponse(result.getValue()),
-                { status: 200 }
+            const transformed = TeacherPresenter.toResponse(
+                result.getValue()
             );
 
+            return HttpResultHandler.handle(Result.ok(transformed));
         } catch (error) {
             return handleZodError(error);
         }
@@ -141,18 +123,18 @@ export class TeacherController {
 
     /* ==========================================================
        DELETE
-       ========================================================== */
+    ========================================================== */
 
-    async delete(id: string) {
+    async delete(id: string): Promise<Response> {
         const result = await this.service.delete(id);
         return HttpResultHandler.handle(result);
     }
 
     /* ==========================================================
        ASSIGN ROLE
-       ========================================================== */
+    ========================================================== */
 
-    async assignRole(id: string, req: NextRequest) {
+    async assignRole(id: string, req: Request): Promise<Response> {
         try {
             const body = AssignTeacherRoleSchema.parse(await req.json());
 
@@ -165,11 +147,11 @@ export class TeacherController {
                 return HttpResultHandler.handle(result);
             }
 
-            return NextResponse.json(
-                TeacherPresenter.toResponse(result.getValue()),
-                { status: 200 }
+            const transformed = TeacherPresenter.toResponse(
+                result.getValue()
             );
 
+            return HttpResultHandler.handle(Result.ok(transformed));
         } catch (error) {
             return handleZodError(error);
         }
@@ -177,15 +159,14 @@ export class TeacherController {
 
     /* ==========================================================
        ASSIGN HOMEROOM
-       ========================================================== */
+    ========================================================== */
 
-    async assignHomeroom(req: NextRequest) {
+    async assignHomeroom(req: Request): Promise<Response> {
         try {
             const dto = AssignHomeroomSchema.parse(await req.json());
             const result = await this.service.assignHomeroom(dto);
 
             return HttpResultHandler.handle(result);
-
         } catch (error) {
             return handleZodError(error);
         }
@@ -193,9 +174,9 @@ export class TeacherController {
 
     /* ==========================================================
        SEARCH
-       ========================================================== */
+    ========================================================== */
 
-    async search(request: NextRequest) {
+    async search(request: Request): Promise<Response> {
         try {
             const { searchParams } = new URL(request.url);
 
@@ -217,41 +198,34 @@ export class TeacherController {
 
             const value = result.getValue();
 
-            return NextResponse.json(
-                {
-                    data: TeacherPresenter.toResponseList(value.data),
-                    total: value.total,
-                    page: value.page,
-                    limit: value.limit,
-                },
-                { status: 200 }
-            );
+            const transformed = {
+                data: TeacherPresenter.toResponseList(value.data),
+                total: value.total,
+                page: value.page,
+                limit: value.limit,
+            };
 
+            return HttpResultHandler.handle(Result.ok(transformed));
         } catch (error) {
             return handleZodError(error);
         }
     }
 
     /* ==========================================================
-       IMPORT
-       ========================================================== */
+       IMPORT / EXPORT
+    ========================================================== */
 
-    async import(req: NextRequest) {
+    async import(req: Request): Promise<Response> {
         try {
             const body = ImportTeacherSchema.parse(await req.json());
             const result = await this.service.import(body);
             return HttpResultHandler.handle(result);
-
         } catch (error) {
             return handleZodError(error);
         }
     }
 
-    /* ==========================================================
-       EXPORT
-       ========================================================== */
-
-    async export() {
+    async export(): Promise<Response> {
         const result = await this.service.export();
         return HttpResultHandler.handle(result);
     }
