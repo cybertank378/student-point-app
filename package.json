@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "biome lint .",
     "format": "biome format --write .",
-    "build": "prisma migrate deploy  prisma generate && prisma db seed && next build",
+    "build": "prisma migrate deploy  prisma generate && next build",
     "migrate:deploy": "prisma migrate deploy",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
