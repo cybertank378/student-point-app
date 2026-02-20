@@ -4,6 +4,7 @@ import { AppError } from "@/modules/shared/errors/AppError";
 
 import type { AuthRepositoryInterface } from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
 import type { HashServiceInterface } from "@/modules/auth/domain/interfaces/HashServiceInterface";
+import {serverLog} from "@/libs/serverLogger";
 
 /**
  * ============================================================
@@ -71,6 +72,8 @@ export class ChangePasswordUseCase extends BaseUseCase<
         const { userId, oldPassword, newPassword } = request;
 
         const user = await this.repo.findById(userId);
+        serverLog("Change password attempt", { userId });
+        serverLog("Change password attempt", { userId, oldPassword, newPassword });
 
         if (!user) {
             throw AppError.notFound("User not found");

@@ -81,7 +81,7 @@ export async function proxy(req: NextRequest) {
 
   const accessToken = req.cookies.get("accessToken")?.value;
 
-  const refreshToken = req.cookies.get("refreshToken")?.value;
+  const refreshToken = req.cookies.get("refresh_token")?.value;
 
   let user: AuthPayload | null = null;
 
@@ -145,7 +145,7 @@ export async function proxy(req: NextRequest) {
       maxAge: ONE_DAY,
     });
 
-    response.cookies.set("refreshToken", refreshToken, {
+    response.cookies.set("refresh_token", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

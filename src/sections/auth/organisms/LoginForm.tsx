@@ -87,12 +87,10 @@ export default function LoginForm() {
 
             showSuccessToast("Selamat datang!");
 
-            //if (response.mustChangePassword) {
-            //    router.replace("/change-password");
-            //    return;
-            //}
-            // 🔒 Must Change Password sementara dinonaktifkan
-            router.replace("/dashboard");
+            if (response.mustChangePassword) {
+                router.replace("/change-password");
+                return;
+            }
 
             router.replace(redirectByRole(response.role));
         } catch {

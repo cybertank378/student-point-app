@@ -300,6 +300,10 @@ export const rbacConfig = {
             POST: PERMISSIONS.DASHBOARD_VIEW,
         },
 
+        "/api/auth/change-password": {
+            POST: PERMISSIONS.DASHBOARD_VIEW,
+        },
+
     } as const,
 
     /* --------------------------------------------------------

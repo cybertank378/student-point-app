@@ -1,5 +1,6 @@
-import LoginSection from "@/sections/auth/pages/LoginSection";
+//Files: src/app/(public)/login/page.tsx
+import AuthSection from "@/sections/auth/pages/AuthSection";
 
 export default function LoginPage() {
-	return <LoginSection />;
+    return <AuthSection mode="login" />;
 }

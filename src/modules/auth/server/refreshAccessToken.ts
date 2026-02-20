@@ -16,7 +16,7 @@ import { BcryptService } from "@/modules/auth/application/service/BcryptService"
 
 export async function refreshAccessToken(): Promise<AuthPayload | null> {
   const cookieStore = await cookies();
-  const refreshToken = cookieStore.get("refreshToken")?.value;
+  const refreshToken = cookieStore.get("refresh_token")?.value;
 
   if (!refreshToken) {
     serverLog("Refresh → No refresh token cookie");
