@@ -9,6 +9,7 @@ export const TeacherPresenter = {
             nip: teacher.nip,
             nuptk: teacher.nuptk,
             nrk: teacher.nrk,
+            nrg: teacher.nrg,
 
             name: teacher.name,
             gender: teacher.gender,
@@ -31,6 +32,7 @@ export const TeacherPresenter = {
             roles: teacher.roles,
 
             homeroomClassIds: teacher.homeroomClassIds,
+            isPns: teacher.isPns
         };
     },
 

@@ -1,3 +1,5 @@
+//Files: src/modules/shared/core/Result.ts
+
 /**
  * ============================================================
  * RESULT PATTERN

@@ -75,13 +75,15 @@ export type UserWithRelations = Prisma.UserGetPayload<{
                 name: true;
                 nip: true;
                 nrk: true;
+                nuptk: true;
+                nrg: true;
             };
         };
     };
 }>;
 
 /**
- * Maps Prisma User model to Domain UserEntity.
+ * Maps a Prisma User model to Domain UserEntity.
  */
 export const UserMapper = {
     toDomain(user: UserWithRelations): UserEntity {
@@ -148,6 +150,8 @@ export const UserMapper = {
                     name: user.teacher.name,
                     nip: user.teacher.nip,
                     nrk: user.teacher.nrk,
+                    nuptk: user.teacher.nuptk,
+                    nrg: user.teacher.nrg
                 }
                 : null,
             createdAt: user.createdAt,

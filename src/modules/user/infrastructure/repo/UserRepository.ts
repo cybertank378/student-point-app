@@ -104,6 +104,8 @@ const userSelect = {
             name: true,
             nip: true,
             nrk: true,
+            nuptk: true,
+            nrg: true,
         },
     },
 } satisfies Prisma.UserSelect;
@@ -135,7 +137,7 @@ export class UserRepository implements UserInterface {
 
     /**
      * Retrieve a single user by unique ID.
-     * Returns null if user is not found.
+     * Returns null if the user is not found.
      */
     async findById(id: string): Promise<UserEntity | null> {
         const user = await prisma.user.findUnique({

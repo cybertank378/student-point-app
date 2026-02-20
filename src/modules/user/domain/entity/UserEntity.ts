@@ -11,33 +11,13 @@ export interface UserEntity {
     id: string;
     username: string;
     password: string;
-
-    /**
-     * Optional profile image
-     */
     image?: string | null;
-
-    /**
-     * Primary system role (ADMIN | STUDENT | PARENT | TEACHER)
-     */
     role: UserRole;
-
-    /**
-     * Secondary role if user is TEACHER
-     * (e.g. SUBJECT_TEACHER, HOMEROOM, etc.)
-     */
     teacherRole?: TeacherRole | null;
 
-    /**
-     * Foreign keys to profile tables
-     */
     studentId?: string | null;
     parentId?: string | null;
     teacherId?: string | null; // ✅ NEW (added)
-
-    /**
-     * Security fields
-     */
     isActive: boolean;
     version: number;
     lockUntil?: Date | null;
@@ -81,17 +61,10 @@ export interface UserEntity {
     teacher?: {
         id: string;
         name: string;
-        /**
-         * Teacher identification number.
-         * Nullable because not all teachers have NIP.
-         */
         nip: string | null;
-
-        /**
-         * Regional teacher number.
-         * Nullable depending on employment type.
-         */
         nrk: string | null;
+        nuptk: string | null;
+        nrg: number | null;
     } | null;
 
     createdAt: Date;

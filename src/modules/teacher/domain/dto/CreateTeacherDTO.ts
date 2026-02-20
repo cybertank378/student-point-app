@@ -33,4 +33,6 @@ export interface CreateTeacherDTO {
 
     roles: TeacherRole[];
     isPns:  boolean;
+
+    homeroomClassId?: string | null;
 }

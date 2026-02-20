@@ -1,60 +1,94 @@
-//Files: src/modules/user/infrastructure/http/UploadController.ts
+// Files: src/modules/user/infrastructure/http/UploadController.ts
 
-import { NextResponse } from "next/server";
+import { HttpResultHandler } from "@/modules/shared/http/HttpResultHandler";
 import type { UserService } from "@/modules/user/application/services/UserServices";
-import {serverLog} from "@/libs/serverLogger";
+import type { UploadUserImageRequest } from "@/modules/user/application/usecase/UploadUserImageUseCase";
 
 /**
- * =========================================================
- * UploadController
- * =========================================================
+ * ============================================================
+ * UPLOAD CONTROLLER
+ * ============================================================
  *
- * Responsible for:
- * - Parsing multipart form
- * - Validating file existence
- * - Delegating to UserService
+ * HTTP Adapter for handling user image upload.
+ *
+ * ------------------------------------------------------------
+ * RESPONSIBILITIES
+ * ------------------------------------------------------------
+ * 1. Parse multipart/form-data request
+ * 2. Perform HTTP-level validation only
+ * 3. Delegate execution to the Application Layer (UserService)
+ * 4. Standardize HTTP response via HttpResultHandler
+ *
+ * ------------------------------------------------------------
+ * ARCHITECTURE PRINCIPLES
+ * ------------------------------------------------------------
+ * - No business logic inside controller
+ * - No database access
+ * - No filesystem access
+ * - No Result. Fail usage here
+ * - Business validation handled in UseCase
+ * - Error wrapping handled by BaseUseCase
+ *
+ * This class is strictly an HTTP transport adapter.
+ * ============================================================
  */
 export class UploadController {
     constructor(
         private readonly userService: UserService
     ) {}
 
+    /**
+     * Handle upload request.
+     *
+     * @param req     Incoming HTTP request (multipart/form-data)
+     * @param userId  Authenticated user ID (from auth middleware)
+     *
+     * Flow:
+     * 1. Extract file from formData
+     * 2. Validate transport-level requirements
+     * 3. Call UserService
+     * 4. Return standardized HTTP response
+     */
     async upload(req: Request, userId: string) {
-        try {
-            const formData = await req.formData();
-            const file = formData.get("file") as File | null;
 
-            if (!file) {
-                return NextResponse.json(
-                    { message: "File tidak ditemukan." },
-                    { status: 400 }
-                );
-            }
+        /* =========================================================
+           1️⃣ Parse multipart form data
+        ========================================================= */
 
-            const result =
-                await this.userService.uploadUserImage(
-                    userId,
-                    file
-                );
+        const formData = await req.formData();
+        const file = formData.get("file") as File | null;
 
-            if (result.isFailure) {
-                return NextResponse.json(
-                    { message: result.getError() },
-                    { status: 400 }
-                );
-            }
+        /* =========================================================
+           2️⃣ HTTP-Level Validation
+           (Transport validation only, not business rule)
+        ========================================================= */
 
-            return NextResponse.json(
-                result.getValue(),
-                { status: 200 }
-            );
-        } catch (error) {
-            serverLog("UPLOAD CONTROLLER ERROR:", error);
-            return NextResponse.json(
-                { message: "Gagal upload file." },
-                { status: 500 }
+        if (!file) {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    message: "File tidak ditemukan.",
+                }),
+                { status: 400 }
             );
         }
+
+        /* =========================================================
+           3️⃣ Delegate to Application Layer
+        ========================================================= */
+
+        const request: UploadUserImageRequest = {
+            userId,
+            file,
+        };
+
+        const result =
+            await this.userService.uploadUserImage(request);
+
+        /* =========================================================
+           4️⃣ Standardized HTTP Response
+        ========================================================= */
+
+        return HttpResultHandler.handle(result);
     }
 }
-

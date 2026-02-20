@@ -14,30 +14,14 @@ import type {
 import { Teacher } from "@/modules/teacher/domain/entity/Teacher";
 import { TeacherMapper } from "@/modules/teacher/domain/mapper/TeacherMapper";
 import { BasePaginationParams } from "@/modules/shared/http/pagination/BasePagination";
+import {
+    buildCreatePayload,
+    buildOrderBy,
+    buildUpdatePayload,
+    teacherInclude
+} from "@/modules/student/domain/mapper/PayloadBuilder";
 
-/**
- * ============================================================
- * RELATION INCLUDE CONFIG (Single Source of Truth)
- * ============================================================
- */
-const teacherInclude = {
-    religion: true,
-    homeroomOf: true,
-} satisfies Prisma.TeacherInclude;
 
-/**
- * All valid sortable fields derived directly from Prisma.
- * Fully type-safe and auto-updated if schema changes.
- */
-type TeacherOrderableField =
-    keyof Prisma.TeacherOrderByWithRelationInput;
-
-/**
- * Normalize nullable values for Prisma payload.
- */
-const normalizeNullable = <T>(
-    value: T | null | undefined
-): T | undefined => value ?? undefined;
 
 /**
  * ============================================================
@@ -53,69 +37,13 @@ const normalizeNullable = <T>(
 export class TeacherRepository implements TeacherInterface {
 
     /* =========================================================
-       PRIVATE: Build Persistence Payload
-    ========================================================= */
-    /**
-     * Build Prisma-compatible payload from DTO.
-     * Single reusable source of truth.
-     */
-    private buildPayload(dto: CreateTeacherDTO | UpdateTeacherDTO): Prisma.TeacherUncheckedCreateInput {
-        return {
-            nip: normalizeNullable(dto.nip),
-            nuptk: normalizeNullable(dto.nuptk),
-            nrk: normalizeNullable(dto.nrk),
-            nrg: normalizeNullable(dto.nrg),
-
-            name: dto.name,
-            gender: dto.gender,
-            religionCode: dto.religionCode,
-
-            phone: normalizeNullable(dto.phone),
-            email: normalizeNullable(dto.email),
-            photo: normalizeNullable(dto.photo),
-
-            educationLevel: dto.educationLevel,
-            major: normalizeNullable(dto.major),
-            graduationYear: dto.graduationYear,
-
-            birthPlace: dto.birthPlace,
-            birthDate: dto.birthDate,
-
-            civilServantRank: normalizeNullable(dto.civilServantRank),
-
-            roles: dto.roles,
-            isPns: dto.isPns,
-        };
-    }
-
-    /* =========================================================
-       PRIVATE: Build OrderBy
-    ========================================================= */
-    /**
-     * Safely build Prisma orderBy object.
-     * Prevents invalid dynamic key injection.
-     */
-    private buildOrderBy(
-        sortBy?: TeacherOrderableField,
-        sortOrder: Prisma.SortOrder = "asc"
-    ): Prisma.TeacherOrderByWithRelationInput {
-        if (!sortBy) {
-            return { name: "asc" };
-        }
-
-        return {
-            [sortBy]: sortOrder,
-        };
-    }
-
-    /* =========================================================
        FIND ALL (Paginated + Role Filter)
     ========================================================= */
     /**
      * Retrieve paginated teacher list.
      * Supports:
      * - B-Tree optimized prefix search
-     * - Role filter (array contains)
+     * - Role filter (an array contains)
      */
     async findAll(
         params: BasePaginationParams & { role?: string }
@@ -208,7 +136,7 @@ export class TeacherRepository implements TeacherInterface {
      */
     async create(dto: CreateTeacherDTO): Promise<Teacher> {
         const created = await prisma.teacher.create({
-            data: this.buildPayload(dto),
+            data: buildCreatePayload(dto),
             include: teacherInclude,
         });
 
@@ -227,11 +155,12 @@ export class TeacherRepository implements TeacherInterface {
 
             const updated = await tx.teacher.update({
                 where: { id: dto.id },
-                data: this.buildPayload(dto),
+                data: buildUpdatePayload(dto),
                 include: teacherInclude,
             });
 
             if (dto.homeroomClassId !== undefined) {
+
                 await tx.class.updateMany({
                     where: { homeroomTeacherId: dto.id },
                     data: { homeroomTeacherId: null },
@@ -331,7 +260,7 @@ export class TeacherRepository implements TeacherInterface {
                 where,
                 skip,
                 take: params.limit,
-                orderBy: this.buildOrderBy(
+                orderBy: buildOrderBy(
                     params.sortBy,
                     params.sortOrder
                 ),
@@ -359,7 +288,7 @@ export class TeacherRepository implements TeacherInterface {
         if (!data.length) return;
 
         await prisma.teacher.createMany({
-            data: data.map((dto) => this.buildPayload(dto)),
+            data: data.map((dto) => buildCreatePayload(dto)),
             skipDuplicates: true,
         });
     }

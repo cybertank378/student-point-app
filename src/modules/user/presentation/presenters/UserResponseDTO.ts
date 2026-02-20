@@ -25,6 +25,10 @@ export interface UserResponseDTO {
         id: string;
         name: string;
         nip: string;
+        nrp: string;
+        nuptk: string;
+        nrk: string;
+        nrg: number;
     } | null;
 
     createdAt: Date;
