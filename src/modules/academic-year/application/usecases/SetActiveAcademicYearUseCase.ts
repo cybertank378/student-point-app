@@ -1,39 +1,57 @@
 //Files: src/modules/academic-year/application/usecases/SetActiveAcademicYearUseCase.ts
-import { Result } from "@/modules/shared/core/Result";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import type { AcademicYearInterface } from "@/modules/academic-year/domain/interfaces/AcademicYearInterface";
 import { serverLog } from "@/libs/serverLogger";
 
-export class SetActiveAcademicYearUseCase {
+/**
+ * ============================================================
+ * SET ACTIVE ACADEMIC YEAR USE CASE
+ * ============================================================
+ *
+ * Responsibility:
+ * - Validate academic year existence
+ * - Activate selected academic year
+ *
+ * Business Rules:
+ * - Academic year must exist
+ * - Only existing academic year can be activated
+ *
+ * This use case relies on:
+ * - BaseUseCase for standardized Result handling
+ * - Repository abstraction (AcademicYearInterface)
+ *
+ * Result:
+ * - Success → void
+ * - Failure → meaningful error message
+ */
+export class SetActiveAcademicYearUseCase
+    extends BaseUseCase<string, void>
+{
     constructor(
         private readonly repo: AcademicYearInterface
-    ) {}
+    ) {
+        super();
+    }
 
-    async execute(id: string): Promise<Result<void>> {
-        try {
-            serverLog("SET ACTIVE CALLED WITH ID:", id);
+    /**
+     * ============================================================
+     * BUSINESS LOGIC
+     * ============================================================
+     *
+     * @param id - Academic year ID
+     */
+    protected async handle(id: string): Promise<void> {
+        serverLog("SET_ACTIVE_ACADEMIC_YEAR_REQUEST", { id });
 
-            const existing = await this.repo.findById(id);
+        const academicYear = await this.repo.findById(id);
 
-            serverLog("FIND RESULT:", existing);
-
-            if (!existing) {
-                serverLog("ACADEMIC YEAR NOT FOUND:", id);
-                return Result.fail("Tahun ajaran tidak ditemukan.");
-            }
-
-            await this.repo.setActive(id);
-
-            serverLog("ACADEMIC YEAR ACTIVATED:", id);
-
-            return Result.ok();
-        } catch (error) {
-            serverLog("SET ACTIVE ERROR:", error);
-
-            return Result.fail(
-                "Gagal mengaktifkan tahun ajaran."
-            );
+        if (!academicYear) {
+            serverLog("ACADEMIC_YEAR_NOT_FOUND", { id });
+            throw new Error("Tahun ajaran tidak ditemukan.");
         }
+
+        await this.repo.setActive(id);
+
+        serverLog("ACADEMIC_YEAR_ACTIVATED", { id });
     }
 }
-
-

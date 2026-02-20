@@ -1,25 +1,42 @@
 //Files: src/modules/religion/application/usecase/CreateReligionUseCase.ts
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import { AppError } from "@/modules/shared/errors/AppError";
 
-import { Result } from "@/modules/shared/core/Result";
-import type { Religion } from "@/modules/religion/domain/entity/Religion";
 import type { CreateReligionDTO } from "@/modules/religion/domain/dto/CreateReligionDTO";
-import type {ReligionInterface} from "@/modules/religion/domain/interfaces/ReligionInterface";
+import type { Religion } from "@/modules/religion/domain/entity/Religion";
+import type { ReligionInterface } from "@/modules/religion/domain/interfaces/ReligionInterface";
 
-export class CreateReligionUseCase {
-    constructor(
-        private readonly repo: ReligionInterface,
-    ) {}
+/**
+ * ============================================================
+ * CREATE RELIGION USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Create a new Religion entity.
+ *
+ * Business Rules:
+ * - Religion code must be unique.
+ *
+ * Architecture:
+ * - Extends BaseUseCase (standardized Result handling)
+ * - Uses AppError for structured error handling
+ * - No manual Result wrapping
+ */
+export class CreateReligionUseCase extends BaseUseCase<
+    CreateReligionDTO,
+    Religion
+> {
+    constructor(private readonly repo: ReligionInterface) {
+        super();
+    }
 
-    async execute(
-        dto: CreateReligionDTO,
-    ): Promise<Result<Religion>> {
-
+    protected async handle(dto: CreateReligionDTO): Promise<Religion> {
         const exists = await this.repo.findByCode(dto.kode);
+
         if (exists) {
-            return Result.fail("Kode agama sudah terdaftar");
+            throw AppError.conflict("Kode agama sudah terdaftar");
         }
 
-        const religion = await this.repo.create(dto);
-        return Result.ok(religion);
+        return this.repo.create(dto);
     }
 }

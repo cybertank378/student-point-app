@@ -1,11 +1,11 @@
 //Files: src/modules/auth/application/usecase/LoginUseCase.ts
-
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import { SEVEN_DAYS } from "@/libs/utils";
 import { serverLog } from "@/libs/serverLogger";
 
 import {
-  canLogin,
-  calculateLock,
+    canLogin,
+    calculateLock,
 } from "@/modules/auth/domain/rules/AccountLockRule";
 
 import type { AuthRepositoryInterface } from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
@@ -13,116 +13,155 @@ import type { HashServiceInterface } from "@/modules/auth/domain/interfaces/Hash
 import type { TokenServiceInterface } from "@/modules/auth/domain/interfaces/TokenServiceInterface";
 
 import {
-  AccountLockedError,
-  InvalidCredentialsError,
+    AccountLockedError,
+    InvalidCredentialsError,
 } from "@/modules/auth/domain/error/AuthErrors";
 
-export class LoginUseCase {
-  constructor(
-    private readonly repo: AuthRepositoryInterface,
-    private readonly hash: HashServiceInterface,
-    private readonly token: TokenServiceInterface,
-  ) {}
+/**
+ * ============================================================
+ * LOGIN USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Authenticate user credentials
+ * - Apply account lock rule
+ * - Generate JWT tokens
+ * - Persist refresh session
+ *
+ * Architecture:
+ * - Extends BaseUseCase (standardized Result handling)
+ * - Uses domain errors for authentication failures
+ * - No manual Result wrapping
+ *
+ * Error Strategy:
+ * - Invalid credentials → InvalidCredentialsError
+ * - Account locked → AccountLockedError
+ * - Other errors → handled by BaseUseCase
+ */
 
-  async execute(
-    username: string,
-    password: string,
-    ip: string | null,
-    userAgent: string | null,
-  ) {
-    serverLog("Login attempt", { username, ip, userAgent });
+export interface LoginRequest {
+    username: string;
+    password: string;
+    ip: string | null;
+    userAgent: string | null;
+}
 
-    const user = await this.repo.findByUsername(username);
+export interface LoginResponse {
+    accessToken: string;
+    refreshToken: string;
+    role: string;
+    mustChangePassword: boolean;
+}
 
-    if (!user) {
-      serverLog("Login failed - user not found", { username, ip });
-      throw new InvalidCredentialsError();
+export class LoginUseCase extends BaseUseCase<
+    LoginRequest,
+    LoginResponse
+> {
+    constructor(
+        private readonly repo: AuthRepositoryInterface,
+        private readonly hash: HashServiceInterface,
+        private readonly token: TokenServiceInterface
+    ) {
+        super();
     }
 
-    /* =====================================================
+    /**
+     * Core authentication logic.
+     */
+    protected async handle(
+        request: LoginRequest
+    ): Promise<LoginResponse> {
+        const { username, password, ip, userAgent } = request;
+
+        serverLog("Login attempt", { username, ip, userAgent });
+
+        const user = await this.repo.findByUsername(username);
+
+        if (!user) {
+            serverLog("Login failed - user not found", { username, ip });
+            throw new InvalidCredentialsError();
+        }
+
+        /* =====================================================
            ACCOUNT LOCK CHECK (Domain Rule)
         ===================================================== */
 
-    try {
-      canLogin(user);
-    } catch {
-      serverLog("Login blocked - account locked", {
-        userId: user.id,
-        lockedUntil: user.lockUntil,
-      });
+        try {
+            canLogin(user);
+        } catch {
+            serverLog("Login blocked - account locked", {
+                userId: user.id,
+                lockedUntil: user.lockUntil,
+            });
 
-      throw new AccountLockedError(user.lockUntil!);
-    }
+            throw new AccountLockedError(user.lockUntil!);
+        }
 
-    /* =====================================================
+        /* =====================================================
            PASSWORD VALIDATION
         ===================================================== */
 
-    const valid = await this.hash.compare(password, user.password);
+        const valid = await this.hash.compare(password, user.password);
 
-    if (!valid) {
-      // 1️⃣ Increment counter
-      await this.repo.incrementFailedAttempts(user.id);
+        if (!valid) {
+            await this.repo.incrementFailedAttempts(user.id);
 
-      // 2️⃣ Hitung lock time
-      const failedAttempts = user.failedAttempts + 1;
-      const lockUntil = calculateLock(failedAttempts);
+            const failedAttempts = user.failedAttempts + 1;
+            const lockUntil = calculateLock(failedAttempts);
 
-      // 3️⃣ Lock account jika perlu
-      if (lockUntil) {
-        await this.repo.lockAccount(user.id, lockUntil);
-      }
+            if (lockUntil) {
+                await this.repo.lockAccount(user.id, lockUntil);
+            }
 
-      await this.repo.createLoginAudit(null, username, false, ip, userAgent);
+            await this.repo.createLoginAudit(null, username, false, ip, userAgent);
 
-      serverLog("Login failed - invalid password", {
-        userId: user.id,
-        ip,
-      });
+            serverLog("Login failed - invalid password", {
+                userId: user.id,
+                ip,
+            });
 
-      throw new InvalidCredentialsError();
-    }
+            throw new InvalidCredentialsError();
+        }
 
-    /* =====================================================
+        /* =====================================================
            SUCCESS LOGIN
         ===================================================== */
 
-    await this.repo.resetFailedAttempts(user.id);
+        await this.repo.resetFailedAttempts(user.id);
 
-    const payload = {
-      sub: user.id,
-      username: user.username,
-      role: user.role,
-      teacherRole: user.teacherRole,
-    };
+        const payload = {
+            sub: user.id,
+            username: user.username,
+            role: user.role,
+            teacherRole: user.teacherRole,
+        };
 
-    const accessToken = await this.token.generateAccessToken(payload);
+        const accessToken = await this.token.generateAccessToken(payload);
+        const refreshToken = await this.token.generateRefreshToken(payload);
 
-    const refreshToken = await this.token.generateRefreshToken(payload);
+        const hashRefresh = await this.hash.hash(refreshToken);
 
-    const hashRefresh = await this.hash.hash(refreshToken);
+        await this.repo.saveSession(
+            user.id,
+            hashRefresh,
+            new Date(Date.now() + SEVEN_DAYS)
+        );
 
-    await this.repo.saveSession(
-      user.id,
-      hashRefresh,
-      new Date(Date.now() + SEVEN_DAYS),
-    );
+        await this.repo.createLoginAudit(user.id, username, true, ip, userAgent);
 
-    await this.repo.createLoginAudit(user.id, username, true, ip, userAgent);
+        serverLog("Login success", {
+            userId: user.id,
+            username: user.username,
+            role: user.role,
+            teacherRole: user.teacherRole,
+            ip,
+        });
 
-    serverLog("Login success", {
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-      teacherRole: user.teacherRole,
-      ip,
-    });
-
-    return {
-      accessToken,
-      refreshToken,
-      role: user.role,
-      mustChangePassword: user.mustChangePassword,
-    };
-  }
+        return {
+            accessToken,
+            refreshToken,
+            role: user.role,
+            mustChangePassword: user.mustChangePassword,
+        };
+    }
 }

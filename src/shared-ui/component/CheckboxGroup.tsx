@@ -1,19 +1,32 @@
 //Files: src/shared-ui/component/CheckboxGroup.tsx
+// Files: src/shared-ui/component/CheckboxGroup.tsx
 
 import Checkbox from "@/shared-ui/component/Checkbox";
+import clsx from "clsx";
 
-interface Props {
-    options: { label: string; value: string }[];
-    value?: string[];
-    onChange?: (value: string[]) => void;
+type Direction = "vertical" | "horizontal";
+
+interface Option<T extends string> {
+    label: string;
+    value: T;
 }
 
-export default function CheckboxGroup({
-                                          options,
-                                          value = [],
-                                          onChange,
-                                      }: Props) {
-    const handleChange = (val: string) => {
+interface Props<T extends string> {
+    options: Option<T>[];
+    value?: T[];
+    onChange?: (value: T[]) => void;
+    direction?: Direction;
+    className?: string;
+}
+
+export default function CheckboxGroup<T extends string>({
+                                                            options,
+                                                            value = [],
+                                                            onChange,
+                                                            direction = "vertical",
+                                                            className,
+                                                        }: Props<T>) {
+    const handleChange = (val: T) => {
         if (!onChange) return;
 
         if (value.includes(val)) {
@@ -24,7 +37,14 @@ export default function CheckboxGroup({
     };
 
     return (
-        <div className="flex flex-col gap-2">
+        <div
+            className={clsx(
+                direction === "vertical"
+                    ? "flex flex-col gap-2"
+                    : "flex flex-wrap gap-4",
+                className
+            )}
+        >
             {options.map((opt) => (
                 <Checkbox
                     key={opt.value}
@@ -36,3 +56,4 @@ export default function CheckboxGroup({
         </div>
     );
 }
+

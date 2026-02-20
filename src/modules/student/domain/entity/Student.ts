@@ -12,7 +12,7 @@ export class Student {
     public nickname: string | null,
 
     public gender: Gender,
-    public religionId: string,
+    public religionCode: string,
     public rombelId: string,
 
     public status: StudentStatus,

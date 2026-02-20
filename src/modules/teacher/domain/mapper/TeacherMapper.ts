@@ -1,36 +1,55 @@
 //Files: src/modules/teacher/domain/mapper/TeacherMapper.ts
-import type {
-  Teacher as PrismaTeacher,
-  Class as PrismaClass,
-} from "@/generated/prisma";
 import { Teacher } from "@/modules/teacher/domain/entity/Teacher";
+import type { Prisma } from "@/generated/prisma";
+
+type TeacherRow = Prisma.TeacherGetPayload<{
+    include: {
+        religion: true;
+        homeroomOf: true;
+    };
+}>;
 
 /**
- * Prisma type dengan relation homeroom
+ * ============================================================
+ * TEACHER MAPPER
+ * ============================================================
+ *
+ * Responsible for transforming persistence model
+ * (Prisma) → Domain Entity.
  */
-type TeacherWithHomeroom = PrismaTeacher & {
-  homeroomOf: PrismaClass | null;
-};
+export class TeacherMapper {
+    /**
+     * Convert single Prisma row into Domain Entity.
+     */
+    static toDomain(row: TeacherRow): Teacher {
+        return new Teacher(
+            row.id,
+            row.nip,
+            row.nuptk,
+            row.nrk,
+            row.nrg,
+            row.name,
+            row.gender,
+            row.religionCode,
+            row.phone,
+            row.email,
+            row.photo,
+            row.educationLevel,
+            row.major,
+            row.graduationYear,
+            row.birthPlace,
+            row.birthDate,
+            row.civilServantRank,
+            row.roles,
+            row.homeroomOf.map((c) => c.id),
+            row.isPns
+        );
+    }
 
-/**
- * Mapper: Prisma → Domain
- * Tidak ada logic bisnis
- */
-export const TeacherMapper = {
-  toDomain(row: TeacherWithHomeroom): Teacher {
-    return new Teacher(
-      row.id,
-      row.userId,
-      row.nip,
-      row.name,
-      row.phone,
-      row.email,
-      row.roles,
-      row.homeroomOf?.id ?? null,
-    );
-  },
-
-  toDomainList(rows: TeacherWithHomeroom[]): Teacher[] {
-    return rows.map(TeacherMapper.toDomain);
-  },
-};
+    /**
+     * Convert multiple rows into Domain Entities.
+     */
+    static toDomainList(rows: TeacherRow[]): Teacher[] {
+        return rows.map(TeacherMapper.toDomain);
+    }
+}

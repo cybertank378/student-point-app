@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
 import { FaChevronRight } from "react-icons/fa";
 import clsx from "clsx";
+import {isRouteActive} from "@/libs/utils";
 
 interface Props {
     item: SidebarMenuItem;
@@ -26,13 +27,15 @@ export function RecursiveSidebarItem({
     const router = useRouter();
 
     const hasChildren = !!item.children?.length;
-    const isActive = item.path && pathname === item.path;
-    const isOpen = expandedIndex === index;
 
+    // ✅ ACTIVE STATE FIX
+    const isActive = isRouteActive(item.path, pathname);
+
+    const isOpen = expandedIndex === index;
     const isIconOnly = collapsed;
 
     const handleClick = () => {
-        // Icon only mode → langsung navigate
+        // Icon-only mode → langsung navigate
         if (isIconOnly && item.path) {
             router.push(item.path);
             return;
@@ -108,7 +111,7 @@ export function RecursiveSidebarItem({
                             key={child.label}
                             item={child}
                             level={level + 1}
-                            index={i}
+                            index={i} // 🔥 kembali normal
                             expandedIndex={expandedIndex}
                             setExpandedIndex={setExpandedIndex}
                             collapsed={collapsed}

@@ -1,37 +1,47 @@
 //Files: src/modules/achievement/infrastructure/http/AchievementController.ts
-
 import type { NextRequest } from "next/server";
+import { HttpResultHandler } from "@/modules/shared/http/HttpResultHandler";
 
 import type { AchievementService } from "@/modules/achievement/application/services/AchievementService";
+
 import {
     CreateAchievementSchema,
     UpdateAchievementSchema
 } from "@/modules/achievement/infrastructure/validators/achievementMaster.validator";
-import {handleZodError} from "@/modules/shared/errors/handleZodError";
 
+import { handleZodError } from "@/modules/shared/errors/handleZodError";
 
+/**
+ * ============================================================
+ * ACHIEVEMENT CONTROLLER
+ * ============================================================
+ *
+ * Responsibility:
+ * - Handle HTTP layer only
+ * - Validate request payload (Zod)
+ * - Delegate business logic to service
+ * - Convert Result<T> into HTTP response via HttpResultHandler
+ *
+ * Notes:
+ * - No business logic here
+ * - No manual Result checking
+ * - No isFailure usage
+ * - No manual Response.json branching
+ */
 export class AchievementController {
     constructor(
-        private readonly service: AchievementService,
+        private readonly service: AchievementService
     ) {}
 
     /**
      * ======================================
-     * ============ LIST (GET ALL) ===========
+     * ============ LIST (GET ALL) ==========
      * ======================================
      * GET /api/achievements-master
      */
     async getAll() {
         const result = await this.service.list();
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json(result.getValue());
+        return HttpResultHandler.handle(result);
     }
 
     /**
@@ -42,41 +52,24 @@ export class AchievementController {
      */
     async getById(id: string) {
         const result = await this.service.getById(id);
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 404 },
-            );
-        }
-
-        return Response.json(result.getValue());
+        return HttpResultHandler.handle(result);
     }
 
     /**
      * ======================================
-     * ============== CREATE ===============
+     * ============== CREATE ================
      * ======================================
      * POST /api/achievements-master
      */
     async create(req: NextRequest) {
         try {
             const body = CreateAchievementSchema.parse(
-                await req.json(),
+                await req.json()
             );
 
             const result = await this.service.create(body);
 
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
-
-            return Response.json(result.getValue(), {
-                status: 201,
-            });
+            return HttpResultHandler.handle(result, 201);
         } catch (error) {
             return handleZodError(error);
         }
@@ -84,14 +77,14 @@ export class AchievementController {
 
     /**
      * ======================================
-     * ============== UPDATE ===============
+     * ============== UPDATE ================
      * ======================================
      * PUT /api/achievements-master/:id
      */
     async update(id: string, req: NextRequest) {
         try {
             const body = UpdateAchievementSchema.parse(
-                await req.json(),
+                await req.json()
             );
 
             const result = await this.service.update({
@@ -99,14 +92,7 @@ export class AchievementController {
                 ...body,
             });
 
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
-
-            return Response.json(result.getValue());
+            return HttpResultHandler.handle(result);
         } catch (error) {
             return handleZodError(error);
         }
@@ -114,23 +100,15 @@ export class AchievementController {
 
     /**
      * ======================================
-     * ============== DELETE ===============
+     * ============== DELETE ================
      * ======================================
      * DELETE /api/achievements-master/:id
      *
-     * - SOFT DELETE
-     * - DITOLAK jika achievement sudah dipakai
+     * - Soft delete
+     * - Rejected if achievement already used
      */
     async delete(id: string) {
         const result = await this.service.delete(id);
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json({ success: true });
+        return HttpResultHandler.handle(result);
     }
 }

@@ -1,25 +1,54 @@
 //Files: src/modules/teacher/application/usecase/CreateTeacherUseCase.ts
-
-import { Result } from "@/modules/shared/core/Result";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import type { Teacher } from "@/modules/teacher/domain/entity/Teacher";
 import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
 import type { CreateTeacherDTO } from "@/modules/teacher/domain/dto/CreateTeacherDTO";
 
-export class CreateTeacherUseCase {
-    constructor(
-        private readonly repo: TeacherInterface,
-    ) {}
+/**
+ * CREATE TEACHER USE CASE
+ *
+ * Business Rules:
+ * - Minimal 1 role
+ * - BirthDate tidak boleh di masa depan
+ * - GraduationYear tidak boleh di masa depan
+ * - NIP/NUPTK/NRK harus unik
+ */
+export class CreateTeacherUseCase
+    extends BaseUseCase<CreateTeacherDTO, Teacher> {
 
-    async execute(
-        dto: CreateTeacherDTO,
-    ): Promise<Result<Teacher>> {
+    constructor(private readonly repo: TeacherInterface) {
+        super();
+    }
 
-        const exists = await this.repo.findByUserId(dto.userId);
-        if (exists) {
-            return Result.fail("AuthUser sudah terdaftar sebagai guru");
+    protected async handle(dto: CreateTeacherDTO): Promise<Teacher> {
+
+        if (!dto.roles || dto.roles.length === 0) {
+            throw new Error("Guru minimal memiliki satu role.");
         }
 
-        const teacher = await this.repo.create(dto);
-        return Result.ok(teacher);
+        const now = new Date();
+
+        if (dto.birthDate > now) {
+            throw new Error("Tanggal lahir tidak boleh di masa depan.");
+        }
+
+        if (dto.graduationYear > now.getFullYear()) {
+            throw new Error("Tahun lulus tidak boleh di masa depan.");
+        }
+
+        if (dto.nip && await this.repo.findByNip(dto.nip)) {
+            throw new Error("NIP sudah terdaftar.");
+        }
+
+        if (dto.nuptk && await this.repo.findByNuptk(dto.nuptk)) {
+            throw new Error("NUPTK sudah terdaftar.");
+        }
+
+        if (dto.nrk && await this.repo.findByNrk(dto.nrk)) {
+            throw new Error("NRK sudah terdaftar.");
+        }
+
+        return this.repo.create(dto);
     }
 }
+

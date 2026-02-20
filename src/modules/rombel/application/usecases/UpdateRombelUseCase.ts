@@ -1,25 +1,42 @@
 //Files: src/modules/rombel/application/usecases/UpdateRombelUseCase.ts
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import { AppError } from "@/modules/shared/errors/AppError";
 
-import { Result } from "@/modules/shared/core/Result";
 import type { Rombel } from "@/modules/rombel/domain/entity/Rombel";
 import type { UpdateRombelDTO } from "@/modules/rombel/domain/dto/UpdateRombelDTO";
 import type { RombelInterface } from "@/modules/rombel/domain/interfaces/RombelInterface";
 
-export class UpdateRombelUseCase {
-    constructor(
-        private readonly repo: RombelInterface,
-    ) {}
+/**
+ * ============================================================
+ * UPDATE ROMBEL USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Update existing Rombel entity.
+ *
+ * Business Rules:
+ * - Rombel must exist before update.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - Uses AppError for structured error handling
+ * - No manual Result wrapping
+ */
+export class UpdateRombelUseCase extends BaseUseCase<
+    UpdateRombelDTO,
+    Rombel
+> {
+    constructor(private readonly repo: RombelInterface) {
+        super();
+    }
 
-    async execute(
-        dto: UpdateRombelDTO,
-    ): Promise<Result<Rombel>> {
+    protected async handle(dto: UpdateRombelDTO): Promise<Rombel> {
         const existing = await this.repo.findById(dto.id);
 
         if (!existing) {
-            return Result.fail("Rombel not found");
+            throw AppError.notFound("Rombel not found");
         }
 
-        const updated = await this.repo.update(dto);
-        return Result.ok(updated);
+        return this.repo.update(dto);
     }
 }

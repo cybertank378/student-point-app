@@ -64,6 +64,46 @@ enum ViolationActionType {
   SUSPENSION
 }
 
+enum EducationLevel {
+  SD
+  SMP
+  SMA
+  DI
+  DII
+  DIII
+  DIV
+  S1
+  S2
+  S3
+}
+
+enum CivilServantRank {
+  // Golongan I
+  I_A
+  I_B
+  I_C
+  I_D
+
+  // Golongan II
+  II_A
+  II_B
+  II_C
+  II_D
+
+  // Golongan III
+  III_A
+  III_B
+  III_C
+  III_D
+
+  // Golongan IV
+  IV_A
+  IV_B
+  IV_C
+  IV_D
+  IV_E
+}
+
 /////////////////////////////////////////////////////
 // AUTH MODULE
 /////////////////////////////////////////////////////
@@ -81,14 +121,15 @@ model User {
   version            Int       @default(1)
   failedAttempts     Int       @default(0)
   lockUntil          DateTime?
-  mustChangePassword Boolean   @default(false)
+  mustChangePassword Boolean   @default(true)
 
-  studentId String?
-  parentId  String?
+  studentId String? @unique
+  parentId  String? @unique
+  teacherId String? @unique
 
   student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
   parent  Parent?  @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  teacher Teacher?
+  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
   sessions    AuthSession[]
   resetTokens PasswordResetToken[]
@@ -97,15 +138,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([studentId])
-  @@unique([parentId])
-  @@unique([id, version])
+  // 🔥 B-TREE OPTIMIZED INDEXES
   @@index([role])
   @@index([isActive])
   @@index([createdAt])
+  @@index([username])
   @@index([role, isActive])
-  @@index([studentId])
-  @@index([parentId])
   @@index([isActive, createdAt])
 }
 
@@ -201,17 +239,22 @@ model Class {
   grade             String
   name              String
   academicYearId    String
-  homeroomTeacherId String? @unique
+  homeroomTeacherId String?
 
   academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
   homeroomTeacher Teacher?     @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
-  students        Student[]
+
+  students Student[]
 
   createdAt DateTime @default(now())
 
+  // 1 kelas unik per tahun
   @@unique([grade, name, academicYearId])
+  // 🔥 1 guru hanya boleh jadi wali 1 kelas per tahun
+  @@unique([homeroomTeacherId, academicYearId])
   @@index([academicYearId])
   @@index([grade])
+  @@index([homeroomTeacherId])
 }
 
 /////////////////////////////////////////////////////
@@ -225,33 +268,32 @@ model Student {
   name     String
   nickname String?
 
-  gender     Gender
-  religionId String
-  rombelId   String
+  gender       Gender
+  religionCode String
+  rombelId     String
 
   status    StudentStatus @default(ACTIVE)
   deletedAt DateTime?
 
-  religion Religion @relation(fields: [religionId], references: [id])
+  religion Religion @relation(fields: [religionCode], references: [kode])
   rombel   Class    @relation(fields: [rombelId], references: [id])
 
-  profile StudentProfile?
-
-  // 🔥 pivot relation
-  parents StudentParent[]
-
-  users        User[]
+  parents      StudentParent[]
   violations   StudentViolation[]
   achievements StudentAchievement[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User?
+  studentProfile StudentProfile?
 
-  @@index([rombelId])
-  @@index([religionId])
-  @@index([status])
+  // 🔥 HIGH PERFORMANCE INDEX STRATEGY
+  @@index([name]) // prefix search
+  @@index([status, rombelId]) // filtering per class
+  @@index([rombelId, status]) // dashboard class
+  @@index([religionCode])
   @@index([deletedAt])
-  @@index([name])
+  @@index([createdAt])
 }
 
 /////////////////////////////////////////////////////
@@ -301,6 +343,8 @@ model Religion {
   name String
 
   students Student[]
+  Teacher  Teacher[]
+  Parent   Parent[]
 
   @@index([name])
 }
@@ -317,20 +361,21 @@ model Parent {
   education String
   job       String
   income    String?
-  religion  String
-  phone     String  @unique
-  address   String
 
-  // 🔥 pivot relation
+  religionCode String
+  religion     Religion @relation(fields: [religionCode], references: [kode])
+
+  phone   String @unique
+  address String
+
   students StudentParent[]
-
-  users User[]
+  users    User[]
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
 
-  @@index([phone])
   @@index([name])
+  @@index([religionCode])
 }
 
 /////////////////////////////////////////////////////
@@ -360,24 +405,59 @@ model StudentParent {
 /////////////////////////////////////////////////////
 
 model Teacher {
-  id    String  @id @default(uuid())
-  nip   String  @unique
-  name  String
+  id String @id @default(uuid())
+
+  // =========================
+  // BASIC INFO
+  // =========================
+  nip   String? @unique
+  nuptk String? @unique
+  nrk   String? @unique
+  nrg   Int?    @unique
+
+  name   String
+  gender Gender
+
+  religionCode String
+  religion     Religion @relation(fields: [religionCode], references: [kode])
+
   phone String?
   email String?
+  photo String?
 
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
+  educationLevel EducationLevel
+  major          String?
+  graduationYear Int
 
-  roles TeacherRole[]
+  birthPlace String
+  birthDate  DateTime
 
-  homeroomOf Class? @relation("HomeroomTeacher")
+  civilServantRank CivilServantRank?
+  roles            TeacherRole[]
 
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  ViolationResolution ViolationResolution[]
+  // ✅ FIXED: ONE-TO-MANY (BUKAN Class?)
+  homeroomOf Class[] @relation("HomeroomTeacher")
+
+  isPns Boolean
+
+  // Relation ke User
+  user User?
+
+  // Relation ke pelanggaran
+  handledResolutions ViolationResolution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([name])
+  @@index([nip])
+  @@index([nrk])
+  @@index([nuptk])
+  @@index([nrg])
+  @@index([religionCode])
+  @@index([civilServantRank])
+  @@index([educationLevel])
+  @@index([createdAt])
 }
 
 /////////////////////////////////////////////////////
@@ -423,6 +503,7 @@ model ViolationResolution {
 
   @@index([handlerTeacherId])
   @@index([status])
+  @@index([createdAt])
 }
 
 /////////////////////////////////////////////////////
@@ -438,6 +519,7 @@ model ViolationActionLog {
 
   resolution ViolationResolution @relation(fields: [resolutionId], references: [id])
 
+  @@unique([resolutionId, action])
   @@index([resolutionId])
   @@index([createdAt])
 }
@@ -460,7 +542,9 @@ model StudentViolation {
 
   resolution ViolationResolution?
 
-  @@index([studentId])
+  @@unique([studentId, violationId, occurredAt])
+  // 🔥 HEAVY TRAFFIC OPTIMIZATION
+  @@index([studentId, occurredAt]) // timeline student
   @@index([violationId])
   @@index([occurredAt])
 }

@@ -1,18 +1,37 @@
 //Files: src/modules/religion/application/usecase/DeleteReligionUseCase.ts
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import { AppError } from "@/modules/shared/errors/AppError";
 
-import { Result } from "@/modules/shared/core/Result";
 import type { ReligionInterface } from "@/modules/religion/domain/interfaces/ReligionInterface";
 
-export class DeleteReligionUseCase {
-  constructor(private readonly repo: ReligionInterface) {}
-
-  async execute(id: string): Promise<Result<void>> {
-    const existing = await this.repo.findById(id);
-    if (!existing) {
-      return Result.fail("ID Agama tidak ditemukan");
+/**
+ * ============================================================
+ * DELETE RELIGION USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Delete Religion by ID.
+ *
+ * Business Rules:
+ * - Religion must exist before deletion.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - Uses AppError for structured error handling
+ * - No manual Result wrapping
+ */
+export class DeleteReligionUseCase extends BaseUseCase<string, void> {
+    constructor(private readonly repo: ReligionInterface) {
+        super();
     }
 
-    await this.repo.delete(id);
-    return Result.ok(undefined);
-  }
+    protected async handle(id: string): Promise<void> {
+        const existing = await this.repo.findById(id);
+
+        if (!existing) {
+            throw AppError.notFound("ID Agama tidak ditemukan");
+        }
+
+        await this.repo.delete(id);
+    }
 }

@@ -1,14 +1,34 @@
 //Files: src/modules/student/application/usecases/ListStudentUseCase.ts
-import { Result } from "@/modules/shared/core/Result";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+
 import type { Student } from "@/modules/student/domain/entity/Student";
 import type { StudentQueryDTO } from "@/modules/student/domain/dto/StudentQueryDTO";
 import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
 
-export class ListStudentUseCase {
-  constructor(private readonly repo: StudentInterface) {}
+/**
+ * ============================================================
+ * LIST STUDENT USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Retrieve students with optional query filter.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - No manual Result wrapping
+ * - Errors handled centrally
+ */
+export class ListStudentUseCase extends BaseUseCase<
+    StudentQueryDTO | undefined,
+    Student[]
+> {
+    constructor(private readonly repo: StudentInterface) {
+        super();
+    }
 
-  async execute(query?: StudentQueryDTO): Promise<Result<Student[]>> {
-    const students = await this.repo.findAll(query);
-    return Result.ok(students);
-  }
+    protected async handle(
+        query?: StudentQueryDTO
+    ): Promise<Student[]> {
+        return this.repo.findAll(query);
+    }
 }

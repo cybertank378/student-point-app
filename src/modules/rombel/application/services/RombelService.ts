@@ -1,5 +1,4 @@
 //Files: src/modules/rombel/application/services/RombelService.ts
-
 import type { Result } from "@/modules/shared/core/Result";
 
 import type { Rombel } from "@/modules/rombel/domain/entity/Rombel";
@@ -14,9 +13,14 @@ import { UpdateRombelUseCase } from "@/modules/rombel/application/usecases/Updat
 import { DeleteRombelUseCase } from "@/modules/rombel/application/usecases/DeleteRombelUseCase";
 
 /**
- * RombelService
- * -------------
- * Aggregator seluruh usecase Rombel
+ * ============================================================
+ * ROMBEL SERVICE
+ * ============================================================
+ *
+ * Responsibility:
+ * - Aggregate Rombel use cases
+ * - Act as application facade for controller
+ * - No business logic here
  */
 export class RombelService {
     private readonly listUseCase: ListRombelUseCase;
@@ -25,9 +29,7 @@ export class RombelService {
     private readonly updateUseCase: UpdateRombelUseCase;
     private readonly deleteUseCase: DeleteRombelUseCase;
 
-    constructor(
-        repo: RombelInterface,
-    ) {
+    constructor(repo: RombelInterface) {
         this.listUseCase = new ListRombelUseCase(repo);
         this.getByIdUseCase = new GetRombelByIdUseCase(repo);
         this.createUseCase = new CreateRombelUseCase(repo);
@@ -35,52 +37,23 @@ export class RombelService {
         this.deleteUseCase = new DeleteRombelUseCase(repo);
     }
 
-    /**
-     * =========================
-     * LIST
-     * =========================
-     */
-    async getAll(): Promise<Result<Rombel[]>> {
+    getAll(): Promise<Result<Rombel[]>> {
         return this.listUseCase.execute();
     }
 
-    /**
-     * =========================
-     * GET BY ID
-     * =========================
-     */
-    async getById(id: string): Promise<Result<Rombel>> {
+    getById(id: string): Promise<Result<Rombel>> {
         return this.getByIdUseCase.execute(id);
     }
 
-    /**
-     * =========================
-     * CREATE
-     * =========================
-     */
-    async create(
-        dto: CreateRombelDTO,
-    ): Promise<Result<Rombel>> {
+    create(dto: CreateRombelDTO): Promise<Result<Rombel>> {
         return this.createUseCase.execute(dto);
     }
 
-    /**
-     * =========================
-     * UPDATE
-     * =========================
-     */
-    async update(
-        dto: UpdateRombelDTO,
-    ): Promise<Result<Rombel>> {
+    update(dto: UpdateRombelDTO): Promise<Result<Rombel>> {
         return this.updateUseCase.execute(dto);
     }
 
-    /**
-     * =========================
-     * DELETE
-     * =========================
-     */
-    async delete(id: string): Promise<Result<void>> {
+    delete(id: string): Promise<Result<void>> {
         return this.deleteUseCase.execute(id);
     }
 }

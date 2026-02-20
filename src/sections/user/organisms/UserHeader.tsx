@@ -106,7 +106,7 @@ export default function UserHeader({ api }: Props) {
                         Filters
                     </h3>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 items-end-safe">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
                         {/* Select Role */}
                         <SelectField
                             value={roleFilter}

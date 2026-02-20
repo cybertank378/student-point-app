@@ -1,12 +1,36 @@
-//Files: src/modules/teacher/domain/domain/dto/CreateTeacherDTO.ts
+// Files: src/modules/teacher/domain/dto/CreateTeacherDTO.ts
 
-import type {TeacherRole} from "@/libs/utils";
+import type {
+    Gender,
+    EducationLevel,
+    CivilServantRank,
+    TeacherRole,
+} from "@/generated/prisma";
 
 export interface CreateTeacherDTO {
-    userId: string;
-    nip: string;
+    nip?: string | null;
+    nuptk?: string | null;
+    nrk?: string | null;
+    nrg?: number | null;
+
     name: string;
+    gender: Gender;
+
+    religionCode: string; // ✅ FK only
+
     phone?: string | null;
     email?: string | null;
+    photo?: string | null;
+
+    educationLevel: EducationLevel;
+    major?: string | null;
+    graduationYear: number;
+
+    birthPlace: string;
+    birthDate: Date;
+
+    civilServantRank?: CivilServantRank | null;
+
     roles: TeacherRole[];
+    isPns:  boolean;
 }

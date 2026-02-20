@@ -17,7 +17,7 @@ export const StudentMapper = {
       row.name,
       row.nickname ?? null,
       GenderMapper.toDomain(row.gender),
-      row.religionId,
+      row.religionCode,
       row.rombelId,
       StudentStatusMapper.toDomain(row.status),
       row.deletedAt,

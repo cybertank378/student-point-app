@@ -1,27 +1,60 @@
 //Files: src/modules/auth/application/service/AuthService.ts
+import { LoginUseCase, type LoginRequest, type LoginResponse }
+    from "@/modules/auth/application/usecase/LoginUseCase";
 
-import {LoginUseCase} from "@/modules/auth/application/usecase/LoginUseCase";
-import {RefreshTokenUseCase} from "@/modules/auth/application/usecase/RefreshTokenUseCase";
-import {LogoutUseCase} from "@/modules/auth/application/usecase/LogoutUseCase";
-import {ChangePasswordUseCase} from "@/modules/auth/application/usecase/ChangePasswordUseCase";
-import {RequestResetPasswordUseCase} from "@/modules/auth/application/usecase/RequestResetPasswordUseCase";
-import type {AuthRepositoryInterface} from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
-import type {HashServiceInterface} from "@/modules/auth/domain/interfaces/HashServiceInterface";
-import type {TokenServiceInterface} from "@/modules/auth/domain/interfaces/TokenServiceInterface";
-import {ResetPasswordUseCase} from "@/modules/auth/application/usecase/ResetPasswordUseCase";
+import { RefreshTokenUseCase, type RefreshTokenRequest, type RefreshTokenResponse }
+    from "@/modules/auth/application/usecase/RefreshTokenUseCase";
+
+import { LogoutUseCase, type LogoutRequest }
+    from "@/modules/auth/application/usecase/LogoutUseCase";
+
+import { ChangePasswordUseCase, type ChangePasswordRequest }
+    from "@/modules/auth/application/usecase/ChangePasswordUseCase";
+
+import { RequestResetPasswordUseCase, type RequestResetPasswordRequest, type RequestResetPasswordResponse }
+    from "@/modules/auth/application/usecase/RequestResetPasswordUseCase";
+
+import { ResetPasswordUseCase, type ResetPasswordRequest }
+    from "@/modules/auth/application/usecase/ResetPasswordUseCase";
+
+import type { AuthRepositoryInterface }
+    from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
+
+import type { HashServiceInterface }
+    from "@/modules/auth/domain/interfaces/HashServiceInterface";
+
+import type { TokenServiceInterface }
+    from "@/modules/auth/domain/interfaces/TokenServiceInterface";
+
+/**
+ * ============================================================
+ * AUTH SERVICE
+ * ============================================================
+ *
+ * Responsibility:
+ * - Compose Auth use cases
+ * - Act as application facade for controller
+ * - No business logic here
+ *
+ * Architecture:
+ * - Delegates to BaseUseCase-based use cases
+ * - Returns Promise<Result<T>>
+ * - No try/catch
+ * - No manual Result handling
+ */
 
 export class AuthService {
-    private loginUC: LoginUseCase;
-    private refreshUC: RefreshTokenUseCase;
-    private logoutUC: LogoutUseCase;
-    private changePasswordUC: ChangePasswordUseCase;
-    private requestResetUC: RequestResetPasswordUseCase;
-    private resetPasswordUC: ResetPasswordUseCase;
+    private readonly loginUC: LoginUseCase;
+    private readonly refreshUC: RefreshTokenUseCase;
+    private readonly logoutUC: LogoutUseCase;
+    private readonly changePasswordUC: ChangePasswordUseCase;
+    private readonly requestResetUC: RequestResetPasswordUseCase;
+    private readonly resetPasswordUC: ResetPasswordUseCase;
 
     constructor(
         repo: AuthRepositoryInterface,
         hash: HashServiceInterface,
-        token: TokenServiceInterface,
+        token: TokenServiceInterface
     ) {
         this.loginUC = new LoginUseCase(repo, hash, token);
         this.refreshUC = new RefreshTokenUseCase(repo, hash, token);
@@ -31,43 +64,53 @@ export class AuthService {
         this.resetPasswordUC = new ResetPasswordUseCase(repo, hash);
     }
 
-    login(
-        ...args: Parameters<LoginUseCase["execute"]>
-    ) {
-        return this.loginUC.execute(...args);
+    /* ============================================================
+       LOGIN
+    ============================================================ */
+
+    login(request: LoginRequest) {
+        return this.loginUC.execute(request);
     }
 
-    refresh(
-        ...args: Parameters<RefreshTokenUseCase["execute"]>
-    ) {
-        return this.refreshUC.execute(...args);
+    /* ============================================================
+       REFRESH TOKEN
+    ============================================================ */
+
+    refresh(request: RefreshTokenRequest) {
+        return this.refreshUC.execute(request);
     }
 
-    logout(
-        ...args: Parameters<LogoutUseCase["execute"]>
-    ) {
-        return this.logoutUC.execute(...args);
+    /* ============================================================
+       LOGOUT (by token or all sessions)
+    ============================================================ */
+
+    logout(request: LogoutRequest) {
+        return this.logoutUC.execute(request);
     }
 
-    logoutByRefreshToken(refreshToken: string) {
-        return this.logoutUC.executeByRefreshToken(refreshToken);
+    /* ============================================================
+       CHANGE PASSWORD
+    ============================================================ */
+
+    changePassword(request: ChangePasswordRequest) {
+        return this.changePasswordUC.execute(request);
     }
 
-    changePassword(
-        ...args: Parameters<ChangePasswordUseCase["execute"]>
-    ) {
-        return this.changePasswordUC.execute(...args);
-    }
+    /* ============================================================
+       REQUEST RESET PASSWORD
+    ============================================================ */
 
     requestResetPassword(
-        ...args: Parameters<RequestResetPasswordUseCase["execute"]>
+        request: RequestResetPasswordRequest
     ) {
-        return this.requestResetUC.execute(...args);
+        return this.requestResetUC.execute(request);
     }
 
-    resetPassword(
-        ...args: Parameters<ResetPasswordUseCase["execute"]>
-    ) {
-        return this.resetPasswordUC.execute(...args);
+    /* ============================================================
+       RESET PASSWORD
+    ============================================================ */
+
+    resetPassword(request: ResetPasswordRequest) {
+        return this.resetPasswordUC.execute(request);
     }
 }

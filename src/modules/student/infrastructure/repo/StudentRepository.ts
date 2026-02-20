@@ -47,7 +47,7 @@ export class StudentRepository implements StudentInterface {
         name: dto.name,
         nickname: dto.nickname ?? null,
         gender: GenderMapper.toPrisma(dto.gender),
-        religionId: dto.religionId,
+        religionCode: dto.religionCode,
         rombelId: dto.rombelId,
       },
     });
@@ -62,7 +62,7 @@ export class StudentRepository implements StudentInterface {
         name: dto.name,
         nickname: dto.nickname,
         gender: dto.gender && GenderMapper.toPrisma(dto.gender),
-        religionId: dto.religionId,
+        religionCode: dto.religionCode,
         rombelId: dto.rombelId,
         status: dto.status && StudentStatusMapper.toPrisma(dto.status),
       },

@@ -1,27 +1,58 @@
-//Files: src/modules/teacher/application/usecase/AssignHomeroomUseCase.ts
-import { Result } from "@/modules/shared/core/Result";
-import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
+// src/modules/teacher/application/usecase/AssignHomeroomUseCase.ts
 
-export class AssignHomeroomUseCase {
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+
+import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
+import type { AssignHomeroomDTO } from "@/modules/teacher/domain/dto/AssignHomeroomDTO";
+
+/**
+ * ============================================================
+ * ASSIGN HOMEROOM USE CASE
+ * ============================================================
+ *
+ * Business Responsibilities:
+ * - Memastikan guru ada
+ * - Menetapkan guru sebagai wali kelas
+ *
+ * Error handling dilakukan oleh BaseUseCase.
+ */
+export class AssignHomeroomUseCase
+    extends BaseUseCase<AssignHomeroomDTO, void> {
+
     constructor(
         private readonly repo: TeacherInterface,
-    ) {}
+    ) {
+        super();
+    }
 
-    async execute(
-        teacherId: string,
-        classId: string,
-    ): Promise<Result<void>> {
+    /**
+     * Implementasi logika penetapan wali kelas.
+     */
+    protected async handle(
+        dto: AssignHomeroomDTO,
+    ): Promise<void> {
 
-        const teacher = await this.repo.findById(teacherId);
+        /**
+         * ====================================================
+         * VALIDASI KEBERADAAN GURU
+         * ====================================================
+         */
+
+        const teacher = await this.repo.findById(dto.teacherId);
+
         if (!teacher) {
-            return Result.fail("Guru tidak ditemukan");
+            throw new Error("Guru tidak ditemukan.");
         }
 
-        if (!teacher.isHomeroom()) {
-            return Result.fail("Guru tidak memiliki role wali kelas");
-        }
+        /**
+         * ====================================================
+         * ASSIGN HOMEROOM
+         * ====================================================
+         */
 
-        await this.repo.assignHomeroom(teacherId, classId);
-        return Result.ok(undefined);
+        await this.repo.assignHomeroom(
+            dto.teacherId,
+            dto.classId,
+        );
     }
 }

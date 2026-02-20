@@ -37,6 +37,7 @@ export const PERMISSIONS = {
     COUNSELING_MANAGE: "counseling.manage",
 
     PARENT_CALL_READ: "parent_call.read",
+    PARENT_CALL_MANAGE: "parent_call.read",
 
     REPORT_READ: "report.read",
     REPORT_MANAGE: "report.manage",

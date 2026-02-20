@@ -1,45 +1,64 @@
 //Files: src/modules/student/application/usecases/CreateStudentUseCase.ts
-import { Result } from "@/modules/shared/core/Result";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import { AppError } from "@/modules/shared/errors/AppError";
 
 import type { Student } from "@/modules/student/domain/entity/Student";
 import type { CreateStudentDTO } from "@/modules/student/domain/dto/CreateStudentDTO";
 import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
 import type { AcademicYearInterface } from "@/modules/academic-year/domain/interfaces/AcademicYearInterface";
 
-export class CreateStudentUseCase {
+/**
+ * ============================================================
+ * CREATE STUDENT USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Create new Student entity.
+ *
+ * Business Rules:
+ * - Must have an active academic year.
+ * - NIS must be unique.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - Uses AppError for structured error handling
+ * - No manual Result wrapping
+ */
+export class CreateStudentUseCase extends BaseUseCase<
+    CreateStudentDTO,
+    Student
+> {
     constructor(
         private readonly studentRepo: StudentInterface,
-        private readonly academicYearRepo: AcademicYearInterface,
-    ) {}
+        private readonly academicYearRepo: AcademicYearInterface
+    ) {
+        super();
+    }
 
-    async execute(
-        dto: CreateStudentDTO,
-    ): Promise<Result<Student>> {
-
-        // 1️⃣ Validasi tahun ajaran aktif
+    protected async handle(
+        dto: CreateStudentDTO
+    ): Promise<Student> {
+        // 1️⃣ Validate active academic year
         const activeYear =
             await this.academicYearRepo.findActive();
 
         if (!activeYear) {
-            return Result.fail(
-                "Tidak ada tahun ajaran aktif",
+            throw AppError.badRequest(
+                "Tidak ada tahun ajaran aktif"
             );
         }
 
-        // 2️⃣ Validasi NIS unik
+        // 2️⃣ Validate NIS uniqueness
         const exists =
             await this.studentRepo.findByNis(dto.nis);
 
         if (exists) {
-            return Result.fail(
-                "NIS sudah terdaftar",
+            throw AppError.conflict(
+                "NIS sudah terdaftar"
             );
         }
 
-        // 3️⃣ SIMPAN VIA REPOSITORY (DTO → Entity)
-        const student =
-            await this.studentRepo.create(dto);
-
-        return Result.ok(student);
+        // 3️⃣ Persist student
+        return this.studentRepo.create(dto);
     }
 }

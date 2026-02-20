@@ -1,21 +1,41 @@
 //Files: src/modules/rombel/application/usecases/GetRombelByIdUseCase.ts
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import { AppError } from "@/modules/shared/errors/AppError";
 
-import { Result } from "@/modules/shared/core/Result";
 import type { Rombel } from "@/modules/rombel/domain/entity/Rombel";
 import type { RombelInterface } from "@/modules/rombel/domain/interfaces/RombelInterface";
 
-export class GetRombelByIdUseCase {
-    constructor(
-        private readonly repo: RombelInterface,
-    ) {}
+/**
+ * ============================================================
+ * GET ROMBEL BY ID USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Retrieve Rombel entity by ID.
+ *
+ * Business Rules:
+ * - Rombel must exist.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - Uses AppError for structured error handling
+ * - No manual Result wrapping
+ */
+export class GetRombelByIdUseCase extends BaseUseCase<
+    string,
+    Rombel
+> {
+    constructor(private readonly repo: RombelInterface) {
+        super();
+    }
 
-    async execute(id: string): Promise<Result<Rombel>> {
+    protected async handle(id: string): Promise<Rombel> {
         const rombel = await this.repo.findById(id);
 
         if (!rombel) {
-            return Result.fail("Rombel not found");
+            throw AppError.notFound("Rombel not found");
         }
 
-        return Result.ok(rombel);
+        return rombel;
     }
 }

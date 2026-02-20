@@ -1,10 +1,19 @@
 import type { UserRole } from "@/libs/utils";
-import {rbacConfig} from "@/modules/auth/domain/rbac/rbacConfig";
-import {canAccess} from "@/modules/auth/domain/rbac/fieldGuard";
+import { rbacConfig } from "@/modules/auth/domain/rbac/rbacConfig";
+import { canAccess } from "@/modules/auth/domain/rbac/fieldGuard";
+import type { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
 
-export function generateSidebar(role: UserRole) {
+function isSidebarItem(
+    item: SidebarMenuItem | null
+): item is SidebarMenuItem {
+    return item !== null;
+}
+
+export function generateSidebar(
+    role: UserRole
+): SidebarMenuItem[] {
     return rbacConfig.sidebar
-        .map((item) => {
+        .map<SidebarMenuItem | null>((item) => {
             if (item.permission && !canAccess(role, item.permission)) {
                 return null;
             }
@@ -23,5 +32,5 @@ export function generateSidebar(role: UserRole) {
 
             return item;
         })
-        .filter(Boolean);
+        .filter(isSidebarItem);
 }

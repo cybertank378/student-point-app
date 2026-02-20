@@ -1,13 +1,13 @@
-//Files: src/modules/teacher/domain/dto/UpdateTeacherDTO.ts
+// src/modules/teacher/domain/dto/UpdateTeacherDTO.ts
 
+import type { CreateTeacherDTO } from "./CreateTeacherDTO";
 
-import type {TeacherRole} from "@/libs/utils";
+/**
+ * PATCH DTO
+ * - id wajib
+ * - semua field lain optional
+ */
 
-export interface UpdateTeacherDTO {
-    id: string;
-    nip: string;
-    name: string;
-    phone?: string | null;
-    email?: string | null;
-    roles: TeacherRole[];
-}
+export type UpdateTeacherDTO =
+    { id: string }
+    & Partial<CreateTeacherDTO>;

@@ -1,40 +1,38 @@
 //Files: src/modules/religion/infrastructure/http/ReligionController.ts
-
 import type { NextRequest } from "next/server";
 
+import { HttpResultHandler } from "@/modules/shared/http/HttpResultHandler";
+import { handleZodError } from "@/modules/shared/errors/handleZodError";
+
 import type { ReligionService } from "@/modules/religion/application/services/ReligionService";
+
 import {
     CreateReligionSchema,
-    UpdateReligionSchema
+    UpdateReligionSchema,
 } from "@/modules/religion/infrastructure/validators/religion.validator";
-import {handleZodError} from "@/modules/shared/errors/handleZodError";
-
-
 
 /**
- * ReligionController
- * ------------------
- * HTTP Adapter for Religion module
+ * ============================================================
+ * RELIGION CONTROLLER
+ * ============================================================
+ *
+ * Responsibility:
+ * - Handle HTTP layer only
+ * - Validate request input (Zod)
+ * - Delegate business logic to service
+ * - Convert Result<T> into HTTP response via HttpResultHandler
+ *
+ * No business logic here.
  */
 export class ReligionController {
-    constructor(
-        private readonly service: ReligionService,
-    ) {}
+    constructor(private readonly service: ReligionService) {}
 
     /**
      * GET /api/religions
      */
     async getAll() {
         const result = await this.service.getAll();
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json(result.getValue());
+        return HttpResultHandler.handle(result);
     }
 
     /**
@@ -42,15 +40,7 @@ export class ReligionController {
      */
     async getById(id: string) {
         const result = await this.service.getById(id);
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 404 },
-            );
-        }
-
-        return Response.json(result.getValue());
+        return HttpResultHandler.handle(result);
     }
 
     /**
@@ -59,22 +49,12 @@ export class ReligionController {
     async create(req: NextRequest) {
         try {
             const body = CreateReligionSchema.parse(
-                await req.json(),
+                await req.json()
             );
 
             const result = await this.service.create(body);
 
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
-
-            return Response.json(
-                result.getValue(),
-                { status: 201 },
-            );
+            return HttpResultHandler.handle(result, 201);
         } catch (error) {
             return handleZodError(error);
         }
@@ -86,7 +66,7 @@ export class ReligionController {
     async update(id: string, req: NextRequest) {
         try {
             const body = UpdateReligionSchema.parse(
-                await req.json(),
+                await req.json()
             );
 
             const result = await this.service.update({
@@ -94,14 +74,7 @@ export class ReligionController {
                 ...body,
             });
 
-            if (result.isFailure) {
-                return Response.json(
-                    { error: result.getError() },
-                    { status: 400 },
-                );
-            }
-
-            return Response.json(result.getValue());
+            return HttpResultHandler.handle(result);
         } catch (error) {
             return handleZodError(error);
         }
@@ -112,14 +85,6 @@ export class ReligionController {
      */
     async delete(id: string) {
         const result = await this.service.delete(id);
-
-        if (result.isFailure) {
-            return Response.json(
-                { error: result.getError() },
-                { status: 400 },
-            );
-        }
-
-        return Response.json({ success: true });
+        return HttpResultHandler.handle(result);
     }
 }

@@ -8,7 +8,7 @@ export interface UpdateStudentDTO {
   name?: string;
   nickname?: string | null;
   gender?: Gender;
-  religionId?: string;
+  religionCode?: string;
   rombelId?: string;
   status?: StudentStatus;
 }

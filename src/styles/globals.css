@@ -50,3 +50,48 @@ select {
     -moz-appearance: none;
     appearance: none;
 }
+
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE & Edge */
+    scrollbar-width: none;     /* Firefox */
+}
+
+/* =========================================
+   ENTERPRISE SCROLLBAR
+========================================= */
+
+.scrollbar-modern {
+    scrollbar-width: thin;              /* Firefox */
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s ease;
+}
+
+/* Webkit (Chrome, Edge, Safari) */
+.scrollbar-modern::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollbar-modern::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-modern::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 9999px;
+    transition: background-color 0.3s ease;
+}
+
+/* 🔥 Show only on hover */
+.scrollbar-modern:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(100, 116, 139, 0.5); /* gray-500 */
+}
+
+.scrollbar-modern:hover {
+    scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+}

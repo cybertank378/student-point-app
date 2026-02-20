@@ -1,120 +1,101 @@
 //Files: src/modules/rombel/infrastructure/http/RombelController.ts
 // src/modules/rombel/infrastructure/http/RombelController.ts
-
 import type { NextRequest } from "next/server";
 
-import type { RombelService } from "@/modules/rombel/application/services/RombelService";
+import { HttpResultHandler } from "@/modules/shared/http/HttpResultHandler";
+import { handleZodError } from "@/modules/shared/errors/handleZodError";
 
-import type { CreateRombelDTO } from "@/modules/rombel/domain/dto/CreateRombelDTO";
+import type { RombelService } from "@/modules/rombel/application/services/RombelService";
 import type { UpdateRombelDTO } from "@/modules/rombel/domain/dto/UpdateRombelDTO";
 
-import { handleZodError } from "@/modules/shared/errors/handleZodError";
 import {
-  CreateRombelSchema,
-  UpdateRombelSchema,
+    CreateRombelSchema,
+    UpdateRombelSchema,
 } from "@/modules/rombel/infrastructure/validators/rombel.validator";
 
+/**
+ * ============================================================
+ * ROMBEL CONTROLLER
+ * ============================================================
+ *
+ * Responsibility:
+ * - HTTP adapter only
+ * - Validate input (Zod)
+ * - Delegate to service
+ * - Convert Result<T> → HTTP response via HttpResultHandler
+ *
+ * No business logic here.
+ */
 export class RombelController {
-  constructor(private readonly service: RombelService) {}
+    constructor(private readonly service: RombelService) {}
 
-  /* ======================================
+    /* ======================================
        LIST (GET ALL)
        GET /api/rombels
     ====================================== */
-  async getAll(_req: NextRequest) {
-    const result = await this.service.getAll();
-
-    if (result.isFailure) {
-      return Response.json({ error: result.getError() }, { status: 400 });
+    async getAll(_req: NextRequest) {
+        const result = await this.service.getAll();
+        return HttpResultHandler.handle(result);
     }
 
-    return Response.json(result.getValue());
-  }
-
-  /* ======================================
+    /* ======================================
        GET BY ID
        GET /api/rombels/:id
     ====================================== */
-  async getById(id: string) {
-    if (!id) {
-      return Response.json({ error: "ID is required" }, { status: 400 });
+    async getById(id: string) {
+        const result = await this.service.getById(id);
+        return HttpResultHandler.handle(result);
     }
 
-    const result = await this.service.getById(id);
-
-    if (result.isFailure) {
-      return Response.json({ error: result.getError() }, { status: 404 });
-    }
-
-    return Response.json(result.getValue());
-  }
-
-  /* ======================================
+    /* ======================================
        CREATE
        POST /api/rombels
     ====================================== */
-  async create(req: NextRequest) {
-    try {
-      const body: CreateRombelDTO = CreateRombelSchema.parse(await req.json());
+    async create(req: NextRequest) {
+        try {
+            const body = CreateRombelSchema.parse(
+                await req.json()
+            );
 
-      const result = await this.service.create(body);
+            const result = await this.service.create(body);
 
-      if (result.isFailure) {
-        return Response.json({ error: result.getError() }, { status: 400 });
-      }
-
-      return Response.json(result.getValue(), { status: 201 });
-    } catch (error) {
-      return handleZodError(error);
+            return HttpResultHandler.handle(result, 201);
+        } catch (error) {
+            return handleZodError(error);
+        }
     }
-  }
 
-  /* ======================================
+    /* ======================================
        UPDATE
        PUT /api/rombels/:id
     ====================================== */
-  async update(id: string, req: NextRequest) {
-    try {
-      if (!id) {
-        return Response.json({ error: "ID is required" }, { status: 400 });
-      }
+    async update(id: string, req: NextRequest) {
+        try {
+            const body = UpdateRombelSchema.parse(
+                await req.json()
+            );
 
-      const body = UpdateRombelSchema.parse(await req.json());
+            const payload: UpdateRombelDTO = {
+                id,
+                grade: body.grade,
+                name: body.name,
+                academicYearId: body.academicYearId,
+            };
 
-      const payload: UpdateRombelDTO = {
-        id,
-        grade: body.grade,
-        name: body.name,
-        academicYearId: body.academicYearId,
-      };
+            const result = await this.service.update(payload);
 
-      const result = await this.service.update(payload);
-
-      if (result.isFailure) {
-        return Response.json({ error: result.getError() }, { status: 400 });
-      }
-
-      return Response.json(result.getValue());
-    } catch (error) {
-      return handleZodError(error);
+            return HttpResultHandler.handle(result);
+        } catch (error) {
+            return handleZodError(error);
+        }
     }
-  }
 
-  /* ======================================
+    /* ======================================
        DELETE
        DELETE /api/rombels/:id
     ====================================== */
-  async delete(id: string) {
-    if (!id) {
-      return Response.json({ error: "ID is required" }, { status: 400 });
+    async delete(id: string) {
+        const result = await this.service.delete(id);
+        return HttpResultHandler.handle(result);
     }
-
-    const result = await this.service.delete(id);
-
-    if (result.isFailure) {
-      return Response.json({ error: result.getError() }, { status: 400 });
-    }
-
-    return Response.json({ success: true });
-  }
 }

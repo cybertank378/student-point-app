@@ -1,14 +1,12 @@
-//Files: src/modules/user/domain/mapper/UserMapper.ts
+// Files: src/modules/user/domain/mapper/UserMapper.ts
+
 import type { Prisma } from "@/generated/prisma";
 import type { UserEntity } from "@/modules/user/domain/entity/UserEntity";
 import type { TeacherRole, UserRole } from "@/libs/utils";
 
-//
-// ======================================================
-// PRISMA TYPE (SELECT SHAPE)
-// ======================================================
-//
-
+/**
+ * Prisma payload shape including related entities.
+ */
 export type UserWithRelations = Prisma.UserGetPayload<{
     select: {
         id: true;
@@ -17,8 +15,11 @@ export type UserWithRelations = Prisma.UserGetPayload<{
         image: true;
         role: true;
         teacherRole: true;
+
         studentId: true;
         parentId: true;
+        teacherId: true; // ✅ NEW
+
         isActive: true;
         lockUntil: true;
         failedAttempts: true;
@@ -26,7 +27,6 @@ export type UserWithRelations = Prisma.UserGetPayload<{
         createdAt: true;
         updatedAt: true;
 
-        // STUDENT RELATION
         student: {
             select: {
                 id: true;
@@ -48,7 +48,6 @@ export type UserWithRelations = Prisma.UserGetPayload<{
             };
         };
 
-        // PARENT RELATION
         parent: {
             select: {
                 id: true;
@@ -70,23 +69,20 @@ export type UserWithRelations = Prisma.UserGetPayload<{
             };
         };
 
-        // TEACHER RELATION
         teacher: {
             select: {
                 id: true;
                 name: true;
                 nip: true;
+                nrk: true;
             };
         };
     };
 }>;
 
-//
-// ======================================================
-// MAPPER
-// ======================================================
-//
-
+/**
+ * Maps Prisma User model to Domain UserEntity.
+ */
 export const UserMapper = {
     toDomain(user: UserWithRelations): UserEntity {
         return {
@@ -94,17 +90,21 @@ export const UserMapper = {
             username: user.username,
             password: user.password,
             image: user.image,
+
             role: user.role as UserRole,
             teacherRole: user.teacherRole as TeacherRole | null,
+
             studentId: user.studentId,
             parentId: user.parentId,
+            teacherId: user.teacherId, // ✅ NEW
+
             isActive: user.isActive,
             lockUntil: user.lockUntil,
             failedAttempts: user.failedAttempts,
             version: user.version,
 
             // =============================
-            // STUDENT
+            // STUDENT PROFILE
             // =============================
             student: user.student
                 ? {
@@ -122,7 +122,7 @@ export const UserMapper = {
                 : null,
 
             // =============================
-            // PARENT
+            // PARENT PROFILE
             // =============================
             parent: user.parent
                 ? {
@@ -140,16 +140,16 @@ export const UserMapper = {
                 : null,
 
             // =============================
-            // TEACHER
+            // TEACHER PROFILE
             // =============================
             teacher: user.teacher
                 ? {
                     id: user.teacher.id,
                     name: user.teacher.name,
                     nip: user.teacher.nip,
+                    nrk: user.teacher.nrk,
                 }
                 : null,
-
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
         };

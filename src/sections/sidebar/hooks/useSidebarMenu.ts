@@ -53,22 +53,4 @@ function filterMenu(
         );
 }
 
-/* ============================================================
-   HOOK
-============================================================ */
-
-export function useSidebarMenu(role: UserRole) {
-
-    return useMemo(() => {
-
-        const permissions =
-            getRolePermissions(role);
-
-        return filterMenu(
-            rbacConfig.sidebar,
-            permissions
-        );
-
-    }, [role]);
-}
 

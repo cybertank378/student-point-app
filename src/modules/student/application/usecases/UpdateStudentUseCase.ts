@@ -1,19 +1,44 @@
 //Files: src/modules/student/application/usecases/UpdateStudentUseCase.ts
-import { Result } from "@/modules/shared/core/Result";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import { AppError } from "@/modules/shared/errors/AppError";
+
 import type { Student } from "@/modules/student/domain/entity/Student";
 import type { UpdateStudentDTO } from "@/modules/student/domain/dto/UpdateStudentDTO";
 import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
 
-export class UpdateStudentUseCase {
-  constructor(private readonly repo: StudentInterface) {}
-
-  async execute(dto: UpdateStudentDTO): Promise<Result<Student>> {
-    const existing = await this.repo.findById(dto.id);
-    if (!existing) {
-      return Result.fail("Siswa tidak ditemukan");
+/**
+ * ============================================================
+ * UPDATE STUDENT USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Update existing student.
+ *
+ * Business Rules:
+ * - Student must exist before update.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - Uses AppError for structured error handling
+ * - No manual Result wrapping
+ */
+export class UpdateStudentUseCase extends BaseUseCase<
+    UpdateStudentDTO,
+    Student
+> {
+    constructor(private readonly repo: StudentInterface) {
+        super();
     }
 
-    const updated = await this.repo.update(dto);
-    return Result.ok(updated);
-  }
+    protected async handle(
+        dto: UpdateStudentDTO
+    ): Promise<Student> {
+        const existing = await this.repo.findById(dto.id);
+
+        if (!existing) {
+            throw AppError.notFound("Siswa tidak ditemukan");
+        }
+
+        return this.repo.update(dto);
+    }
 }

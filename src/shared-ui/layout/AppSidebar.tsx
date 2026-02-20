@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import {useState, useEffect, useMemo} from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import type { UserRole } from "@/libs/utils";
-import { useSidebarMenu } from "@/sections/sidebar/hooks/useSidebarMenu";
 import { RecursiveSidebarItem } from "@/sections/sidebar/components/RecursiveSidebarItem";
-import { MdClose } from "react-icons/md";
+import { ArrowMenuIcon } from "@/shared-ui/component/Icons";
+import {generateSidebar} from "@/modules/auth/domain/rbac/sidebar/getSidebarMenu";
 
 interface Props {
     role: UserRole;
@@ -20,21 +20,39 @@ export default function AppSidebar({
                                        mobileOpen = false,
                                        onClose,
                                    }: Props) {
-    const menu = useSidebarMenu(role);
     const pathname = usePathname();
 
+    // ⬇️ GUNAKAN DI SINI
+    const menu = useMemo(() => generateSidebar(role), [role]);
+
+
     const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+    const [collapsed, setCollapsed] = useState(false);
+
+    const toggleCollapse = () => {
+        setCollapsed((prev) => !prev);
+    };
 
     /* ================= AUTO OPEN ACTIVE PARENT ================= */
     useEffect(() => {
         const parentIndex = menu.findIndex((item) =>
-            item.children?.some((child) => child.path === pathname)
+            item.children?.some((child) =>
+                child.path && pathname.startsWith(child.path)
+            )
         );
 
         if (parentIndex !== -1) {
             setExpandedIndex(parentIndex);
+        } else if (pathname === "/dashboard") {
+            const masterIndex = menu.findIndex(
+                (item) => item.label === "Master Akademik"
+            );
+
+            setExpandedIndex(masterIndex !== -1 ? masterIndex : null);
+        } else {
+            setExpandedIndex(null);
         }
-    }, [pathname, menu]);
+    }, [pathname]); // ✅ HANYA pathname
 
     /* ================= AUTO CLOSE MOBILE ON ROUTE CHANGE ================= */
     useEffect(() => {
@@ -45,29 +63,58 @@ export default function AppSidebar({
 
     /* ================= SIDEBAR CONTENT ================= */
     const SidebarContent = (
-        <div className="h-screen w-[259px] bg-slate-800 text-indigo-100 flex flex-col">
-            {/* HEADER */}
-            <div className="h-16 flex items-center justify-between px-4">
-                <Image
-                    src="/assets/images/logo/logo.png"
-                    alt="Logo"
-                    width={28}
-                    height={28}
-                />
+        <motion.div
+            animate={{ width: collapsed ? 80 : 259 }}
+            transition={{ duration: 0.3 }}
+            className="h-screen bg-slate-800 text-indigo-100 flex flex-col overflow-hidden"
+        >
+            {/* ================= HEADER ================= */}
+            <div>
+                <div className="h-16 flex items-center px-4 border-b">
 
-                {onClose && (
-                    <button
-                        onClick={onClose}
-                        className="md:hidden text-indigo-100"
-                    >
-                        <MdClose size={22} />
-                    </button>
-                )}
+                    {/* LEFT GROUP */}
+                    <div className="flex items-center gap-3 flex-1">
+                        <Image
+                            src="/assets/images/logo/logo_light.png"
+                            alt="Logo"
+                            width={40}
+                            height={40}
+                            className={`shrink-0 ${
+                                collapsed ? "mx-auto cursor-pointer" : ""
+                            }`}
+                            onClick={() => {
+                                if (collapsed) toggleCollapse();
+                            }}
+                        />
+
+                        {!collapsed && (
+                            <div className="flex flex-col leading-tight">
+                                <span className="text-white font-semibold text-sm">
+                                    SMP Negeri 29
+                                </span>
+                                <span className="text-indigo-200 text-xs">
+                                    Jakarta
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ARROW (Collapse Trigger) */}
+                    {!collapsed && (
+                        <button
+                            onClick={toggleCollapse}
+                            className="text-indigo-200 hover:text-white transition"
+                        >
+                            <ArrowMenuIcon />
+                        </button>
+                    )}
+                </div>
+
+
             </div>
 
-            <div className="h-px bg-slate-700 opacity-50" />
 
-            {/* MENU */}
+            {/* ================= MENU ================= */}
             <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
                 {menu.map((item, index) => (
                     <RecursiveSidebarItem
@@ -76,11 +123,11 @@ export default function AppSidebar({
                         index={index}
                         expandedIndex={expandedIndex}
                         setExpandedIndex={setExpandedIndex}
-                        collapsed={false}
+                        collapsed={collapsed}
                     />
                 ))}
             </nav>
-        </div>
+        </motion.div>
     );
 
     return (

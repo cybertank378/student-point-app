@@ -1,13 +1,9 @@
-//Files: src/shared-ui/component/DropdownItem.tsx
-// Files: src/shared-ui/component/DropdownItem.tsx
-
 "use client";
 
-import type { IconType } from "react-icons";
-import Button from "@/shared-ui/component/Button";
 import clsx from "clsx";
+import type { IconType } from "react-icons";
 
-interface DropdownItemProps {
+interface Props {
     icon: IconType;
     label: string;
     badge?: string;
@@ -19,26 +15,28 @@ export function DropdownItem({
                                  label,
                                  badge,
                                  onClick,
-                             }: DropdownItemProps) {
+                             }: Props) {
     return (
-        <Button
-            variant="text"
-            color="secondary"
-            size="md"
-            fullWidth
+        <button
             onClick={onClick}
-            leftIcon={Icon}
             className={clsx(
-                "justify-between px-4 py-2.5 text-sm hover:bg-gray-50"
+                "w-full flex items-center justify-between",
+                "px-4 py-2.5 text-sm text-gray-700",
+                "hover:bg-gray-100 transition-colors"
             )}
         >
-            <span>{label}</span>
+            {/* LEFT SIDE */}
+            <div className="flex items-center gap-3">
+                <Icon size={18} className="text-gray-500" />
+                <span className="text-left">{label}</span>
+            </div>
 
+            {/* BADGE */}
             {badge && (
-                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
           {badge}
         </span>
             )}
-        </Button>
+        </button>
     );
 }

@@ -1,31 +1,80 @@
 //Files: src/app/api/teachers/[id]/route.ts
-import type { NextRequest } from "next/server";
-import { createTeacherController } from "../_factory";
-import { getRouteParam } from "@/modules/shared/http/getRouteParam";
+
+import {createTeacherController} from "@/app/api/teachers/_factory";
+import {NextRequest} from "next/server";
+
+
+/**
+ * ============================================================
+ * TEACHER DETAIL ROUTE
+ * ============================================================
+ *
+ * Endpoint: /api/teachers/:id
+ *
+ * Supported Methods:
+ * - GET    → Get teacher by ID
+ * - PUT    → Update teacher
+ * - DELETE → Delete teacher
+ */
 
 const controller = createTeacherController();
 
 /**
- * =====================================================
- * GET    /api/teachers/:id
- * PUT    /api/teachers/:id
- * DELETE /api/teachers/:id
- * =====================================================
+ * ============================================================
+ * GET /api/teachers/:id
+ * ------------------------------------------------------------
+ * Mengambil detail guru berdasarkan ID.
  *
- * RbacConfig handled in middleware
+ * Response:
+ * 200 → Teacher detail
+ * 404 → Not found
  */
+export async function GET(
+    _: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params;
 
-export async function GET(req: NextRequest) {
-    const id = getRouteParam(req);
     return controller.getById(id);
 }
 
-export async function PUT(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.update(id, req);
+/**
+ * ============================================================
+ * PATCH /api/teachers/:id
+ * ------------------------------------------------------------
+ * Memperbarui data guru.
+ *
+ * Body:
+ * - UpdateTeacherDTO
+ *
+ * Response:
+ * 200 → Updated teacher
+ * 400 → Validation error
+ */
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params;
+
+    return controller.update(id, request);
 }
 
-export async function DELETE(req: NextRequest) {
-    const id = getRouteParam(req);
+/**
+ * ============================================================
+ * DELETE /api/teachers/:id
+ * ------------------------------------------------------------
+ * Menghapus data guru secara permanen.
+ *
+ * Response:
+ * 200 → Success
+ * 404 → Not found
+ */
+export async function DELETE(
+    _: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    const { id } = await params;
+
     return controller.delete(id);
 }

@@ -1,5 +1,5 @@
 //Files: src/modules/user/application/usecase/UpdateUserUseCase.ts
-import { Result } from "@/modules/shared/core/Result";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import type { UpdateUserDTO } from "@/modules/user/domain/dto/UpdateUserDTO";
 import type { UserEntity } from "@/modules/user/domain/entity/UserEntity";
 import type {
@@ -8,90 +8,86 @@ import type {
 } from "@/modules/user/domain/interfaces/UserInterface";
 import type { HashServiceInterface } from "@/modules/auth/domain/interfaces/HashServiceInterface";
 
-export class UpdateUserUseCase {
+export class UpdateUserUseCase extends BaseUseCase<
+    UpdateUserDTO,
+    UserEntity
+> {
     constructor(
         private readonly repo: UserInterface,
         private readonly hashService: HashServiceInterface
-    ) {}
+    ) {
+        super();
+    }
 
-    async execute(dto: UpdateUserDTO): Promise<Result<UserEntity>> {
-        try {
-            const existing = await this.repo.findById(dto.id);
+    /**
+     * Business logic implementation.
+     * Throw error for failure.
+     * Return entity for success.
+     */
+    protected async handle(dto: UpdateUserDTO): Promise<UserEntity> {
+        const existing = await this.repo.findById(dto.id);
 
-            if (!existing) {
-                return Result.fail("User tidak ditemukan.");
-            }
-
-            /* =========================================================
-               BUSINESS RULE VALIDATION
-            ========================================================= */
-
-            const ruleValidation = this.validateBusinessRules(existing, dto);
-
-            if (ruleValidation.isFailure) {
-                return ruleValidation as Result<UserEntity>;
-            }
-
-            /* =========================================================
-               PASSWORD HANDLING (Partial Update Safe)
-            ========================================================= */
-
-            const { hashedPassword, passwordChanged } =
-                await this.resolvePassword(existing, dto);
-
-            /* =========================================================
-               ACCOUNT LOCK HANDLING
-               - If user is reactivated, clear lock state.
-            ========================================================= */
-
-            const unlockAccount =
-                existing.lockUntil !== null && dto.isActive;
-
-            /* =========================================================
-               BUILD UPDATE PAYLOAD
-            ========================================================= */
-
-            const updatePayload: UpdateUserData = {
-                password: hashedPassword,
-                role: dto.role,
-                teacherRole:
-                    dto.role === "TEACHER"
-                        ? dto.teacherRole ?? null
-                        : null,
-                isActive: dto.isActive,
-                image: dto.image ?? null,
-                mustChangePassword: passwordChanged,
-                lockUntil: unlockAccount ? null : existing.lockUntil,
-                failedAttempts: unlockAccount
-                    ? 0
-                    : existing.failedAttempts,
-                updatedAt: new Date(),
-            };
-
-            const updated = await this.repo.update(dto.id, updatePayload);
-
-            return Result.ok(updated);
-        } catch (error) {
-            // TODO: replace with proper logger if available
-            console.error("UpdateUserUseCase Error:", error);
-            return Result.fail("Gagal memperbarui user.");
+        if (!existing) {
+            throw new Error("User tidak ditemukan.");
         }
+
+        /* =========================================================
+           BUSINESS RULE VALIDATION
+        ========================================================= */
+
+        this.validateBusinessRules(existing, dto);
+
+        /* =========================================================
+           PASSWORD HANDLING
+        ========================================================= */
+
+        const { hashedPassword, passwordChanged } =
+            await this.resolvePassword(existing, dto);
+
+        /* =========================================================
+           ACCOUNT LOCK HANDLING
+        ========================================================= */
+
+        const unlockAccount =
+            existing.lockUntil !== null && dto.isActive;
+
+        /* =========================================================
+           BUILD UPDATE PAYLOAD
+        ========================================================= */
+
+        const updatePayload: UpdateUserData = {
+            password: hashedPassword,
+            role: dto.role,
+            teacherRole:
+                dto.role === "TEACHER"
+                    ? dto.teacherRole ?? null
+                    : null,
+            isActive: dto.isActive,
+            image: dto.image ?? null,
+            mustChangePassword: passwordChanged,
+            lockUntil: unlockAccount ? null : existing.lockUntil,
+            failedAttempts: unlockAccount
+                ? 0
+                : existing.failedAttempts,
+            updatedAt: new Date(),
+        };
+
+        const updated = await this.repo.update(dto.id, updatePayload);
+
+        return updated;
     }
 
     /* =========================================================
        PRIVATE METHODS
     ========================================================= */
 
-    /**
-     * Enforce domain invariants before update.
-     */
     private validateBusinessRules(
         existing: UserEntity,
         dto: UpdateUserDTO
-    ): Result<void> {
+    ): void {
         // Rule 1: ADMIN accounts cannot be deactivated.
         if (existing.role === "ADMIN" && !dto.isActive) {
-            return Result.fail(
+            throw new Error(
                 "User ADMIN tidak boleh dinonaktifkan."
             );
         }
@@ -101,27 +97,22 @@ export class UpdateUserUseCase {
             existing.role === "STUDENT" &&
             dto.role !== "STUDENT"
         ) {
-            return Result.fail(
+            throw new Error(
                 "Role siswa tidak dapat diubah."
             );
         }
 
-        // Rule 3: TEACHER must always have a teacherRole.
+        // Rule 3: TEACHER must always have teacherRole.
         if (
             dto.role === "TEACHER" &&
             dto.teacherRole == null
         ) {
-            return Result.fail(
+            throw new Error(
                 "Teacher harus memiliki TeacherRole."
             );
         }
-
-        return Result.ok();
     }
 
-    /**
-     * Hash password only if a valid new password is provided.
-     */
     private async resolvePassword(
         existing: UserEntity,
         dto: UpdateUserDTO
@@ -145,5 +136,4 @@ export class UpdateUserUseCase {
         };
     }
 }
-
 

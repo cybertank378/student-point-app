@@ -1,19 +1,25 @@
 //Files: src/modules/user/infrastructure/repo/UserRepository.ts
-import {UserEntity} from "@/modules/user/domain/entity/UserEntity";
+// Files: src/modules/user/infrastructure/repo/UserRepository.ts
+
+import { UserEntity } from "@/modules/user/domain/entity/UserEntity";
 import prisma from "@/libs/prisma";
 import { Prisma } from "@/generated/prisma";
 import type {
     UpdateUserData,
     UserInterface,
     UserSearchParams,
-    UserSearchResult
+    UserSearchResult,
 } from "@/modules/user/domain/interfaces/UserInterface";
-import {UserMapper} from "@/modules/user/domain/mapper/UserMapper";
-import type {UserRole, TeacherRole} from "@/libs/utils";
+import { UserMapper } from "@/modules/user/domain/mapper/UserMapper";
+import type { UserRole, TeacherRole } from "@/libs/utils";
 
 //
 // ======================================================
-// REUSABLE SELECT (SINGLE SOURCE OF TRUTH)
+// PRISMA SELECT CONFIGURATION
+// ------------------------------------------------------
+// Single Source of Truth for User read operations.
+// Ensures consistency between repository and mapper.
+// Any relation or field addition must be reflected here.
 // ======================================================
 //
 
@@ -22,17 +28,28 @@ const userSelect = {
     username: true,
     password: true,
     image: true,
+
+    // System roles
     role: true,
     teacherRole: true,
+
+    // Foreign keys (profile linkage)
     studentId: true,
     parentId: true,
+    teacherId: true,
+
+    // Security & state control
     version: true,
     lockUntil: true,
     failedAttempts: true,
     isActive: true,
+
     createdAt: true,
     updatedAt: true,
 
+    // --------------------------------------------------
+    // STUDENT PROFILE RELATION
+    // --------------------------------------------------
     student: {
         select: {
             id: true,
@@ -54,6 +71,9 @@ const userSelect = {
         },
     },
 
+    // --------------------------------------------------
+    // PARENT PROFILE RELATION
+    // --------------------------------------------------
     parent: {
         select: {
             id: true,
@@ -75,28 +95,34 @@ const userSelect = {
         },
     },
 
+    // --------------------------------------------------
+    // TEACHER PROFILE RELATION
+    // --------------------------------------------------
     teacher: {
         select: {
             id: true,
             name: true,
             nip: true,
+            nrk: true,
         },
     },
 } satisfies Prisma.UserSelect;
 
 //
 // ======================================================
-// REPOSITORY IMPLEMENTATION
+// USER REPOSITORY IMPLEMENTATION
+// ------------------------------------------------------
+// Responsible for data persistence layer interaction.
+// Converts Prisma models into Domain Entities via mapper.
 // ======================================================
 //
 
 export class UserRepository implements UserInterface {
 
-    //
-    // ======================================================
-    // FIND ALL ACTIVE USERS
-    // ======================================================
-    //
+    /**
+     * Retrieve all active users ordered by newest first.
+     * Intended for admin overview.
+     */
     async findAll(): Promise<ReadonlyArray<UserEntity>> {
         const users = await prisma.user.findMany({
             where: { isActive: true },
@@ -107,11 +133,10 @@ export class UserRepository implements UserInterface {
         return UserMapper.toDomainList(users);
     }
 
-    //
-    // ======================================================
-    // FIND BY ID
-    // ======================================================
-    //
+    /**
+     * Retrieve a single user by unique ID.
+     * Returns null if user is not found.
+     */
     async findById(id: string): Promise<UserEntity | null> {
         const user = await prisma.user.findUnique({
             where: { id },
@@ -121,11 +146,17 @@ export class UserRepository implements UserInterface {
         return user ? UserMapper.toDomain(user) : null;
     }
 
-    //
-    // ======================================================
-    // CREATE USER
-    // ======================================================
-    //
+    /**
+     * Create new system user.
+     *
+     * This method supports linking user account
+     * to exactly one profile:
+     * - studentId
+     * - parentId
+     * - teacherId
+     *
+     * Business layer must ensure only one is provided.
+     */
     async create(data: {
         username: string;
         password: string;
@@ -133,6 +164,7 @@ export class UserRepository implements UserInterface {
         teacherRole?: TeacherRole | null;
         studentId?: string | null;
         parentId?: string | null;
+        teacherId?: string | null;
     }): Promise<UserEntity> {
 
         const user = await prisma.user.create({
@@ -141,8 +173,10 @@ export class UserRepository implements UserInterface {
                 password: data.password,
                 role: data.role,
                 teacherRole: data.teacherRole ?? null,
+
                 studentId: data.studentId ?? null,
                 parentId: data.parentId ?? null,
+                teacherId: data.teacherId ?? null,
             },
             select: userSelect,
         });
@@ -150,11 +184,10 @@ export class UserRepository implements UserInterface {
         return UserMapper.toDomain(user);
     }
 
-    //
-    // ======================================================
-    // UPDATE USER
-    // ======================================================
-    //
+    /**
+     * Update user account properties.
+     * Supports partial update via UpdateUserData.
+     */
     async update(id: string, data: UpdateUserData): Promise<UserEntity> {
         const updated = await prisma.user.update({
             where: { id },
@@ -165,22 +198,20 @@ export class UserRepository implements UserInterface {
         return UserMapper.toDomain(updated);
     }
 
-    //
-    // ======================================================
-    // DELETE USER (HARD DELETE)
-    // ======================================================
-    //
+    /**
+     * Permanently delete user record.
+     * Use cautiously (no soft delete here).
+     */
     async delete(id: string): Promise<void> {
         await prisma.user.delete({
             where: { id },
         });
     }
 
-    //
-    // ======================================================
-    // PAGINATED LIST
-    // ======================================================
-    //
+    /**
+     * Paginated listing for admin table view.
+     * Supports optional keyword search.
+     */
     async list(params: {
         page: number;
         limit: number;
@@ -194,6 +225,7 @@ export class UserRepository implements UserInterface {
             isActive: true,
         };
 
+        // Flexible keyword search
         if (search) {
             where.OR = [
                 { username: { contains: search, mode: "insensitive" } },
@@ -220,11 +252,9 @@ export class UserRepository implements UserInterface {
         };
     }
 
-    //
-    // ======================================================
-    // STATS
-    // ======================================================
-    //
+    /**
+     * Aggregated statistics for dashboard analytics.
+     */
     async getUserStats(): Promise<{
         totalActiveUsers: number;
         totalStudentUsers: number;
@@ -252,11 +282,15 @@ export class UserRepository implements UserInterface {
         };
     }
 
-    //
-    // ======================================================
-    // ADVANCED SEARCH
-    // ======================================================
-    //
+    /**
+     * Advanced search with dynamic filtering.
+     * Supports:
+     * - Role filter
+     * - Active status
+     * - Teacher role
+     * - Date range
+     * - Sorting
+     */
     async search(params: UserSearchParams): Promise<UserSearchResult> {
 
         const {
@@ -273,7 +307,6 @@ export class UserRepository implements UserInterface {
         } = params;
 
         const skip = (page - 1) * limit;
-
         const filters: Prisma.UserWhereInput[] = [];
 
         if (username) {

@@ -1,21 +1,40 @@
 //Files: src/modules/teacher/application/usecase/DeleteTeacherUseCase.ts
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 
-import { Result } from "@/modules/shared/core/Result";
 import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
+import {AppError} from "@/modules/shared/errors/AppError";
 
-export class DeleteTeacherUseCase {
+/**
+ * ============================================================
+ * DELETE TEACHER USE CASE
+ * ============================================================
+ *
+ * Business Responsibilities:
+ * - Memastikan guru ada sebelum dihapus
+ * - Menghapus data guru
+ *
+ * Error handling dilakukan oleh BaseUseCase.
+ */
+export class DeleteTeacherUseCase
+    extends BaseUseCase<string, void> {
+
     constructor(
         private readonly repo: TeacherInterface,
-    ) {}
+    ) {
+        super();
+    }
 
-    async execute(id: string): Promise<Result<void>> {
+    /**
+     * Implementasi logika penghapusan guru.
+     */
+    protected async handle(id: string): Promise<void> {
         const teacher = await this.repo.findById(id);
 
         if (!teacher) {
-            return Result.fail("Guru tidak ditemukan");
+            throw AppError.notFound("Guru tidak ditemukan.");
+
         }
 
         await this.repo.delete(id);
-        return Result.ok(undefined);
     }
 }

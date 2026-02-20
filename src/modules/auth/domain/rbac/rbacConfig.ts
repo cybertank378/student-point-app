@@ -1,7 +1,21 @@
-// Files: src/modules/auth/domain/rbac/rbacConfig.ts
-import type {UserRole} from "@/libs/utils";
-import {type Permission, PERMISSIONS,} from "@/modules/auth/domain/rbac/permissions";
+// ============================================================
+// FILE: rbacConfig.ts
+// PURPOSE:
+// Central configuration for:
+// - Role metadata (label, icon, color)
+// - Permission mapping per role
+// - Sidebar navigation
+// - Avatar dropdown menu
+// - API access control
+// ============================================================
 
+import type { UserRole } from "@/libs/utils";
+import {
+    type Permission,
+    PERMISSIONS,
+} from "@/modules/auth/domain/rbac/permissions";
+
+import type { IconType } from "react-icons";
 import {
     MdAssessment,
     MdAssignmentTurnedIn,
@@ -11,18 +25,14 @@ import {
     MdPsychology,
     MdSchool,
 } from "react-icons/md";
-import type {IconType} from "react-icons";
-import {FiBookOpen, FiShield, FiUser, FiUsers} from "react-icons/fi";
+import {FiBookOpen, FiLogOut, FiShield, FiUser, FiUsers} from "react-icons/fi";
 
+/* ============================================================
+   ROLE VISUAL CONFIGURATION
+   Used for badge, UI indicator, profile header, etc.
+============================================================ */
 
-export const roleConfig: Record<
-    UserRole,
-    {
-        icon: IconType;
-        colorClass: string;
-        label: string;
-    }
-> = {
+export const roleConfig: Record<UserRole, {icon: IconType; colorClass: string; label: string; }> = {
     ADMIN: {
         icon: FiShield,
         colorClass: "bg-red-100 text-red-600",
@@ -45,9 +55,8 @@ export const roleConfig: Record<
     },
 };
 
-
 /* ============================================================
-   SIDEBAR TYPE
+   SIDEBAR NODE TYPE
 ============================================================ */
 
 export interface SidebarNode {
@@ -59,10 +68,28 @@ export interface SidebarNode {
 }
 
 /* ============================================================
-   RBAC CONFIG
+   AVATAR DROPDOWN NODE TYPE
+   Used for top-right profile dropdown
+============================================================ */
+
+export interface AvatarMenuNode {
+    label: string;
+    path?: string;
+    action?: "LOGOUT";
+    icon: IconType; // ✅ required
+    permission?: Permission;
+}
+
+
+/* ============================================================
+   RBAC CONFIGURATION CORE
 ============================================================ */
 
 export const rbacConfig = {
+    /* --------------------------------------------------------
+       ROLE PERMISSION MATRIX
+       ADMIN gets ALL permissions automatically
+    --------------------------------------------------------- */
     roles: {
         ADMIN: "ALL",
 
@@ -89,16 +116,6 @@ export const rbacConfig = {
             PERMISSIONS.VIOLATION_READ,
         ],
     } as Record<UserRole, "ALL" | Permission[]>,
-
-    dashboard: {
-        "/dashboard": PERMISSIONS.DASHBOARD_VIEW,
-        "/dashboard/students": PERMISSIONS.STUDENT_READ,
-        "/dashboard/teachers": PERMISSIONS.TEACHER_READ,
-        "/dashboard/users": PERMISSIONS.USER_READ,
-        "/dashboard/violations": PERMISSIONS.VIOLATION_READ,
-        "/dashboard/achievements": PERMISSIONS.ACHIEVEMENT_READ,
-    } as const,
-
 
     api: {
         /**
@@ -285,17 +302,124 @@ export const rbacConfig = {
 
     } as const,
 
+    /* --------------------------------------------------------
+       AVATAR DROPDOWN MENU
+       Permission-based filtering (NOT role-based hardcode)
+    --------------------------------------------------------- */
+    avatarMenu: [
+        {
+            label: "Profil Saya",
+            path: "/dashboard/profile",
+            icon: FiUser,
+            permission: PERMISSIONS.DASHBOARD_VIEW,
+        },
+        {
+            label: "Ubah Password",
+            path: "/dashboard/change-password",
+            icon: FiShield,
+            permission: PERMISSIONS.DASHBOARD_VIEW,
+        },
+        {
+            label: "Pengaturan Sistem",
+            path: "/dashboard/settings",
+            icon: MdManageAccounts,
+            permission: PERMISSIONS.USER_MANAGE,
+        },
+        {
+            label: "Log Aktivitas",
+            path: "/dashboard/logs",
+            icon: MdAssessment,
+            permission: PERMISSIONS.USER_READ,
+        },
+        {
+            label: "Keluar",
+            action: "LOGOUT",
+            icon: FiLogOut, // ✅ tambahkan icon
+        },
+    ] satisfies readonly AvatarMenuNode[],
+
+    /**
+     * =========================================================
+     * DASHBOARD ROUTE PERMISSION MAP
+     * ---------------------------------------------------------
+     * Mapping antara route halaman dashboard dengan permission
+     * yang dibutuhkan untuk mengakses halaman tersebut.
+     *
+     * Digunakan oleh:
+     * - canAccessRoute()
+     * - Middleware / proxy guard
+     * - Route-level protection (UI & server)
+     *
+     * IMPORTANT:
+     * - Semua halaman utama dashboard HARUS didaftarkan di sini
+     * - Jika route tidak didaftarkan:
+     *      → akan dianggap PUBLIC (atau sesuai logic guard)
+     * - Pastikan mapping ini konsisten dengan sidebar config
+     *
+     * SECURITY NOTE:
+     * Ini hanya guard level aplikasi.
+     * API tetap harus divalidasi ulang di server layer.
+     * =========================================================
+     */
+
+    dashboard: {
+        "/dashboard": PERMISSIONS.DASHBOARD_VIEW,
+        "/dashboard/students": PERMISSIONS.STUDENT_READ,
+        "/dashboard/teachers": PERMISSIONS.TEACHER_READ,
+        "/dashboard/users": PERMISSIONS.USER_READ,
+        "/dashboard/violations": PERMISSIONS.VIOLATION_READ,
+        "/dashboard/achievements": PERMISSIONS.ACHIEVEMENT_READ,
+    } as const,
+
     fields: {
+        /* ========================================================
+           STUDENT RESOURCE
+        ======================================================== */
         student: {
             name: [PERMISSIONS.STUDENT_MANAGE],
-            nis: [PERMISSIONS.STUDENT_MANAGE],
+            nis: [PERMISSIONS.STUDENT_MANAGE], // hanya admin
+            religionCode: [PERMISSIONS.STUDENT_MANAGE],
+            rombelId: [PERMISSIONS.STUDENT_MANAGE],
+            status: [PERMISSIONS.STUDENT_MANAGE],
         },
+
+        /* ========================================================
+           TEACHER RESOURCE
+        ======================================================== */
+        teacher: {
+            name: [PERMISSIONS.TEACHER_MANAGE],
+            nip: [PERMISSIONS.TEACHER_MANAGE], // hanya admin
+            subject: [PERMISSIONS.TEACHER_MANAGE],
+            phone: [PERMISSIONS.TEACHER_MANAGE],
+        },
+
+        /* ========================================================
+           PARENT RESOURCE
+        ======================================================== */
+        parent: {
+            name: [PERMISSIONS.STUDENT_MANAGE],
+            phone: [PERMISSIONS.PARENT_CALL_MANAGE],
+            job: [PERMISSIONS.STUDENT_MANAGE],
+            education: [PERMISSIONS.STUDENT_MANAGE],
+            income: [PERMISSIONS.STUDENT_MANAGE], // sensitif
+        },
+
+        /* ========================================================
+           USER ACCOUNT RESOURCE
+        ======================================================== */
         user: {
-            role: [PERMISSIONS.USER_MANAGE],
+            role: [PERMISSIONS.USER_MANAGE], // hanya admin
             email: [PERMISSIONS.USER_MANAGE],
+            password: [PERMISSIONS.USER_MANAGE],
+            isActive: [PERMISSIONS.USER_MANAGE],
         },
     } as const,
 
+
+    /* --------------------------------------------------------
+       SIDEBAR NAVIGATION STRUCTURE
+       Each item protected by permission
+    --------------------------------------------------------- */
     sidebar: [
         {
             label: "Dashboard",
@@ -433,15 +557,33 @@ export const rbacConfig = {
 } as const;
 
 /* ============================================================
-   ROLE PERMISSION RESOLVER
+   PERMISSION RESOLVER
+   Returns all permissions for a given role
 ============================================================ */
 
 export function getRolePermissions(role: UserRole): Permission[] {
-    const roleConfig = rbacConfig.roles[role];
+    const rolePermission = rbacConfig.roles[role];
 
-    if (roleConfig === "ALL") {
+    // ADMIN gets every permission automatically
+    if (rolePermission === "ALL") {
         return Object.values(PERMISSIONS);
     }
 
-    return roleConfig;
+    return rolePermission;
+}
+
+/* ============================================================
+   AVATAR MENU RESOLVER
+   Filters dropdown menu based on role permission
+============================================================ */
+
+export function getAvatarMenuByRole(
+    role: UserRole
+): AvatarMenuNode[] {
+    const permissions = getRolePermissions(role);
+
+    return rbacConfig.avatarMenu.filter((item) => {
+        if (!item.permission) return true;
+        return permissions.includes(item.permission);
+    });
 }

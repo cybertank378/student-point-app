@@ -14,16 +14,21 @@ import { DeleteStudentUseCase } from "@/modules/student/application/usecases/Del
 import { UpdateStudentUseCase } from "@/modules/student/application/usecases/UpdateStudentUseCase";
 import { CreateStudentUseCase } from "@/modules/student/application/usecases/CreateStudentUseCase";
 import { GetStudentByNisUseCase } from "@/modules/student/application/usecases/GetStudentByNisUseCase";
+import { AssignStudentAcademicYearUseCase } from "@/modules/student/application/usecases/AssignStudentAcademicYearUseCase";
+
 import type { AcademicYearInterface } from "@/modules/academic-year/domain/interfaces/AcademicYearInterface";
 import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
 import {
-    AssignStudentAcademicYearUsecase
-} from "@/modules/student/application/usecases/AssignStudentAcademicYearUseCase";
+    BatchAssignStudentAcademicYearUseCase
+} from "@/modules/student/application/usecases/BatchAssignStudentAcademicYearUseCase";
 
 /**
- * StudentService
- * --------------
- * Aggregator seluruh usecase Student
+ * ============================================================
+ * STUDENT SERVICE
+ * ============================================================
+ *
+ * Aggregator seluruh Student usecase.
+ * Semua method return Result<T>.
  */
 export class StudentService {
     private readonly listUseCase: ListStudentUseCase;
@@ -34,34 +39,35 @@ export class StudentService {
     private readonly deleteUseCase: DeleteStudentUseCase;
     private readonly assignRombelUseCase: AssignStudentToRombelUseCase;
     private readonly batchAssignRombelUseCase: BatchAssignStudentToRombelUseCase;
-
-    /* 🔥 Tambahkan */
-    private readonly assignAcademicYearUseCase: AssignStudentAcademicYearUsecase;
+    private readonly assignAcademicYearUseCase: AssignStudentAcademicYearUseCase;
+    private readonly batchAssignAcademicYearUseCase: BatchAssignStudentAcademicYearUseCase;
 
     constructor(
         repo: StudentInterface,
-        academicYearRepo: AcademicYearInterface,
+        academicYearRepo: AcademicYearInterface
     ) {
         this.listUseCase = new ListStudentUseCase(repo);
         this.getByIdUseCase = new GetStudentByIdUseCase(repo);
         this.getByNisUseCase = new GetStudentByNisUseCase(repo);
-        this.createUseCase = new CreateStudentUseCase(repo, academicYearRepo);
+        this.createUseCase = new CreateStudentUseCase(
+            repo,
+            academicYearRepo
+        );
         this.updateUseCase = new UpdateStudentUseCase(repo);
         this.deleteUseCase = new DeleteStudentUseCase(repo);
         this.assignRombelUseCase = new AssignStudentToRombelUseCase(repo);
-        this.batchAssignRombelUseCase =
-            new BatchAssignStudentToRombelUseCase(repo);
-
-        /* 🔥 Inisialisasi */
-        this.assignAcademicYearUseCase =
-            new AssignStudentAcademicYearUsecase(repo);
+        this.batchAssignRombelUseCase =new BatchAssignStudentToRombelUseCase(repo);
+        this.assignAcademicYearUseCase = new AssignStudentAcademicYearUseCase(repo);
+        this.batchAssignAcademicYearUseCase = new BatchAssignStudentAcademicYearUseCase(repo);
     }
 
     /* =========================
        LIST
     ========================= */
 
-    async getAll(query?: StudentQueryDTO): Promise<Result<Student[]>> {
+    getAll(
+        query?: StudentQueryDTO
+    ): Promise<Result<Student[]>> {
         return this.listUseCase.execute(query);
     }
 
@@ -69,7 +75,7 @@ export class StudentService {
        GET BY ID
     ========================= */
 
-    async getById(id: string): Promise<Result<Student>> {
+    getById(id: string): Promise<Result<Student>> {
         return this.getByIdUseCase.execute(id);
     }
 
@@ -77,7 +83,7 @@ export class StudentService {
        GET BY NIS
     ========================= */
 
-    async getByNis(nis: number): Promise<Result<Student>> {
+    getByNis(nis: number): Promise<Result<Student>> {
         return this.getByNisUseCase.execute(nis);
     }
 
@@ -85,7 +91,9 @@ export class StudentService {
        CREATE
     ========================= */
 
-    async create(dto: CreateStudentDTO): Promise<Result<Student>> {
+    create(
+        dto: CreateStudentDTO
+    ): Promise<Result<Student>> {
         return this.createUseCase.execute(dto);
     }
 
@@ -93,15 +101,17 @@ export class StudentService {
        UPDATE
     ========================= */
 
-    async update(dto: UpdateStudentDTO): Promise<Result<Student>> {
+    update(
+        dto: UpdateStudentDTO
+    ): Promise<Result<Student>> {
         return this.updateUseCase.execute(dto);
     }
 
     /* =========================
-       DELETE (SOFT)
+       DELETE
     ========================= */
 
-    async delete(id: string): Promise<Result<void>> {
+    delete(id: string): Promise<Result<void>> {
         return this.deleteUseCase.execute(id);
     }
 
@@ -109,55 +119,37 @@ export class StudentService {
        ASSIGN ROMBEL
     ========================= */
 
-    async assignToRombel(
-        studentId: string,
-        rombelId: string,
+    assignToRombel(
+        dto: { studentId: string; rombelId: string }
     ): Promise<Result<void>> {
-        return this.assignRombelUseCase.execute({
-            studentId,
-            rombelId,
-        });
+        return this.assignRombelUseCase.execute(dto);
     }
 
     /* =========================
        BATCH ASSIGN ROMBEL
     ========================= */
 
-    async batchAssignToRombel(
-        studentIds: string[],
-        rombelId: string,
+    batchAssignToRombel(
+        dto: { studentIds: string[]; rombelId: string }
     ): Promise<Result<number>> {
-        return this.batchAssignRombelUseCase.execute({
-            studentIds,
-            rombelId,
-        });
+        return this.batchAssignRombelUseCase.execute(dto);
     }
 
     /* =========================
-       ASSIGN ACADEMIC YEAR (NEW)
+       ASSIGN ACADEMIC YEAR
     ========================= */
-
-    async assignAcademicYear(
-        studentId: string,
-        rombelId: string,
-    ): Promise<Student> {
-        return this.assignAcademicYearUseCase.execute({
-            studentId,
-            rombelId,
-        });
+    assignAcademicYear(
+        dto: { studentId: string; rombelId: string }
+    ): Promise<Result<Student>> {
+        return this.assignAcademicYearUseCase.execute(dto);
     }
 
     /* =========================
-       BATCH ASSIGN ACADEMIC YEAR (NEW)
+       BATCH ASSIGN ACADEMIC YEAR
     ========================= */
-
-    async batchAssignAcademicYear(
-        studentIds: string[],
-        rombelId: string,
-    ): Promise<number> {
-        return this.assignAcademicYearUseCase.batchExecute({
-            studentIds,
-            rombelId,
-        });
+    batchAssignAcademicYear(
+        dto: { studentIds: string[]; rombelId: string }
+    ): Promise<Result<number>> {
+        return this.batchAssignAcademicYearUseCase.execute(dto);
     }
 }

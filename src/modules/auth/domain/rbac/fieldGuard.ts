@@ -19,19 +19,17 @@ export function canAccess(
    ROUTE GUARD
 ============================================================ */
 
-export function canAccessRoute(
-    role: UserRole,
-    path: string
-): boolean {
+export function canAccessRoute(role: UserRole, path: string) {
+    const dashboardRoutes = rbacConfig.dashboard;
+
     const required =
-        rbacConfig.dashboard[
-            path as keyof typeof rbacConfig.dashboard
-            ];
+        dashboardRoutes[path as keyof typeof dashboardRoutes];
 
     if (!required) return true;
 
     return canAccess(role, required);
 }
+
 
 /* ============================================================
    FIELD GUARD

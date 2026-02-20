@@ -1,257 +1,220 @@
 //Files: src/modules/auth/infrastructure/http/AuthController.ts
-
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  loginSchema,
-  changePasswordSchema,
-  requestResetSchema,
-  resetPasswordSchema,
+    loginSchema,
+    changePasswordSchema,
+    requestResetSchema,
+    resetPasswordSchema,
 } from "../validators/auth.validator";
+
 import { handleZodError } from "@/modules/shared/errors/handleZodError";
-import { DomainError } from "@/modules/shared/errors/DomainError";
+import { HttpResultHandler } from "@/modules/shared/http/HttpResultHandler";
 import type { AuthService } from "@/modules/auth/application/service/AuthService";
+
 import { ONE_DAY, SEVEN_DAYS } from "@/libs/utils";
 
 export class AuthController {
-  constructor(private readonly service: AuthService) {}
+    constructor(private readonly service: AuthService) {}
 
-  /**
-   * Extract client IP safely from headers
-   */
-  private getClientIp(req: NextRequest): string | null {
-    const forwarded = req.headers.get("x-forwarded-for");
+    /* ============================================================
+       HELPER
+    ============================================================ */
 
-    if (forwarded) {
-      return forwarded.split(",")[0].trim();
+    private getClientIp(req: NextRequest): string | null {
+        const forwarded = req.headers.get("x-forwarded-for");
+        if (forwarded) return forwarded.split(",")[0].trim();
+
+        return req.headers.get("x-real-ip") ?? null;
     }
 
-    const realIp = req.headers.get("x-real-ip");
+    /* ============================================================
+       LOGIN
+    ============================================================ */
 
-    return realIp ?? null;
-  }
+    async login(req: NextRequest) {
+        try {
+            const body = loginSchema.parse(await req.json());
 
-  /**
-   * ======================================
-   * ============== LOGIN ================
-   * ======================================
-   * POST /api/auth/login
-   */
-  async login(req: NextRequest) {
-    try {
-      const body = loginSchema.parse(await req.json());
+            const result = await this.service.login({
+                username: body.username,
+                password: body.password,
+                ip: this.getClientIp(req),
+                userAgent: req.headers.get("user-agent"),
+            });
 
-      const result = await this.service.login(
-        body.username,
-        body.password,
-        this.getClientIp(req),
-        req.headers.get("user-agent"),
-      );
+            if (!result.isSuccess) {
+                return HttpResultHandler.handle(result);
+            }
 
-      const response = NextResponse.json({
-        role: result.role,
-        mustChangePassword: result.mustChangePassword,
-      });
+            const value = result.getValue();
 
-      // 🔥 ACCESS TOKEN COOKIE
-      response.cookies.set("accessToken", result.accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: ONE_DAY, // 15 menit
-      });
+            const response = NextResponse.json({
+                role: value.role,
+                mustChangePassword: value.mustChangePassword,
+            });
 
-      // 🔥 REFRESH TOKEN COOKIE
-      response.cookies.set("refresh_token", result.refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: SEVEN_DAYS, // 7 hari
-      });
+            response.cookies.set("accessToken", value.accessToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: ONE_DAY,
+            });
 
-      return response;
-    } catch (error) {
-      if (error instanceof DomainError) {
-        return NextResponse.json(
-          { message: error.message },
-          { status: error.statusCode },
-        );
-      }
+            response.cookies.set("refresh_token", value.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: SEVEN_DAYS,
+            });
 
-      return handleZodError(error);
+            return response;
+        } catch (error) {
+            return handleZodError(error);
+        }
     }
-  }
 
-  /**
-   * ======================================
-   * ============== REFRESH ===============
-   * ======================================
-   * POST /api/auth/refresh
-   */
-  async refresh(req: NextRequest) {
-    try {
-      const cookie = req.cookies.get("refresh_token");
+    /* ============================================================
+       REFRESH
+    ============================================================ */
 
-      if (!cookie?.value) {
-        return Response.json(
-          { message: "Refresh token missing" },
-          { status: 401 },
-        );
-      }
+    async refresh(req: NextRequest) {
+        try {
+            const cookie = req.cookies.get("refresh_token");
 
-      const result = await this.service.refresh(cookie.value);
+            if (!cookie?.value) {
+                return NextResponse.json(
+                    { message: "Refresh token missing" },
+                    { status: 401 }
+                );
+            }
 
-      const response = Response.json({
-        accessToken: result.accessToken,
-      });
+            const result = await this.service.refresh({
+                refreshToken: cookie.value,
+            });
 
-      response.headers.append(
-        "Set-Cookie",
-        `refresh_token=${result.refreshToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`,
-      );
+            if (!result.isSuccess) {
+                return HttpResultHandler.handle(result);
+            }
 
-      return response;
-    } catch (error) {
-      if (error instanceof DomainError) {
-        return Response.json(
-          { message: error.message },
-          { status: error.statusCode },
-        );
-      }
+            const value = result.getValue();
 
-      return Response.json(
-        { message: "Invalid refresh token" },
-        { status: 401 },
-      );
+            const response = NextResponse.json({
+                accessToken: value.accessToken,
+            });
+
+            response.cookies.set("refresh_token", value.refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+                path: "/",
+                maxAge: SEVEN_DAYS,
+            });
+
+            return response;
+        } catch (error) {
+            return handleZodError(error);
+        }
     }
-  }
 
-  /**
-   * ======================================
-   * ============== LOGOUT ===============
-   * ======================================
-   * POST /api/auth/logout
-   */
-  async logout(req: NextRequest) {
-    try {
-      const refreshCookie = req.cookies.get("refresh_token");
+    /* ============================================================
+       LOGOUT
+    ============================================================ */
 
-      if (!refreshCookie?.value) {
-        return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-      }
+    async logout(req: NextRequest) {
+        const cookie = req.cookies.get("refresh_token");
 
-      await this.service.logoutByRefreshToken(refreshCookie.value);
+        if (!cookie?.value) {
+            return NextResponse.json(
+                { message: "Unauthorized" },
+                { status: 401 }
+            );
+        }
 
-      const response = NextResponse.json({ success: true });
+        const result = await this.service.logout({
+            refreshToken: cookie.value,
+        });
 
-      // Clear refresh token
-      response.cookies.set("refresh_token", "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 0,
-      });
+        if (!result.isSuccess) {
+            return HttpResultHandler.handle(result);
+        }
 
-      // Clear access token
-      response.cookies.set("accessToken", "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 0,
-      });
+        const response = NextResponse.json({ success: true });
 
-      return response;
-    } catch (_error) {
-      return NextResponse.json({ message: "Logout failed" }, { status: 400 });
+        response.cookies.set("refresh_token", "", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 0,
+        });
+
+        response.cookies.set("accessToken", "", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+            path: "/",
+            maxAge: 0,
+        });
+
+        return response;
     }
-  }
-  /**
-   * ======================================
-   * ========== CHANGE PASSWORD ===========
-   * ======================================
-   * POST /api/auth/change-password
-   */
-  async changePassword(userId: string, req: NextRequest) {
-    try {
-      const body = changePasswordSchema.parse(await req.json());
 
-      await this.service.changePassword(
-        userId,
-        body.oldPassword,
-        body.newPassword,
-      );
+    /* ============================================================
+       CHANGE PASSWORD
+    ============================================================ */
 
-      return Response.json({
-        success: true,
-      });
-    } catch (error) {
-      if (error instanceof DomainError) {
-        return Response.json(
-          { message: error.message },
-          { status: error.statusCode },
-        );
-      }
+    async changePassword(userId: string, req: NextRequest) {
+        try {
+            const body = changePasswordSchema.parse(await req.json());
 
-      return handleZodError(error);
+            const result = await this.service.changePassword({
+                userId,
+                oldPassword: body.oldPassword,
+                newPassword: body.newPassword,
+            });
+
+            return HttpResultHandler.handle(result);
+        } catch (error) {
+            return handleZodError(error);
+        }
     }
-  }
 
-  /**
-   * ======================================
-   * ======== REQUEST RESET PASSWORD ======
-   * ======================================
-   * POST /api/auth/request-reset
-   */
-  async requestReset(req: NextRequest) {
-    try {
-      const body = requestResetSchema.parse(await req.json());
+    /* ============================================================
+       REQUEST RESET PASSWORD
+    ============================================================ */
 
-      const token = await this.service.requestResetPassword(body.username);
+    async requestReset(req: NextRequest) {
+        try {
+            const body = requestResetSchema.parse(await req.json());
 
-      // Kirim token via email service (di luar controller)
-      return Response.json({
-        message: "Reset token generated",
-        token, // production: jangan kirim ke client
-      });
-    } catch (error) {
-      if (error instanceof DomainError) {
-        return Response.json(
-          { message: error.message },
-          { status: error.statusCode },
-        );
-      }
+            const result = await this.service.requestResetPassword({
+                username: body.username,
+            });
 
-      return handleZodError(error);
+            return HttpResultHandler.handle(result);
+        } catch (error) {
+            return handleZodError(error);
+        }
     }
-  }
 
-  /**
-   * ======================================
-   * =========== RESET PASSWORD ===========
-   * ======================================
-   * POST /api/auth/reset-password
-   */
-  async resetPassword(req: NextRequest) {
-    try {
-      const body = resetPasswordSchema.parse(await req.json());
+    /* ============================================================
+       RESET PASSWORD
+    ============================================================ */
 
-      await this.service.resetPassword(body.token, body.newPassword);
+    async resetPassword(req: NextRequest) {
+        try {
+            const body = resetPasswordSchema.parse(await req.json());
 
-      return Response.json({
-        success: true,
-      });
-    } catch (error) {
-      if (error instanceof DomainError) {
-        return Response.json(
-          { message: error.message },
-          { status: error.statusCode },
-        );
-      }
+            const result = await this.service.resetPassword({
+                token: body.token,
+                newPassword: body.newPassword,
+            });
 
-      return handleZodError(error);
+            return HttpResultHandler.handle(result);
+        } catch (error) {
+            return handleZodError(error);
+        }
     }
-  }
 }

@@ -1,36 +1,79 @@
-//Files: src/modules/teacher/infrastructure/validators/teacher.validator.ts
+// Files: src/modules/teacher/infrastructure/validators/teacher.validator.ts
 
 import { z } from "zod";
-import {EMAIL_REGEX, TEACHER_ROLES, UUID_REGEX} from "@/libs/utils";
+import { id } from "zod/locales"
 
-export const TeacherRoleEnum = z.enum(TEACHER_ROLES);
-
-export const UuidSchema = z.string().regex(UUID_REGEX, "Invalid UUID v4");
+import { TeacherRole } from "@/generated/prisma";
+import { teacherSortFields } from "@/modules/teacher/domain/dto/ListTeacherRespDTO";
+import {BaseTeacherSchema, TeacherObjectSchema, teacherRefinement} from "./base.validator";
 
 /* ============================================================
-   OPTIONAL: BRANDED TYPE (STRONGER TYPE SAFETY)
-============================================================ */
-export const CreateTeacherSchema = z.object({
-    userId: UuidSchema,
-    nip: z.string().min(5),
-    name: z.string().min(3),
-    phone: z.string().optional(),
-    email: z.string().regex(EMAIL_REGEX).optional(),
-    roles: z.array(TeacherRoleEnum).min(1),
+   ZOD CONFIG
+   ============================================================ */
+
+z.config(id());
+
+/* ============================================================
+   LIST (PAGINATION)
+   ============================================================ */
+
+export const ListTeacherSchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+    search: z.string().trim().optional(),
 });
 
-export const UpdateTeacherSchema = z.object({
-    nip: z.string().min(5),
-    name: z.string().min(3),
-    phone: z.string().nullable().optional(),
-    email: z.string().regex(EMAIL_REGEX).nullable().optional(),
-    roles: z.array(TeacherRoleEnum).min(1),
+/* ============================================================
+   SEARCH (ADVANCED FILTER)
+   ============================================================ */
+
+export const SearchTeacherSchema = z.object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+
+    name: z.string().trim().optional(),
+    role: z.enum(TeacherRole).optional(),
+    religionCode: z.string().optional(),
+
+    sortBy: z.enum(teacherSortFields).optional(),
+    sortOrder: z.enum(["asc", "desc"]).optional(),
 });
+
+/* ============================================================
+   CREATE
+   ============================================================ */
+
+export const CreateTeacherSchema = BaseTeacherSchema;
+
+/* ============================================================
+   UPDATE
+   ============================================================ */
+
+export const UpdateTeacherSchema =
+    TeacherObjectSchema
+        .partial()
+        .superRefine(teacherRefinement);
+
+
+/* ============================================================
+   ASSIGN ROLE
+   ============================================================ */
 
 export const AssignTeacherRoleSchema = z.object({
-    roles: z.array(TeacherRoleEnum).min(1),
+    roles: z.array(z.enum(TeacherRole)).min(1),
 });
 
+/* ============================================================
+   ASSIGN HOMEROOM
+   ============================================================ */
+
 export const AssignHomeroomSchema = z.object({
-    classId: UuidSchema,
+    teacherId: z.string().min(1),
+    classId: z.string().min(1),
 });
+
+/* ============================================================
+   IMPORT (BULK)
+   ============================================================ */
+
+export const ImportTeacherSchema = z.array(BaseTeacherSchema);

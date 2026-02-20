@@ -15,16 +15,15 @@ export default function AppLayout({ children, role, username }: Props) {
     const [mobileOpen, setMobileOpen] = useState(false);
 
     return (
-        <div className="flex min-h-screen w-full bg-[#f4f5fa]">
+        <div className="flex h-screen overflow-hidden bg-[#f4f5fa]">
 
-            {/* Sidebar - Render Only Once */}
             <AppSidebar
                 role={role}
                 mobileOpen={mobileOpen}
                 onClose={() => setMobileOpen(false)}
             />
 
-            <div className="flex flex-col flex-1 min-w-0 w-full">
+            <div className="flex flex-col flex-1 min-w-0">
 
                 <AppTopbar
                     role={role}
@@ -32,8 +31,9 @@ export default function AppLayout({ children, role, username }: Props) {
                     onMenuClick={() => setMobileOpen(true)}
                 />
 
+                {/* Scroll only here */}
                 <main className="flex-1 overflow-y-auto">
-                    <div className="px-6 md:px-8 py-6 md:py-8 w-full">
+                    <div className="px-6 md:px-8 py-6 md:py-8">
                         {children}
                     </div>
                 </main>

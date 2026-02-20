@@ -1,19 +1,27 @@
 //Files: src/app/api/teachers/[id]/roles/route.ts
-import type { NextRequest } from "next/server";
-import { getRouteParam } from "@/modules/shared/http/getRouteParam";
-import { createTeacherController } from "@/app/api/teachers/_factory";
+import { NextRequest } from "next/server";
+import {createTeacherController} from "@/app/api/teachers/_factory";
+
+/**
+ * ============================================================
+ * TEACHER ROLE ROUTE
+ * ============================================================
+ *
+ * Endpoint:
+ * - PATCH /api/teachers/:id/roles
+ *
+ * Digunakan untuk memperbarui role guru.
+ */
 
 const controller = createTeacherController();
 
 /**
- * =====================================================
- * PUT /api/teachers/:id/assign-role
- * =====================================================
- *
- * RbacConfig handled in middleware
+ * PATCH /api/teachers/:id/role
  */
-
-export async function PUT(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.assignRole(id, req);
+export async function PATCH(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+) {
+    return controller.assignRole(params.id, request);
 }
+

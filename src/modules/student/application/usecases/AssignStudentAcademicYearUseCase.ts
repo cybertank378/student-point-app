@@ -1,75 +1,50 @@
 //Files: src/modules/student/application/usecases/AssignStudentAcademicYearUseCase.ts
-import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import { AppError } from "@/modules/shared/errors/AppError";
+
 import type { Student } from "@/modules/student/domain/entity/Student";
+import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
 
-/* =========================
-   SINGLE ASSIGN
-========================= */
+type Request = {
+    studentId: string;
+    rombelId: string;
+};
 
-interface AssignStudentAcademicYearInput {
-  studentId: string;
-  rombelId: string;
-}
-
-/* =========================
-   BATCH ASSIGN
-========================= */
-
-interface BatchAssignInput {
-  studentIds: string[];
-  rombelId: string;
-}
-
-export class AssignStudentAcademicYearUsecase {
-  constructor(private readonly studentRepo: StudentInterface) {}
-
-  /* =========================
-       SINGLE EXECUTE
-    ========================= */
-
-  async execute(input: AssignStudentAcademicYearInput): Promise<Student> {
-    const { studentId, rombelId } = input;
-
-    if (!studentId) {
-      throw new Error("Student ID is required");
+export class AssignStudentAcademicYearUseCase extends BaseUseCase<
+    Request,
+    Student
+> {
+    constructor(private readonly repo: StudentInterface) {
+        super();
     }
 
-    if (!rombelId) {
-      throw new Error("Rombel ID is required");
+    protected async handle(
+        dto: Request
+    ): Promise<Student> {
+        const { studentId, rombelId } = dto;
+
+        if (!studentId) {
+            throw AppError.badRequest("Student ID is required");
+        }
+
+        if (!rombelId) {
+            throw AppError.badRequest("Rombel ID is required");
+        }
+
+        const student = await this.repo.findById(studentId);
+
+        if (!student) {
+            throw AppError.notFound("Student not found");
+        }
+
+        await this.repo.assignToRombel(studentId, rombelId);
+
+        const updated = await this.repo.findById(studentId);
+
+        if (!updated) {
+            throw AppError.internal("Failed to assign student");
+        }
+
+        return updated;
     }
-
-    const student = await this.studentRepo.findById(studentId);
-
-    if (!student) {
-      throw new Error("Student not found");
-    }
-
-    await this.studentRepo.assignToRombel(studentId, rombelId);
-
-    const updated = await this.studentRepo.findById(studentId);
-
-    if (!updated) {
-      throw new Error("Failed to assign student to academic year");
-    }
-
-    return updated;
-  }
-
-  /* =========================
-       BATCH EXECUTE
-    ========================= */
-
-  async batchExecute(input: BatchAssignInput): Promise<number> {
-    const { studentIds, rombelId } = input;
-
-    if (!studentIds.length) {
-      throw new Error("Student IDs are required");
-    }
-
-    if (!rombelId) {
-      throw new Error("Rombel ID is required");
-    }
-
-    return this.studentRepo.batchAssignToRombel(studentIds, rombelId);
-  }
 }

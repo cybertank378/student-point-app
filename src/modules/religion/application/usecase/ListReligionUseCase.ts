@@ -1,12 +1,32 @@
 //Files: src/modules/religion/application/usecase/ListReligionUseCase.ts
 
-import type { ReligionInterface } from "@/modules/religion/domain/interfaces/ReligionInterface";
-import { Result } from "@/modules/shared/core/Result";
-import type { Religion } from "@/modules/religion/domain/entity/Religion";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 
-export class ListReligionUseCase {
-  constructor(private repo: ReligionInterface) {}
-  async execute(): Promise<Result<Religion[]>> {
-    return Result.ok(await this.repo.findAll());
-  }
+import type { Religion } from "@/modules/religion/domain/entity/Religion";
+import type { ReligionInterface } from "@/modules/religion/domain/interfaces/ReligionInterface";
+
+/**
+ * ============================================================
+ * LIST RELIGION USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Retrieve all Religion entities.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - No manual Result wrapping
+ * - Errors handled centrally
+ */
+export class ListReligionUseCase extends BaseUseCase<
+    void,
+    Religion[]
+> {
+    constructor(private readonly repo: ReligionInterface) {
+        super();
+    }
+
+    protected async handle(): Promise<Religion[]> {
+        return this.repo.findAll();
+    }
 }

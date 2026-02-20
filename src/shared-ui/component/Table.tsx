@@ -9,8 +9,8 @@ import type React from "react";
 ========================= */
 type TableProps = {
     children: React.ReactNode;
-    className?: string;          // untuk <table>
-    wrapperClassName?: string;   // untuk div pembungkus
+    className?: string;        // untuk <table>
+    wrapperClassName?: string; // untuk div pembungkus
 };
 
 export const Table = ({
@@ -20,13 +20,13 @@ export const Table = ({
                       }: TableProps) => (
     <div
         className={clsx(
-            "overflow-x-auto border border-gray-200 bg-white",
+            "overflow-x-auto border border-gray-200 bg-white rounded-lg",
             wrapperClassName
         )}
     >
         <table
             className={clsx(
-                "w-full text-sm text-gray-700 border-separate border-spacing-0",
+                "w-full text-sm text-gray-700 border-collapse",
                 className
             )}
         >
@@ -47,7 +47,7 @@ export const TableHead = ({
 }) => (
     <thead
         className={clsx(
-            "bg-gray-50 text-gray-700 text-sm font-semibold border-b border-gray-200",
+            "h-16 bg-gray-100 text-gray-700 text-sm font-semibold border-b border-gray-200",
             className
         )}
     >
@@ -87,8 +87,9 @@ export const TableRow = ({
 }) => (
     <tr
         className={clsx(
-            "border-b border-gray-100 even:bg-gray-50",
-            "hover:bg-indigo-50/60 transition-all duration-200",
+            "border-b border-gray-200 last:border-b-0",
+            "even:bg-gray-50",
+            "hover:bg-indigo-50/60 transition-colors duration-200",
             className
         )}
         {...props}

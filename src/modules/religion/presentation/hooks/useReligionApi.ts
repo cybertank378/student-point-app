@@ -185,10 +185,13 @@ export const useReligionApi = () => {
    * =========================
    */
   useEffect(() => {
-    void fetchReligions();
-  }, [fetchReligions]);
+      if (religions.length === 0) {
+          void fetchReligions();
+      }
+  }, [fetchReligions, religions.length]);
 
-  return {
+
+    return {
     religions,
     loading,
     error,

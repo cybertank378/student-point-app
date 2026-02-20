@@ -1,45 +1,53 @@
-//Files: src/modules/shared/core/Result.ts
-
+/**
+ * ============================================================
+ * RESULT PATTERN
+ * ============================================================
+ *
+ * Generic wrapper untuk success / failure.
+ * Error disimpan sebagai unknown agar bisa berupa:
+ * - AppError
+ * - DomainError
+ * - Error
+ * - validation error
+ */
 export class Result<T> {
-    public isSuccess: boolean;
-    public isFailure: boolean;
-    private readonly _error: string | null;
-    private readonly _value: T | null;
+    public readonly isSuccess: boolean;
+    private readonly error?: unknown;
+    private readonly value?: T;
 
-    private constructor(isSuccess: boolean, error?: string, value?: T) {
-        if (isSuccess && error) {
-            throw new Error(
-                "InvalidOperation: successful result cannot contain error",
-            );
-        }
-        if (!isSuccess && !error) {
-            throw new Error(
-                "InvalidOperation: failure result must contain error message",
-            );
-        }
-
+    private constructor(
+        isSuccess: boolean,
+        value?: T,
+        error?: unknown
+    ) {
         this.isSuccess = isSuccess;
-        this.isFailure = !isSuccess;
-        this._error = error ?? null;
-        this._value = value ?? null;
+        this.value = value;
+        this.error = error;
+
+        Object.freeze(this);
+    }
+
+    public static ok<T>(value?: T): Result<T> {
+        return new Result<T>(true, value);
+    }
+
+    public static fail<T>(error: unknown): Result<T> {
+        return new Result<T>(false, undefined, error);
     }
 
     public getValue(): T {
         if (!this.isSuccess) {
-            throw new Error("Cannot get value from failed result");
+            throw new Error(
+                "Cannot get value from failed Result."
+            );
         }
-        return this._value as T;
+        return this.value as T;
     }
 
-    public getError(): string | null {
-        return this._error;
-    }
-
-    public static ok<U>(value?: U): Result<U> {
-        return new Result<U>(true, undefined, value);
-    }
-
-    public static fail<U>(error: string): Result<U> {
-        return new Result<U>(false, error);
+    /**
+     * Return raw error (unknown)
+     */
+    public getError(): unknown {
+        return this.error;
     }
 }

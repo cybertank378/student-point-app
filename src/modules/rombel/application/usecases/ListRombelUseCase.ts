@@ -1,46 +1,31 @@
 //Files: src/modules/rombel/application/usecases/ListRombelUseCase.ts
-import { Result } from "@/modules/shared/core/Result";
-import type { Rombel } from "@/modules/rombel/domain/entity/Rombel";
-import type { RombelInterface } from "@/modules/rombel/domain/interfaces/RombelInterface";
-import { serverLog } from "@/libs/serverLogger";
+import {BaseUseCase} from "@/modules/shared/core/BaseUseCase";
 
-export class ListRombelUseCase {
+import type {Rombel} from "@/modules/rombel/domain/entity/Rombel";
+import type {RombelInterface} from "@/modules/rombel/domain/interfaces/RombelInterface";
 
-    constructor(
-        private readonly repo: RombelInterface,
-    ) {}
+/**
+ * ============================================================
+ * LIST ROMBEL USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Retrieve all Rombel entities.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - Centralized error handling
+ * - Structured logging included
+ */
+export class ListRombelUseCase extends BaseUseCase<
+    void,
+    Rombel[]
+> {
+    constructor(private readonly repo: RombelInterface) {
+        super();
+    }
 
-    async execute(): Promise<Result<Rombel[]>> {
-
-        const context = "ListRombelUseCase.execute";
-
-        try {
-
-            const rows = await this.repo.findAll();
-
-            serverLog(
-                context,
-                "Rombel fetched successfully",
-                {
-                    total: rows.length,
-                    data: rows.map(r => ({
-                        id: r.id,
-                        label: r.label,
-                        academicYearName: r.academicYearName,
-                        studentCount: r.studentCount,
-                    })),
-                }
-            );
-
-            return Result.ok(rows);
-
-        } catch (error) {
-
-            serverLog(context, "ERROR:", error);
-
-            return Result.fail(
-                "Failed to fetch rombels"
-            );
-        }
+    protected async handle(): Promise<Rombel[]> {
+        return await this.repo.findAll();
     }
 }

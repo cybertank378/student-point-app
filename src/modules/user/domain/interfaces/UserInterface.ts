@@ -15,37 +15,13 @@ import type { TeacherRole, UserRole } from "@/libs/utils";
 export interface UserSearchParams {
     page: number;
     limit: number;
-
-    /**
-     * Prefix search (B-Tree friendly)
-     * Will be implemented using startsWith
-     */
     username?: string;
-
-    /**
-     * Exact match (indexed)
-     */
     role?: UserRole;
-
-    /**
-     * Exact match boolean (indexed)
-     */
     isActive?: boolean;
-
-    /**
-     * Optional teacher role filter (indexed)
-     */
     teacherRole?: TeacherRole;
-
-    /**
-     * Date range filter (B-Tree optimal)
-     */
     createdFrom?: Date;
     createdTo?: Date;
 
-    /**
-     * Sorting (must match index strategy)
-     */
     sortBy?: "createdAt" | "username";
     sortOrder?: "asc" | "desc";
 }

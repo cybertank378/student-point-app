@@ -47,9 +47,8 @@ export const CreateStudentSchema = z.object({
 
     gender: GenderEnum,
 
-    religionId: z
-        .string()
-        .regex(UUID_REGEX, "Religion ID tidak valid"),
+    religionCode: z
+        .string(),
 
     rombelId: z
         .string()

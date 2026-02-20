@@ -16,7 +16,7 @@ export default async function ProtectedLayout({
   }
 
   return (
-    <AppLayout role={user.role} username={user.sub}>
+    <AppLayout role={user.role} username={user.username}>
       {children}
     </AppLayout>
   );

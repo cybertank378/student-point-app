@@ -96,7 +96,7 @@ export const Modal: FC<ModalProps> = ({
       <div
         className={clsx(
           "w-full rounded-2xl bg-white p-8 shadow-xl",
-          "max-h-[90vh] overflow-y-auto",
+          "max-h-[90vh] overflow-y-auto scrollbar-modern",
           sizeMap[size],
           className,
         )}

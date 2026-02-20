@@ -1,25 +1,45 @@
 //Files: src/modules/rombel/application/usecases/DeleteRombelUseCase.ts
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import { AppError } from "@/modules/shared/errors/AppError";
 
-import { Result } from "@/modules/shared/core/Result";
 import type { RombelInterface } from "@/modules/rombel/domain/interfaces/RombelInterface";
 
-export class DeleteRombelUseCase {
-    constructor(
-        private readonly repo: RombelInterface,
-    ) {}
+/**
+ * ============================================================
+ * DELETE ROMBEL USE CASE
+ * ============================================================
+ *
+ * Purpose:
+ * - Delete Rombel by ID.
+ *
+ * Business Rules:
+ * - Rombel must exist.
+ * - (Optional) Can prevent deletion if still has students.
+ *
+ * Architecture:
+ * - Extends BaseUseCase
+ * - Uses AppError for structured error handling
+ * - No manual Result wrapping
+ */
+export class DeleteRombelUseCase extends BaseUseCase<
+    string,
+    void
+> {
+    constructor(private readonly repo: RombelInterface) {
+        super();
+    }
 
-    async execute(id: string): Promise<Result<void>> {
+    protected async handle(id: string): Promise<void> {
         const existing = await this.repo.findById(id);
 
         if (!existing) {
-            return Result.fail("Rombel not found");
+            throw AppError.notFound("Rombel not found");
         }
 
-        // ⚠️ OPTIONAL BUSINESS RULE:
-        // - Tolak delete jika masih ada siswa
-        // (bisa ditambahkan nanti)
+        // Optional business rule:
+        // - Reject delete if rombel still has students
+        // Implement here if needed
 
         await this.repo.delete(id);
-        return Result.ok(undefined);
     }
 }
