@@ -6,113 +6,95 @@ import { HiPlusCircle } from "react-icons/hi";
 
 import Button from "@/shared-ui/component/Button";
 import ViolationFormModal from "@/sections/violation/organisms/ViolationFormModal";
-
-import type { useViolationMasterApi } from "@/modules/violation/presentation/hooks/useViolationApi";
-import { CreateViolationSchema } from "@/modules/violation/infrastructur/validators/violationMaster.validator";
+import { useViolationForm } from "@/modules/violation/presentation/hooks/useViolationForm";
+import type { useViolationApi } from "@/modules/violation/presentation/hooks/useViolationApi";
 import { showErrorToast, showSuccessToast } from "@/shared-ui/component/Toast";
-
-type ViolationLevel = "LIGHT" | "MEDIUM" | "HEAVY";
+import { serverLog } from "@/libs/serverLogger";
 
 interface Props {
-  api: ReturnType<typeof useViolationMasterApi>;
-}
-
-interface FormState {
-  name: string;
-  point: number;
-  level: ViolationLevel;
+    api: ReturnType<typeof useViolationApi>;
 }
 
 export default function ViolationHeader({ api }: Props) {
-  const { createViolation, fetchViolations } = api;
+    const { createViolation, fetchViolations } = api;
 
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
-  const [form, setForm] = useState<FormState>({
-    name: "",
-    point: 0,
-    level: "LIGHT",
-  });
+    const {
+        form,
+        errors,
+        validateCreate,
+        onChange,
+        reset,
+    } = useViolationForm();
 
-  // ✅ Proper validation usage
-  const isValid = form.name.trim().length >= 3 && form.point > 0 && !loading;
+    /* ================= CREATE ================= */
 
-  const handleChange = (field: keyof FormState, value: string | number) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+    const handleSubmit = async (): Promise<void> => {
+        if (!validateCreate()) return;
 
-  const handleSubmit = async (): Promise<void> => {
-    if (!isValid) return;
+        try {
+            setSubmitting(true);
 
-    try {
-      setLoading(true);
+            await createViolation({
+                name: form.name,
+                point: form.point,
+            });
 
-      // ================= ZOD VALIDATION =================
-      const parsed = CreateViolationSchema.parse(form);
+            showSuccessToast("Pelanggaran berhasil ditambahkan");
 
-      const created = await createViolation(parsed);
+            setOpen(false);
+            reset();
 
-      if (!created) {
-        showErrorToast("Gagal menambahkan pelanggaran");
-        return;
-      }
+            await fetchViolations();
+        } catch (error: unknown) {
+            serverLog("Create Violation Error", error);
 
-      showSuccessToast("Pelanggaran berhasil ditambahkan");
+            if (error instanceof Error) {
+                showErrorToast(error.message);
+            } else {
+                showErrorToast("Gagal menambahkan pelanggaran");
+            }
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
-      setOpen(false);
+    return (
+        <>
+            {/* HEADER ROW */}
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h1 className="text-xl font-semibold text-gray-800">
+                        Master Pelanggaran
+                    </h1>
+                    <p className="text-sm text-gray-500">
+                        Daftar aturan dan poin pelanggaran siswa
+                    </p>
+                </div>
 
-      setForm({
-        name: "",
-        point: 0,
-        level: "LIGHT",
-      });
+                <Button
+                    leftIcon={HiPlusCircle}
+                    onClick={() => setOpen(true)}
+                >
+                    Tambah Pelanggaran
+                </Button>
+            </div>
 
-      await fetchViolations();
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        showErrorToast(err.message);
-      } else {
-        showErrorToast("Terjadi kesalahan");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <>
-      {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl text-gray-800 font-semibold">
-            Master Pelanggaran
-          </h1>
-          <p className="text-sm text-gray-500">
-            Daftar aturan dan poin pelanggaran siswa
-          </p>
-        </div>
-
-        <Button leftIcon={HiPlusCircle} onClick={() => setOpen(true)}>
-          Tambah Pelanggaran
-        </Button>
-      </div>
-
-      {/* FORM MODAL */}
-      <ViolationFormModal
-        open={open}
-        onClose={() => setOpen(false)}
-        onSubmit={handleSubmit}
-        title="Tambah Pelanggaran"
-        subtitle="Lengkapi informasi pelanggaran dengan benar."
-        form={form}
-        onChange={handleChange}
-        loading={loading}
-        submitDisabled={!isValid}
-      />
-    </>
-  );
+            {/* CREATE MODAL */}
+            <ViolationFormModal
+                open={open}
+                onClose={() => setOpen(false)}
+                onSubmit={handleSubmit}
+                title="Tambah Pelanggaran"
+                subtitle="Lengkapi informasi pelanggaran dengan benar."
+                form={form}
+                onChange={onChange}
+                errors={errors}
+                loading={submitting}
+                submitDisabled={submitting}
+            />
+        </>
+    );
 }

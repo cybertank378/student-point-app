@@ -1,5 +1,4 @@
 // Files: src/modules/violation/application/usecases/ListViolationUseCase.ts
-// Files: src/modules/violation/application/usecases/ListViolationUseCase.ts
 
 import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import type { ViolationInterface } from "@/modules/violation/domain/interfaces/ViolationInterface";
