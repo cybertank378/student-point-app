@@ -1,4 +1,4 @@
-// Files : src/modules/user/domain/interfaces/FileStorageInterface.ts
+// Files : src/libs/FileStorageInterface.ts
 
 export interface FileStorageInterface {
     save(

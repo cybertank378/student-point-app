@@ -19,7 +19,7 @@
 
 import type { UserInterface } from "@/modules/user/domain/interfaces/UserInterface";
 import type { HashServiceInterface } from "@/modules/auth/domain/interfaces/HashServiceInterface";
-import type { FileStorageInterface } from "@/modules/user/domain/interfaces/FileStorageInterface";
+import type { FileStorageInterface } from "@/libs/FileStorageInterface";
 
 import { CreateUserUseCase } from "@/modules/user/application/usecase/CreateUserUseCase";
 import { UpdateUserUseCase } from "@/modules/user/application/usecase/UpdateUserUseCase";

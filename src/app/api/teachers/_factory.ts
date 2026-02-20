@@ -3,6 +3,7 @@
 import { TeacherRepository } from "@/modules/teacher/infrastructure/repo/TeacherRepository";
 import { TeacherService } from "@/modules/teacher/application/services/TeacherService";
 import {TeacherController} from "@/modules/teacher/infrastructure/http/TeacherController";
+import {LocalFileStorageService} from "@/modules/shared/http/interface/LocalFileStorageService";
 
 
 /**
@@ -27,6 +28,7 @@ import {TeacherController} from "@/modules/teacher/infrastructure/http/TeacherCo
 
 export const createTeacherController = () => {
     const repo = new TeacherRepository();
-    const service = new TeacherService(repo);
+    const fileRepo = new LocalFileStorageService();
+    const service = new TeacherService(repo, fileRepo);
     return new TeacherController(service);
 };

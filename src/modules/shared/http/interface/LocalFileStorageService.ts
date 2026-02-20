@@ -2,7 +2,7 @@
 
 import fs from "fs/promises";
 import path from "path";
-import type { FileStorageInterface } from "@/modules/user/domain/interfaces/FileStorageInterface";
+import type { FileStorageInterface } from "@/libs/FileStorageInterface";
 
 export class LocalFileStorageService implements FileStorageInterface {
     async save(

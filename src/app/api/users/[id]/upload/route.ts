@@ -2,7 +2,7 @@
 import { UploadController } from "@/modules/user/infrastructure/http/UploadController";
 import { UserService } from "@/modules/user/application/services/UserServices";
 import {BcryptService} from "@/modules/auth/application/service/BcryptService";
-import {LocalFileStorageService} from "@/modules/user/infrastructure/repo/LocalFileStorageService";
+import {LocalFileStorageService} from "@/modules/shared/http/interface/LocalFileStorageService";
 import {UserRepository} from "@/modules/user/infrastructure/repo/UserRepository";
 
 /**

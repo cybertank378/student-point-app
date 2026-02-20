@@ -1,11 +1,9 @@
 //Files: src/modules/teacher/application/services/TeacherService.ts
-// src/modules/teacher/application/services/TeacherService.ts
 
 import type { Result } from "@/modules/shared/core/Result";
 
 import type { Teacher } from "@/modules/teacher/domain/entity/Teacher";
 import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
-import type { ReligionInterface } from "@/modules/religion/domain/interfaces/ReligionInterface";
 
 import type { CreateTeacherDTO } from "@/modules/teacher/domain/dto/CreateTeacherDTO";
 import type { UpdateTeacherDTO } from "@/modules/teacher/domain/dto/UpdateTeacherDTO";
@@ -23,6 +21,12 @@ import { AssignHomeroomUseCase } from "../usecase/AssignHomeroomUseCase";
 import { SearchTeacherUseCase } from "../usecase/SearchTeacherUseCase";
 import { ImportTeacherUseCase } from "../usecase/ImportTeacherUseCase";
 import { ExportTeacherUseCase } from "../usecase/ExportTeacherUseCase";
+import {
+    UploadTeacherImageRequest,
+    UploadTeacherImageUseCase
+} from "@/modules/teacher/application/usecase/UploadTeacherImageUseCase";
+import {FileStorageInterface} from "@/libs/FileStorageInterface";
+import {UploadUserImageRequest} from "@/modules/user/application/usecase/UploadUserImageUseCase";
 
 /**
  * ============================================================
@@ -63,6 +67,7 @@ export class TeacherService {
     private readonly searchUC: SearchTeacherUseCase;
     private readonly importUC: ImportTeacherUseCase;
     private readonly exportUC: ExportTeacherUseCase;
+    private readonly uploadTeacherImageUC: UploadTeacherImageUseCase;
 
     /**
      * Constructor
@@ -73,6 +78,7 @@ export class TeacherService {
      */
     constructor(
         repo: TeacherInterface,
+        fileRepo: FileStorageInterface
     ) {
         this.listUC = new ListTeacherUseCase(repo);
         this.getUC = new GetTeacherByIdUseCase(repo);
@@ -84,6 +90,7 @@ export class TeacherService {
         this.searchUC = new SearchTeacherUseCase(repo);
         this.importUC = new ImportTeacherUseCase(repo);
         this.exportUC = new ExportTeacherUseCase(repo);
+        this.uploadTeacherImageUC = new UploadTeacherImageUseCase(repo, fileRepo)
     }
 
     /* ==========================================================
@@ -162,6 +169,12 @@ export class TeacherService {
      */
     import(rows: ImportRows): Promise<Result<string>> {
         return this.importUC.execute(rows);
+    }
+
+    uploadTeacherImage(
+        request: UploadTeacherImageRequest
+    ): Promise<Result<{ fileName: string }>> {
+        return this.uploadTeacherImageUC.execute(request);
     }
 }
 

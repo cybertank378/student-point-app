@@ -3,7 +3,7 @@ import {UserRepository} from "@/modules/user/infrastructure/repo/UserRepository"
 import {BcryptService} from "@/modules/auth/application/service/BcryptService";
 import {UserService} from "@/modules/user/application/services/UserServices";
 import {UserController} from "@/modules/user/infrastructure/http/UserController";
-import {LocalFileStorageService} from "@/modules/user/infrastructure/repo/LocalFileStorageService";
+import {LocalFileStorageService} from "@/modules/shared/http/interface/LocalFileStorageService";
 
 /**
  * =====================================================

@@ -3,7 +3,7 @@
 import path from "path";
 import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import type { UserInterface } from "@/modules/user/domain/interfaces/UserInterface";
-import type { FileStorageInterface } from "@/modules/user/domain/interfaces/FileStorageInterface";
+import type { FileStorageInterface } from "@/libs/FileStorageInterface";
 import { resolveUserUploadMeta } from "@/libs/utils";
 
 /**
