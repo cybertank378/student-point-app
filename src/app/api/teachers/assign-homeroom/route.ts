@@ -17,8 +17,16 @@ import {NextRequest} from "next/server";
 const controller = createTeacherController();
 
 /**
- * PATCH /api/teachers/:id/homeroom
+ * ============================================================
+ * POST /api/teachers/assign-homeroom
+ * ============================================================
+ *
+ * Body:
+ * {
+ *   teacherIds: string[],
+ *   rombelIds: string[]
+ * }
  */
-export async function PATCH(request: NextRequest) {
-    return controller.assignHomeroom(request);
+export async function POST(req: NextRequest) {
+    return controller.assignHomeroomBulk(req);
 }

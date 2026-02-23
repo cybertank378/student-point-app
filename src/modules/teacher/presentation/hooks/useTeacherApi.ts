@@ -1,3 +1,5 @@
+//Files: src/modules/teacher/presentation/hooks/useTeacherApi.ts
+
 "use client";
 
 /**
@@ -17,21 +19,16 @@
  * UI → useTeacherApi → /api/teachers → Controller → Service → UseCase
  */
 
-import { useCallback, useEffect, useState } from "react";
+import {useCallback, useEffect, useState} from "react";
 
-import type { TeacherRespDTO } from "@/modules/teacher/domain/dto/ListTeacherRespDTO";
-import type { CreateTeacherDTO } from "@/modules/teacher/domain/dto/CreateTeacherDTO";
-import type { UpdateTeacherDTO } from "@/modules/teacher/domain/dto/UpdateTeacherDTO";
-import type { AssignTeacherRoleDTO } from "@/modules/teacher/domain/dto/AssignTeacherRoleDTO";
-import type { AssignHomeroomDTO } from "@/modules/teacher/domain/dto/AssignHomeroomDTO";
+import type {TeacherRespDTO} from "@/modules/teacher/domain/dto/ListTeacherRespDTO";
+import type {CreateTeacherDTO} from "@/modules/teacher/domain/dto/CreateTeacherDTO";
+import type {UpdateTeacherDTO} from "@/modules/teacher/domain/dto/UpdateTeacherDTO";
+import type {AssignTeacherRoleDTO} from "@/modules/teacher/domain/dto/AssignTeacherRoleDTO";
+import type {AssignHomeroomDTO} from "@/modules/teacher/domain/dto/AssignHomeroomDTO";
 
-import {
-    type ApiError,
-    parseError,
-    safeJson,
-    toApiError,
-} from "@/modules/shared/errors/ApiError";
-import {serverLog} from "@/libs/serverLogger";
+import {type ApiError, parseError, safeJson, toApiError,} from "@/modules/shared/errors/ApiError";
+import {downloadFileFromResponse} from "@/libs/downloadFile";
 
 /* ============================================================
  * RESPONSE TYPE
@@ -84,12 +81,12 @@ export const useTeacherApi = (autoFetch = false) => {
                 const query = new URLSearchParams({
                     page: String(params?.page ?? 1),
                     limit: String(params?.limit ?? 10),
-                    ...(params?.search && { search: params.search }),
-                    ...(params?.name && { name: params.name }),
-                    ...(params?.role && { role: params.role }),
-                    ...(params?.religionCode && { religionId: params.religionCode }),
-                    ...(params?.sortBy && { sortBy: params.sortBy }),
-                    ...(params?.sortOrder && { sortOrder: params.sortOrder }),
+                    ...(params?.search && {search: params.search}),
+                    ...(params?.name && {name: params.name}),
+                    ...(params?.role && {role: params.role}),
+                    ...(params?.religionCode && {religionId: params.religionCode}),
+                    ...(params?.sortBy && {sortBy: params.sortBy}),
+                    ...(params?.sortOrder && {sortOrder: params.sortOrder}),
                 });
 
                 const res = await fetch(
@@ -177,7 +174,7 @@ export const useTeacherApi = (autoFetch = false) => {
 
                 const res = await fetch("/api/teachers", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {"Content-Type": "application/json"},
                     body: JSON.stringify(payload),
                 });
 
@@ -202,8 +199,8 @@ export const useTeacherApi = (autoFetch = false) => {
     );
 
     /* ============================================================
- * UPDATE
- * ============================================================ */
+     * UPDATE
+     * ============================================================ */
 
     const updateTeacher = useCallback(
         async (payload: UpdateTeacherDTO): Promise<TeacherRespDTO | null> => {
@@ -211,8 +208,8 @@ export const useTeacherApi = (autoFetch = false) => {
                 setError(null);
 
                 const res = await fetch(`/api/teachers/${payload.id}`, {
-                    method: "PUT", // ✅ Changed from PATCH → PUT
-                    headers: { "Content-Type": "application/json" },
+                    method: "PATCH", // ✅ Changed from PATCH → PUT
+                    headers: {"Content-Type": "application/json"},
                     body: JSON.stringify(payload),
                 });
 
@@ -266,60 +263,27 @@ export const useTeacherApi = (autoFetch = false) => {
         [fetchTeachers]
     );
 
-    /* ============================================================
-     * ASSIGN ROLE
-     * ============================================================ */
-
+    /**
+     * ============================================================
+     * ASSIGN TEACHER ROLE (BULK ONLY)
+     * ============================================================
+     *
+     * Supports:
+     * - Single (teacherIds length = 1)
+     * - Bulk
+     */
     const assignTeacherRole = useCallback(
-        async (
-            payload: AssignTeacherRoleDTO
-        ): Promise<TeacherRespDTO | null> => {
+        async (payload: AssignTeacherRoleDTO): Promise<boolean> => {
             try {
                 setError(null);
 
                 const res = await fetch(
-                    `/api/teachers/${payload.teacherId}/roles`,
+                    "/api/teachers/assign-role",
                     {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ roles: payload.roles }),
-                    }
-                );
-
-                if (!res.ok) {
-                    const apiErr = await parseError(res);
-                    setError(apiErr);
-                    return null;
-                }
-
-                const updated = await safeJson<TeacherRespDTO>(res);
-
-                await fetchTeachers();
-
-                return updated;
-            } catch (err) {
-                const apiErr = toApiError(err, "Gagal assign role guru.");
-                setError(apiErr);
-                return null;
-            }
-        },
-        [fetchTeachers]
-    );
-
-    /* ============================================================
-     * ASSIGN HOMEROOM
-     * ============================================================ */
-
-    const assignHomeroom = useCallback(
-        async (payload: AssignHomeroomDTO): Promise<boolean> => {
-            try {
-                setError(null);
-
-                const res = await fetch(
-                    `/api/teachers/${payload.teacherId}/assign-homeroom`,
-                    {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
                         body: JSON.stringify(payload),
                     }
                 );
@@ -331,6 +295,53 @@ export const useTeacherApi = (autoFetch = false) => {
                 }
 
                 await fetchTeachers();
+
+                return true;
+            } catch (err) {
+                const apiErr = toApiError(
+                    err,
+                    "Gagal menetapkan role guru."
+                );
+                setError(apiErr);
+                return false;
+            }
+        },
+        [fetchTeachers]
+    );
+
+    /**
+     * ============================================================
+     * ASSIGN HOMEROOM (BULK ONLY)
+     * ============================================================
+     *
+     * Supports:
+     * - Single (teacherIds length = 1)
+     * - Bulk
+     */
+    const assignHomeroom = useCallback(
+        async (payload: AssignHomeroomDTO): Promise<boolean> => {
+            try {
+                setError(null);
+
+                const res = await fetch(
+                    "/api/teachers/assign-homeroom",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(payload),
+                    }
+                );
+
+                if (!res.ok) {
+                    const apiErr = await parseError(res);
+                    setError(apiErr);
+                    return false;
+                }
+
+                await fetchTeachers();
+
                 return true;
             } catch (err) {
                 const apiErr = toApiError(
@@ -349,7 +360,7 @@ export const useTeacherApi = (autoFetch = false) => {
      * ============================================================ */
 
     const importTeachers = useCallback(
-        async (rows: unknown): Promise<boolean> => {
+        async (rows: unknown): Promise<ApiError | null> => {
             try {
                 setError(null);
 
@@ -362,15 +373,16 @@ export const useTeacherApi = (autoFetch = false) => {
                 if (!res.ok) {
                     const apiErr = await parseError(res);
                     setError(apiErr);
-                    return false;
+                    return apiErr;
                 }
 
                 await fetchTeachers();
-                return true;
+                return null;
+
             } catch (err) {
                 const apiErr = toApiError(err, "Gagal import guru.");
                 setError(apiErr);
-                return false;
+                return apiErr;
             }
         },
         [fetchTeachers]
@@ -380,25 +392,114 @@ export const useTeacherApi = (autoFetch = false) => {
      * EXPORT
      * ============================================================ */
 
-    const exportTeachers = useCallback(async () => {
-        try {
+    const exportTeachers = useCallback(
+        async (): Promise<ApiError | null> => {
+            try {
+                setError(null);
+
+                const res = await fetch("/api/teachers/export");
+
+                if (!res.ok) {
+                    const apiErr = await parseError(res);
+                    setError(apiErr);
+                    return apiErr;
+                }
+
+                await downloadFileFromResponse(res, "teachers.xlsx");
+
+                return null;
+
+            } catch (err) {
+                const apiErr = toApiError(err, "Gagal export guru.");
+                setError(apiErr);
+                return apiErr;
+            }
+        },
+        []
+    );
+
+    /* ============================================================
+     * UPLOAD IMAGE
+     * ============================================================ */
+
+    const uploadTeacherImage = useCallback(
+        async (
+            id: string,
+            file: File
+        ): Promise<{
+            data: { fileName: string } | null;
+            error: ApiError | null;
+        }> => {
+            setLoading(true);
             setError(null);
 
-            const res = await fetch("/api/teachers/export");
+            try {
+                const formData = new FormData();
+                formData.append("file", file);
 
-            if (!res.ok) {
-                const apiErr = await parseError(res);
-                setError(apiErr);
-                return null;
+                const res = await fetch(`/api/teachers/${id}/upload-image`, {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const result = await safeJson<{ fileName: string }>(res);
+
+
+                return {
+                    data: result,
+                    error: null,
+                };
+            } catch (err) {
+                const apiError = toApiError(
+                    err,
+                    "Gagal mengupload foto guru."
+                );
+
+                setError(apiError);
+
+                return {
+                    data: null,
+                    error: apiError,
+                };
+            } finally {
+                setLoading(false);
             }
+        },
+        []
+    );
 
-            return await safeJson(res);
-        } catch (err) {
-            const apiErr = toApiError(err, "Gagal export guru.");
-            setError(apiErr);
-            return null;
-        }
-    }, []);
+
+    const downloadImportTemplate = useCallback(
+        async (): Promise<ApiError | null> => {
+            try {
+                setError(null);
+
+                const res = await fetch("/api/teachers/import-template");
+
+                if (!res.ok) {
+                    const apiErr = await parseError(res);
+                    setError(apiErr);
+                    return apiErr;
+                }
+
+                await downloadFileFromResponse(
+                    res,
+                    "teacher-import-template.xlsx"
+                );
+
+                return null;
+
+            } catch (err) {
+                const apiErr = toApiError(
+                    err,
+                    "Gagal mengunduh template import."
+                );
+                setError(apiErr);
+                return apiErr;
+            }
+        },
+        []
+    );
 
     /* ============================================================
      * AUTO FETCH
@@ -424,5 +525,7 @@ export const useTeacherApi = (autoFetch = false) => {
         assignHomeroom,
         importTeachers,
         exportTeachers,
+        uploadTeacherImage,
+        downloadImportTemplate,
     };
 };

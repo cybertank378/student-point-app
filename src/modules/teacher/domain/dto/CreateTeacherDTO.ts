@@ -11,12 +11,12 @@ export interface CreateTeacherDTO {
     nip?: string | null;
     nuptk?: string | null;
     nrk?: string | null;
-    nrg?: number | null;
+
+    nrg: string; // required
 
     name: string;
     gender: Gender;
-
-    religionCode: string; // ✅ FK only
+    religionCode: string;
 
     phone?: string | null;
     email?: string | null;
@@ -32,7 +32,8 @@ export interface CreateTeacherDTO {
     civilServantRank?: CivilServantRank | null;
 
     roles: TeacherRole[];
-    isPns:  boolean;
 
-    homeroomClassId?: string | null;
+    isPns: boolean;
+
+    homeroomClassIds: string[];
 }

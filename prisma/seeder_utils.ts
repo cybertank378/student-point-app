@@ -1,17 +1,68 @@
 //Files: prisma/seeder_utils.ts
-
-import { faker } from "@faker-js/faker";
+import { fakerID_ID as faker } from "@faker-js/faker";
 import bcrypt from "bcryptjs";
-import {Prisma, ViolationLevel} from "@/generated/prisma";
+import {FamilyStatus, Prisma, ViolationLevel} from "@/generated/prisma";
 
 faker.seed(123);
 
-/* ================= PASSWORD ================= */
+/* ============================================================
+   PASSWORD
+============================================================ */
 export async function hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
 }
 
-/* ================= TEACHER NAME ================= */
+/* ============================================================
+   WEIGHTED DISTRIBUTION GENERATOR
+============================================================ */
+
+type WeightedOption<T> = {
+    value: T;
+    weight: number;
+};
+
+/**
+ * Generic weighted picker
+ */
+export function pickWeighted<T>(options: WeightedOption<T>[]): T {
+    const totalWeight = options.reduce((sum, opt) => sum + opt.weight, 0);
+
+    const random = faker.number.int({ min: 1, max: totalWeight });
+
+    let cumulative = 0;
+
+    for (const option of options) {
+        cumulative += option.weight;
+        if (random <= cumulative) {
+            return option.value;
+        }
+    }
+
+    // Safety fallback
+    return options[0].value;
+}
+
+/* ============================================================
+   FAMILY STATUS GENERATOR (REALISTIC DISTRIBUTION)
+============================================================ */
+
+const FAMILY_STATUS_DISTRIBUTION: WeightedOption<FamilyStatus>[] = [
+    { value: FamilyStatus.COMPLETE, weight: 70 },
+    { value: FamilyStatus.SINGLE_MOTHER, weight: 15 },
+    { value: FamilyStatus.SINGLE_FATHER, weight: 10 },
+    { value: FamilyStatus.ORPHAN, weight: 5 },
+];
+
+/**
+ * Generate realistic family status
+ */
+export function generateFamilyStatus(): FamilyStatus {
+    return pickWeighted(FAMILY_STATUS_DISTRIBUTION);
+}
+
+/* ============================================================
+   TEACHER NAME (INDONESIA)
+============================================================ */
 export function generateTeacherName(): string {
     const firstNames = [
         "Ahmad","Muhammad","Budi","Dwi","Rizky","Fajar",
@@ -27,21 +78,37 @@ export function generateTeacherName(): string {
 
     const titles = ["S.Pd.","M.Pd.","S.Si.","S.Pd.I"];
 
-    return `${faker.helpers.arrayElement(firstNames)} ${faker.helpers.arrayElement(lastNames)}, ${faker.helpers.arrayElement(titles)}`;
+    return `${faker.helpers.arrayElement(firstNames)} ${
+        faker.helpers.arrayElement(lastNames)
+    }, ${faker.helpers.arrayElement(titles)}`;
 }
 
-/* ================= EMAIL ================= */
+/* ============================================================
+   GENERATE EMAIL SEKOLAH
+============================================================ */
 export function generateTeacherEmail(name: string): string {
-    return name.split(",")[0].toLowerCase().replace(/\s+/g, ".") + "@sekolah.sch.id";
+    return (
+        name.split(",")[0]
+            .toLowerCase()
+            .replace(/\s+/g, ".") +
+        "@sekolah.sch.id"
+    );
 }
 
-/* ================= PHONE ================= */
+/* ============================================================
+   INDONESIAN PHONE NUMBER
+============================================================ */
 export function generateIndonesianPhone(): string {
-    const prefixes = ["0812","0813","0821","0822","0856","0857","0858","0817","0818","0819","0896","0897","0898","0899"];
+    const prefixes = [
+        "0812","0813","0821","0822","0856","0857","0858",
+        "0817","0818","0819","0896","0897","0898","0899"
+    ];
+
     return faker.helpers.arrayElement(prefixes) + faker.string.numeric(8);
 }
-
-/* ================= NIP ================= */
+/* ============================================================
+   GENERATE NIP (18 DIGIT FORMAT)
+============================================================ */
 export async function generateIndonesianNip(
     tx: Prisma.TransactionClient
 ): Promise<string> {
@@ -53,22 +120,83 @@ export async function generateIndonesianNip(
             String(birth.getMonth() + 1).padStart(2, "0") +
             String(birth.getDate()).padStart(2, "0");
 
-        const appointYear = birth.getFullYear() + faker.number.int({ min: 22, max: 30 });
+        const appointYear =
+            birth.getFullYear() + faker.number.int({ min: 22, max: 30 });
+
         const appointMonth = faker.number.int({ min: 1, max: 12 });
 
         const appointStr =
-            appointYear.toString() + String(appointMonth).padStart(2, "0");
+            appointYear.toString() +
+            String(appointMonth).padStart(2, "0");
 
-        const sequence = faker.number.int({ min: 1, max: 999 }).toString().padStart(3, "0");
+        const sequence = faker.number
+            .int({ min: 1, max: 999 })
+            .toString()
+            .padStart(3, "0");
 
         const nip = birthStr + appointStr + sequence;
 
-        const exists = await tx.teacher.findUnique({ where: { nip } });
+        const exists = await tx.teacher.findUnique({
+            where: { nip },
+        });
+
         if (!exists) return nip;
     }
 }
 
+/* ============================================================
+   GENERATE NUPTK (16 DIGIT)
+============================================================ */
+export async function generateNuptk(
+    tx: Prisma.TransactionClient
+): Promise<string> {
+    while (true) {
+        const nuptk = faker.string.numeric(16);
 
+        const exists = await tx.teacher.findUnique({
+            where: { nuptk },
+        });
+
+        if (!exists) return nuptk;
+    }
+}
+/* ============================================================
+   GENERATE NRG (12 DIGIT FORMAT)
+============================================================ */
+export function generateNRG(
+    tahunLulus: number,
+    kodeMapel: number,
+    nomorUrut: number
+): string {
+    const tahun = tahunLulus % 100;
+
+    return (
+        tahun.toString().padStart(2, "0") +
+        kodeMapel.toString().padStart(3, "0") +
+        nomorUrut.toString().padStart(7, "0")
+    );
+}
+
+/* ============================================================
+   GENERATE NRK (6 DIGIT)
+============================================================ */
+export async function generateNRK(
+    tx: Prisma.TransactionClient
+): Promise<string> {
+    while (true) {
+        // Generate 6 digit string
+        const nrk = faker.string.numeric(6);
+
+        const exists = await tx.teacher.findUnique({
+            where: { nrk },
+        });
+
+        if (!exists) return nrk;
+    }
+}
+/* ============================================================
+   VIOLATION MASTER
+============================================================ */
 export const violationMaster = [
     // =========================
     // LIGHT (1 - 40)

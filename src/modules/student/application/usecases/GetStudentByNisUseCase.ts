@@ -22,14 +22,14 @@ import type { StudentInterface } from "@/modules/student/domain/interfaces/Stude
  * - No manual Result wrapping
  */
 export class GetStudentByNisUseCase extends BaseUseCase<
-    number,
+    string,
     Student
 > {
     constructor(private readonly repo: StudentInterface) {
         super();
     }
 
-    protected async handle(nis: number): Promise<Student> {
+    protected async handle(nis: string): Promise<Student> {
         const student = await this.repo.findByNis(nis);
 
         if (!student) {

@@ -1,4 +1,3 @@
-// Files: src/shared-ui/component/ui/TextField.tsx
 "use client";
 
 import React, {
@@ -23,13 +22,16 @@ interface Props
     helperText?: string;
     variant?: Variant;
     size?: Size;
-    error?: boolean;
+
+    // ✅ SUPPORT BOOLEAN ATAU STRING
+    error?: boolean | string;
+
     success?: boolean;
     leftIcon?: IconType;
     rightIcon?: IconType;
     enablePasswordToggle?: boolean;
 
-    // ✅ LENGTH VALIDATION
+    // LENGTH VALIDATION
     maxLengthValue?: number;
     minLengthValue?: number;
     showCounter?: boolean;
@@ -90,12 +92,12 @@ const TextField = forwardRef<HTMLInputElement, Props>(
         const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
             const newValue = e.target.value;
 
-            // 🔥 HARD STOP MAX LENGTH
+            // HARD STOP MAX LENGTH
             if (maxLengthValue && newValue.length > maxLengthValue) {
-                return; // ⛔ hentikan input
+                return;
             }
 
-            // 🔥 OPTIONAL MIN LENGTH ERROR
+            // OPTIONAL MIN LENGTH VALIDATION
             if (minLengthValue && newValue.length < minLengthValue) {
                 setInternalError(`Minimal ${minLengthValue} karakter`);
             } else {
@@ -105,8 +107,17 @@ const TextField = forwardRef<HTMLInputElement, Props>(
             onChange?.(e);
         };
 
+        // 🔥 HANDLE EXTERNAL ERROR
+        const externalErrorMessage =
+            typeof error === "string" ? error : null;
 
-        const finalError = error || !!internalError;
+        const externalErrorBoolean =
+            typeof error === "boolean" ? error : !!externalErrorMessage;
+
+        const finalError = externalErrorBoolean || !!internalError;
+
+        const finalMessage =
+            internalError ?? externalErrorMessage ?? null;
 
         return (
             <FormControl
@@ -135,7 +146,6 @@ const TextField = forwardRef<HTMLInputElement, Props>(
                             "w-full rounded-lg outline-none transition-all",
                             "text-gray-800",
                             "placeholder:text-gray-600",
-                            "placeholder:opacity-100",
                             sizeMap[size],
                             variantMap[variant],
                             finalError &&
@@ -180,22 +190,24 @@ const TextField = forwardRef<HTMLInputElement, Props>(
                     )}
                 </div>
 
-                {/* Helper + Counter */}
-                <div className="flex justify-between items-center">
-                    {(helperText || internalError) && (
-                        <FormHelperText
-                            error={finalError}
-                            success={success}
-                        >
-                            {internalError ?? helperText}
+                {/* 🔥 MESSAGE SECTION — SELALU DI BAWAH FIELD */}
+                <div className="mt-1 space-y-1">
+                    {finalMessage && (
+                        <FormHelperText error>
+                            {finalMessage}
+                        </FormHelperText>
+                    )}
+
+                    {!finalMessage && helperText && (
+                        <FormHelperText success={success}>
+                            {helperText}
                         </FormHelperText>
                     )}
 
                     {showCounter && maxLengthValue && (
-                        <span className="text-xs text-gray-400">
-              {String(value ?? "").length} /{" "}
-                            {maxLengthValue}
-            </span>
+                        <div className="text-right text-xs text-gray-400">
+                            {String(value ?? "").length} / {maxLengthValue}
+                        </div>
                     )}
                 </div>
             </FormControl>
@@ -206,4 +218,3 @@ const TextField = forwardRef<HTMLInputElement, Props>(
 TextField.displayName = "TextField";
 
 export default TextField;
-

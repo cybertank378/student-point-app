@@ -14,16 +14,20 @@ import type {
  *
  * Pure domain model (no Prisma dependency).
  * Immutable identity, mutable state where needed.
+ *
+ * IMPORTANT:
+ * BigInt fields are represented as bigint in the domain.
+ * String conversion should only happen at the presentation layer.
  */
 export class Teacher {
     constructor(
         public readonly id: string,
 
-        // Identifiers
+        // Identifiers (BigInt aligned with Prisma)
         public readonly nip: string | null,
         public readonly nuptk: string | null,
         public readonly nrk: string | null,
-        public nrg : number | null,
+        public nrg: string,
 
         // Basic
         public name: string,
@@ -53,6 +57,6 @@ export class Teacher {
         // Multi-year homeroom
         public homeroomClassIds: string[],
 
-        public isPns : boolean
+        public isPns: boolean
     ) {}
 }

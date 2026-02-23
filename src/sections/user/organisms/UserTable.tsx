@@ -1,3 +1,5 @@
+//Files: src/sections/user/organisms/UserTable.tsx
+
 "use client";
 
 import { FiEdit, FiTrash2 } from "react-icons/fi";
@@ -340,7 +342,6 @@ export default function UserTable({ api }: Props) {
                 form={form}
                 onChange={handleChange}
                 errors={formErrors}
-                title="Edit User"
             />
         </>
     );

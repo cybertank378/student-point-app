@@ -7,9 +7,337 @@ datasource db {
   provider = "postgresql"
 }
 
-/////////////////////////////////////////////////////
-// ENUMS
-/////////////////////////////////////////////////////
+model User {
+  id                 String       @id @default(uuid())
+  username           String       @unique
+  password           String
+  image              String?
+  role               Role
+  teacherRole        TeacherRole?
+  refreshToken       String?
+  isActive           Boolean      @default(true)
+  version            Int          @default(1)
+  failedAttempts     Int          @default(0)
+  lockUntil          DateTime?
+  mustChangePassword Boolean      @default(true)
+  studentId          String?      @unique
+  parentId           String?      @unique
+  teacherId          String?      @unique
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  sessions    AuthSession[]
+  loginAudits LoginAudit[]
+  resetTokens PasswordResetToken[]
+
+  parent  Parent?  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([role])
+  @@index([isActive])
+  @@index([createdAt])
+  @@index([role, isActive])
+}
+
+model AuthSession {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  device    String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revoked])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([used])
+}
+
+model LoginAudit {
+  id         String   @id @default(uuid())
+  userId     String?
+  identifier String
+  success    Boolean
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([identifier])
+  @@index([createdAt])
+  @@index([success])
+}
+
+model AcademicYear {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  classes Class[]
+
+  @@index([isActive])
+}
+
+model Class {
+  id    String @id @default(uuid())
+  grade String
+  name  String
+
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  homeroomTeacherId String?
+  homeroomTeacher   Teacher? @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+
+  students Student[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([grade, name, academicYearId])
+  @@unique([homeroomTeacherId, academicYearId])
+  @@index([academicYearId])
+}
+
+model Student {
+  id           String        @id @default(uuid())
+  nis          String?       @unique
+  nisn         String        @unique
+  name         String
+  nickname     String?
+  gender       Gender
+  religionCode String
+  rombelId     String
+  status       StudentStatus @default(ACTIVE)
+
+  // ✅ Tambahan baru (tanpa index tambahan)
+  familyStatus FamilyStatus @default(COMPLETE)
+
+  deletedAt    DateTime?
+  isDifable    Boolean   @default(false)
+  difableNotes String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  religion Religion @relation(fields: [religionCode], references: [kode])
+  rombel   Class    @relation(fields: [rombelId], references: [id])
+
+  achievements   StudentAchievement[]
+  parents        StudentParent[]
+  studentProfile StudentProfile?
+  violations     StudentViolation[]
+  user           User?
+
+  @@index([name])
+  @@index([status, rombelId])
+  @@index([religionCode])
+  @@index([deletedAt])
+  @@index([isDifable])
+  @@index([familyStatus])
+}
+
+model StudentProfile {
+  id         String   @id @default(uuid())
+  studentId  String   @unique
+  birthPlace String
+  birthDate  DateTime
+  address    String
+  phone      String?
+  email      String?
+
+  student Student @relation(fields: [studentId], references: [id])
+}
+
+model Religion {
+  id   String @id @default(uuid())
+  kode String @unique
+  name String
+
+  parents  Parent[]
+  students Student[]
+  teachers Teacher[]
+
+  @@index([name])
+}
+
+model Parent {
+  id           String   @id @default(uuid())
+  name         String
+  email        String?
+  education    String
+  job          String
+  income       String?
+  religionCode String
+  phone        String   @unique
+  address      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  religion Religion        @relation(fields: [religionCode], references: [kode])
+  students StudentParent[]
+  user     User?
+
+  @@index([name])
+  @@index([religionCode])
+}
+
+model StudentParent {
+  id        String     @id @default(uuid())
+  studentId String
+  parentId  String
+  role      ParentType
+  createdAt DateTime   @default(now())
+
+  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, role])
+}
+
+model Teacher {
+  id String @id @default(uuid())
+
+  nip   String? @unique @db.VarChar(18)
+  nuptk String? @unique @db.VarChar(16)
+  nrk   String? @unique @db.VarChar(12)
+  nrg   String  @unique @db.VarChar(12)
+
+  name   String
+  gender Gender
+  photo  String?
+
+  religionCode String
+  religion     Religion @relation(fields: [religionCode], references: [kode])
+
+  phone String?
+  email String?
+
+  educationLevel EducationLevel
+  major          String?
+  graduationYear Int
+
+  birthPlace String
+  birthDate  DateTime
+
+  civilServantRank CivilServantRank?
+  roles            TeacherRole[]
+
+  isPns Boolean
+
+  homeroomOf Class[] @relation("HomeroomTeacher")
+
+  user               User?
+  handledResolutions ViolationResolution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Violation {
+  id        String         @id @default(uuid())
+  name      String         @unique
+  point     Int
+  level     ViolationLevel
+  deletedAt DateTime?
+  createdAt DateTime       @default(now())
+
+  records StudentViolation[]
+
+  @@index([level])
+  @@index([deletedAt])
+}
+
+model StudentViolation {
+  id          String   @id @default(uuid())
+  studentId   String
+  violationId String
+  point       Int
+  occurredAt  DateTime
+  createdAt   DateTime @default(now())
+
+  student    Student              @relation(fields: [studentId], references: [id])
+  violation  Violation            @relation(fields: [violationId], references: [id])
+  resolution ViolationResolution?
+
+  @@unique([studentId, violationId, occurredAt])
+  @@index([studentId, occurredAt])
+  @@index([violationId])
+}
+
+model ViolationResolution {
+  id                 String                    @id @default(uuid())
+  studentViolationId String                    @unique
+  handlerTeacherId   String
+  status             ViolationResolutionStatus
+  action             ViolationActionType
+  note               String?
+  resolvedAt         DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  logs             ViolationActionLog[]
+  handlerTeacher   Teacher              @relation(fields: [handlerTeacherId], references: [id])
+  studentViolation StudentViolation     @relation(fields: [studentViolationId], references: [id])
+}
+
+model ViolationActionLog {
+  id           String              @id @default(uuid())
+  resolutionId String
+  action       ViolationActionType
+  note         String?
+  createdAt    DateTime            @default(now())
+
+  resolution ViolationResolution @relation(fields: [resolutionId], references: [id])
+
+  @@unique([resolutionId, action])
+}
+
+model Achievement {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  point     Int
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  records StudentAchievement[]
+}
+
+model StudentAchievement {
+  id            String   @id @default(uuid())
+  studentId     String
+  achievementId String
+  point         Int
+  achievedAt    DateTime
+  createdAt     DateTime @default(now())
+
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+  student     Student     @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, achievementId])
+}
 
 enum Role {
   ADMIN
@@ -78,25 +406,18 @@ enum EducationLevel {
 }
 
 enum CivilServantRank {
-  // Golongan I
   I_A
   I_B
   I_C
   I_D
-
-  // Golongan II
   II_A
   II_B
   II_C
   II_D
-
-  // Golongan III
   III_A
   III_B
   III_C
   III_D
-
-  // Golongan IV
   IV_A
   IV_B
   IV_C
@@ -104,479 +425,9 @@ enum CivilServantRank {
   IV_E
 }
 
-/////////////////////////////////////////////////////
-// AUTH MODULE
-/////////////////////////////////////////////////////
-
-model User {
-  id           String       @id @default(uuid())
-  username     String       @unique
-  password     String
-  image        String?
-  role         Role
-  teacherRole  TeacherRole?
-  refreshToken String?
-
-  isActive           Boolean   @default(true)
-  version            Int       @default(1)
-  failedAttempts     Int       @default(0)
-  lockUntil          DateTime?
-  mustChangePassword Boolean   @default(true)
-
-  studentId String? @unique
-  parentId  String? @unique
-  teacherId String? @unique
-
-  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  parent  Parent?  @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  teacher Teacher? @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-
-  sessions    AuthSession[]
-  resetTokens PasswordResetToken[]
-  loginAudits LoginAudit[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 🔥 B-TREE OPTIMIZED INDEXES
-  @@index([role])
-  @@index([isActive])
-  @@index([createdAt])
-  @@index([username])
-  @@index([role, isActive])
-  @@index([isActive, createdAt])
-}
-
-/////////////////////////////////////////////////////
-// AUTH SESSION
-/////////////////////////////////////////////////////
-
-model AuthSession {
-  id        String   @id @default(uuid())
-  userId    String
-  tokenHash String   @unique
-  expiresAt DateTime
-  revoked   Boolean  @default(false)
-
-  device String?
-  ip     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([revoked])
-}
-
-/////////////////////////////////////////////////////
-// PASSWORD RESET TOKEN
-/////////////////////////////////////////////////////
-
-model PasswordResetToken {
-  id        String   @id @default(uuid())
-  userId    String
-  tokenHash String   @unique
-  expiresAt DateTime
-  used      Boolean  @default(false)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([used])
-}
-
-/////////////////////////////////////////////////////
-// LOGIN AUDIT
-/////////////////////////////////////////////////////
-
-model LoginAudit {
-  id         String  @id @default(uuid())
-  userId     String?
-  identifier String
-  success    Boolean
-  ip         String?
-  userAgent  String?
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@index([identifier])
-  @@index([createdAt])
-  @@index([success])
-}
-
-/////////////////////////////////////////////////////
-// ACADEMIC YEAR
-/////////////////////////////////////////////////////
-
-model AcademicYear {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  startDate DateTime @db.Date
-  endDate   DateTime @db.Date
-  isActive  Boolean  @default(false)
-
-  classes Class[]
-
-  createdAt DateTime @default(now())
-
-  @@index([isActive])
-}
-
-/////////////////////////////////////////////////////
-// CLASS
-/////////////////////////////////////////////////////
-
-model Class {
-  id                String  @id @default(uuid())
-  grade             String
-  name              String
-  academicYearId    String
-  homeroomTeacherId String?
-
-  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
-  homeroomTeacher Teacher?     @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
-
-  students Student[]
-
-  createdAt DateTime @default(now())
-
-  // 1 kelas unik per tahun
-  @@unique([grade, name, academicYearId])
-  // 🔥 1 guru hanya boleh jadi wali 1 kelas per tahun
-  @@unique([homeroomTeacherId, academicYearId])
-  @@index([academicYearId])
-  @@index([grade])
-  @@index([homeroomTeacherId])
-}
-
-/////////////////////////////////////////////////////
-// STUDENT
-/////////////////////////////////////////////////////
-
-model Student {
-  id       String  @id @default(uuid())
-  nisn     Int     @unique
-  nis      Int     @unique
-  name     String
-  nickname String?
-
-  gender       Gender
-  religionCode String
-  rombelId     String
-
-  status    StudentStatus @default(ACTIVE)
-  deletedAt DateTime?
-
-  religion Religion @relation(fields: [religionCode], references: [kode])
-  rombel   Class    @relation(fields: [rombelId], references: [id])
-
-  parents      StudentParent[]
-  violations   StudentViolation[]
-  achievements StudentAchievement[]
-
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  user           User?
-  studentProfile StudentProfile?
-
-  // 🔥 HIGH PERFORMANCE INDEX STRATEGY
-  @@index([name]) // prefix search
-  @@index([status, rombelId]) // filtering per class
-  @@index([rombelId, status]) // dashboard class
-  @@index([religionCode])
-  @@index([deletedAt])
-  @@index([createdAt])
-}
-
-/////////////////////////////////////////////////////
-// STUDENT PROFILE
-/////////////////////////////////////////////////////
-
-model StudentProfile {
-  id        String @id @default(uuid())
-  studentId String @unique
-
-  birthPlace String
-  birthDate  DateTime
-  address    String
-
-  distanceToSchool  String
-  transportToSchool String
-  previousSchool    String
-
-  hobby    String?
-  ambition String?
-
-  phone     String?
-  email     String?
-  instagram String?
-
-  internetAccess String?
-  hasLaptop      Boolean
-  hasPC          Boolean
-  hasPhone       Boolean
-
-  kjpRecipient Boolean
-  pipRecipient Boolean
-
-  specialNeeds Boolean
-  inclusion    Boolean
-
-  student Student @relation(fields: [studentId], references: [id])
-}
-
-/////////////////////////////////////////////////////
-// RELIGION
-/////////////////////////////////////////////////////
-
-model Religion {
-  id   String @id @default(uuid())
-  kode String @unique
-  name String
-
-  students Student[]
-  Teacher  Teacher[]
-  Parent   Parent[]
-
-  @@index([name])
-}
-
-/////////////////////////////////////////////////////
-// PARENT
-/////////////////////////////////////////////////////
-
-model Parent {
-  id String @id @default(uuid())
-
-  name      String
-  email     String?
-  education String
-  job       String
-  income    String?
-
-  religionCode String
-  religion     Religion @relation(fields: [religionCode], references: [kode])
-
-  phone   String @unique
-  address String
-
-  students StudentParent[]
-  users    User[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([name])
-  @@index([religionCode])
-}
-
-/////////////////////////////////////////////////////
-// PIVOT TABLE STUDENT PARENT
-/////////////////////////////////////////////////////
-
-model StudentParent {
-  id        String     @id @default(uuid())
-  studentId String
-  parentId  String
-  role      ParentType
-
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  parent  Parent  @relation(fields: [parentId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-
-  @@unique([studentId, parentId]) // mencegah parent sama didaftarkan 2x
-  @@unique([studentId, role]) // 🔥 mencegah 2 FATHER / 2 MOTHER
-  @@index([studentId])
-  @@index([parentId])
-  @@index([role])
-}
-
-/////////////////////////////////////////////////////
-// TEACHER
-/////////////////////////////////////////////////////
-
-model Teacher {
-  id String @id @default(uuid())
-
-  // =========================
-  // BASIC INFO
-  // =========================
-  nip   String? @unique
-  nuptk String? @unique
-  nrk   String? @unique
-  nrg   Int?    @unique
-
-  name   String
-  gender Gender
-
-  religionCode String
-  religion     Religion @relation(fields: [religionCode], references: [kode])
-
-  phone String?
-  email String?
-  photo String?
-
-  educationLevel EducationLevel
-  major          String?
-  graduationYear Int
-
-  birthPlace String
-  birthDate  DateTime
-
-  civilServantRank CivilServantRank?
-  roles            TeacherRole[]
-
-  // ✅ FIXED: ONE-TO-MANY (BUKAN Class?)
-  homeroomOf Class[] @relation("HomeroomTeacher")
-
-  isPns Boolean
-
-  // Relation ke User
-  user User?
-
-  // Relation ke pelanggaran
-  handledResolutions ViolationResolution[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([name])
-  @@index([nip])
-  @@index([nrk])
-  @@index([nuptk])
-  @@index([nrg])
-  @@index([religionCode])
-  @@index([civilServantRank])
-  @@index([educationLevel])
-  @@index([createdAt])
-}
-
-/////////////////////////////////////////////////////
-// VIOLATION
-/////////////////////////////////////////////////////
-
-model Violation {
-  id        String         @id @default(uuid())
-  name      String         @unique
-  point     Int
-  level     ViolationLevel
-  deletedAt DateTime?
-
-  records StudentViolation[]
-
-  createdAt DateTime @default(now())
-
-  @@index([level])
-  @@index([deletedAt])
-}
-
-/////////////////////////////////////////////////////
-// VIOLATION RESOLUTION
-/////////////////////////////////////////////////////
-
-model ViolationResolution {
-  id                 String @id @default(uuid())
-  studentViolationId String @unique
-  handlerTeacherId   String
-
-  status ViolationResolutionStatus
-  action ViolationActionType
-
-  note String?
-
-  resolvedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  studentViolation StudentViolation     @relation(fields: [studentViolationId], references: [id])
-  handlerTeacher   Teacher              @relation(fields: [handlerTeacherId], references: [id])
-  logs             ViolationActionLog[]
-
-  @@index([handlerTeacherId])
-  @@index([status])
-  @@index([createdAt])
-}
-
-/////////////////////////////////////////////////////
-// VIOLATION ACTION LOG
-/////////////////////////////////////////////////////
-
-model ViolationActionLog {
-  id           String              @id @default(uuid())
-  resolutionId String
-  action       ViolationActionType
-  note         String?
-  createdAt    DateTime            @default(now())
-
-  resolution ViolationResolution @relation(fields: [resolutionId], references: [id])
-
-  @@unique([resolutionId, action])
-  @@index([resolutionId])
-  @@index([createdAt])
-}
-
-/////////////////////////////////////////////////////
-// STUDENT VIOLATION
-/////////////////////////////////////////////////////
-
-model StudentViolation {
-  id          String   @id @default(uuid())
-  studentId   String
-  violationId String
-  point       Int
-  occurredAt  DateTime
-
-  student   Student   @relation(fields: [studentId], references: [id])
-  violation Violation @relation(fields: [violationId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  resolution ViolationResolution?
-
-  @@unique([studentId, violationId, occurredAt])
-  // 🔥 HEAVY TRAFFIC OPTIMIZATION
-  @@index([studentId, occurredAt]) // timeline student
-  @@index([violationId])
-  @@index([occurredAt])
-}
-
-/////////////////////////////////////////////////////
-// ACHIEVEMENT
-/////////////////////////////////////////////////////
-
-model Achievement {
-  id        String    @id @default(uuid())
-  name      String    @unique // ✅ wajib ada ini
-  point     Int
-  deletedAt DateTime?
-  createdAt DateTime  @default(now())
-
-  records StudentAchievement[]
-}
-
-/////////////////////////////////////////////////////
-// STUDENT ACHIEVEMENT
-/////////////////////////////////////////////////////
-
-model StudentAchievement {
-  id            String   @id @default(uuid())
-  studentId     String
-  achievementId String
-  point         Int
-  achievedAt    DateTime
-  createdAt     DateTime @default(now())
-
-  student     Student     @relation(fields: [studentId], references: [id])
-  achievement Achievement @relation(fields: [achievementId], references: [id])
-
-  @@unique([studentId, achievementId])
+enum FamilyStatus {
+  COMPLETE
+  SINGLE_MOTHER
+  SINGLE_FATHER
+  ORPHAN
 }

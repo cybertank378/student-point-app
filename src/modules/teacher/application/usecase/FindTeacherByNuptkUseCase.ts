@@ -1,4 +1,4 @@
-//Files: src/modules/teacher/application/usecase/FindTeacherByNuptkUseCase.ts
+// Files: src/modules/teacher/application/usecase/FindTeacherByNuptkUseCase.ts
 
 import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 
@@ -12,7 +12,8 @@ import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/Teach
  *
  * Business Responsibilities:
  * - Validasi NUPTK tidak kosong
- * - Mengembalikan guru berdasarkan NUPTK
+ * - Validasi harus 16 digit angka
+ * - Mengembalikan guru berdasarkan NUPTK (String Based)
  */
 export class FindTeacherByNuptkUseCase
     extends BaseUseCase<string, Teacher> {
@@ -29,7 +30,14 @@ export class FindTeacherByNuptkUseCase
             throw new Error("NUPTK tidak boleh kosong.");
         }
 
-        const teacher = await this.repo.findByNuptk(nuptk.trim());
+        const cleaned = nuptk.trim();
+
+        // ✅ Validasi 16 digit angka
+        if (!/^\d{16}$/.test(cleaned)) {
+            throw new Error("NUPTK harus 16 digit angka.");
+        }
+
+        const teacher = await this.repo.findByNuptk(cleaned);
 
         if (!teacher) {
             throw new Error("Guru dengan NUPTK tersebut tidak ditemukan.");

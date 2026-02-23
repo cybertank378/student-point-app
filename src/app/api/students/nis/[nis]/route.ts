@@ -1,7 +1,7 @@
 //Files: src/app/api/students/nis/[nis]/route.ts
-import type { NextRequest } from "next/server";
-import { createStudentController } from "@/app/api/students/_factory";
-import { getRouteParam } from "@/modules/shared/http/getRouteParam";
+import type {NextRequest} from "next/server";
+import {createStudentController} from "@/app/api/students/_factory";
+import {getRouteParam} from "@/modules/shared/http/getRouteParam";
 
 const controller = createStudentController();
 
@@ -15,14 +15,5 @@ const controller = createStudentController();
 
 export async function GET(req: NextRequest) {
     const nisParam = getRouteParam(req);
-    const nis = Number(nisParam);
-
-    if (Number.isNaN(nis)) {
-        return Response.json(
-            { message: "Invalid NIS" },
-            { status: 400 }
-        );
-    }
-
-    return controller.getByNis(nis);
+    return controller.getByNis(nisParam);
 }

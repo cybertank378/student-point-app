@@ -8,7 +8,7 @@ import type { StudentQueryDTO } from "@/modules/student/domain/dto/StudentQueryD
 export interface StudentInterface {
   findAll(query?: StudentQueryDTO): Promise<Student[]>;
   findById(id: string): Promise<Student | null>;
-  findByNis(nis: number): Promise<Student | null>;
+  findByNis(nis: string): Promise<Student | null>;
 
   create(dto: CreateStudentDTO): Promise<Student>;
   update(dto: UpdateStudentDTO): Promise<Student>;

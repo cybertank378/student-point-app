@@ -2,7 +2,16 @@
 
 import type { TeacherRole } from "@/generated/prisma";
 
+/**
+ * ============================================================
+ * ASSIGN TEACHER ROLE DTO
+ * ============================================================
+ *
+ * Supports both single and bulk operations.
+ * Single assignment = teacherIds.length === 1
+ * Bulk assignment   = teacherIds.length > 1
+ */
 export interface AssignTeacherRoleDTO {
-    teacherId: string;
-    roles: TeacherRole[];
+    readonly teacherIds: string[];
+    readonly roles: TeacherRole[];
 }

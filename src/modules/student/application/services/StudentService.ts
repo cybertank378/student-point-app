@@ -83,7 +83,7 @@ export class StudentService {
        GET BY NIS
     ========================= */
 
-    getByNis(nis: number): Promise<Result<Student>> {
+    getByNis(nis: string): Promise<Result<Student>> {
         return this.getByNisUseCase.execute(nis);
     }
 

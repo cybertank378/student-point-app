@@ -14,12 +14,12 @@ type TeacherRow = Prisma.TeacherGetPayload<{
  * TEACHER MAPPER
  * ============================================================
  *
- * Responsible for transforming persistence model
+ * Responsible for transforming a persistence model
  * (Prisma) → Domain Entity.
  */
 export class TeacherMapper {
     /**
-     * Convert single Prisma row into Domain Entity.
+     * Convert a single Prisma row into a Domain Entity.
      */
     static toDomain(row: TeacherRow): Teacher {
         return new Teacher(

@@ -1,7 +1,6 @@
 // src/modules/teacher/application/usecase/AssignHomeroomUseCase.ts
 
 import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
-
 import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
 import type { AssignHomeroomDTO } from "@/modules/teacher/domain/dto/AssignHomeroomDTO";
 
@@ -10,49 +9,42 @@ import type { AssignHomeroomDTO } from "@/modules/teacher/domain/dto/AssignHomer
  * ASSIGN HOMEROOM USE CASE
  * ============================================================
  *
- * Business Responsibilities:
- * - Memastikan guru ada
- * - Menetapkan guru sebagai wali kelas
- *
- * Error handling dilakukan oleh BaseUseCase.
+ * Business Rules:
+ * - At least one teacher must be selected
+ * - At least one rombel must be selected
+ * - All teachers must exist
+ * - Must be executed atomically
  */
-export class AssignHomeroomUseCase
-    extends BaseUseCase<AssignHomeroomDTO, void> {
-
-    constructor(
-        private readonly repo: TeacherInterface,
-    ) {
+export class AssignHomeroomUseCase extends BaseUseCase<
+    AssignHomeroomDTO,
+    void
+> {
+    constructor(private readonly repo: TeacherInterface) {
         super();
     }
 
-    /**
-     * Implementasi logika penetapan wali kelas.
-     */
-    protected async handle(
-        dto: AssignHomeroomDTO,
-    ): Promise<void> {
-
-        /**
-         * ====================================================
-         * VALIDASI KEBERADAAN GURU
-         * ====================================================
-         */
-
-        const teacher = await this.repo.findById(dto.teacherId);
-
-        if (!teacher) {
-            throw new Error("Guru tidak ditemukan.");
+    protected async handle(dto: AssignHomeroomDTO): Promise<void> {
+        if (dto.teacherIds.length === 0) {
+            throw new Error("Minimal satu guru harus dipilih.");
         }
 
-        /**
-         * ====================================================
-         * ASSIGN HOMEROOM
-         * ====================================================
-         */
+        if (dto.rombelIds.length === 0) {
+            throw new Error("Minimal satu kelas harus dipilih.");
+        }
 
-        await this.repo.assignHomeroom(
-            dto.teacherId,
-            dto.classId,
-        );
+        await this.repo.withTransaction(async () => {
+            const teachers = await Promise.all(
+                dto.teacherIds.map((id) => this.repo.findById(id))
+            );
+
+            if (teachers.some((teacher) => teacher === null)) {
+                throw new Error("Terdapat guru yang tidak ditemukan.");
+            }
+
+            await this.repo.bulkAssignHomeroom(
+                dto.teacherIds,
+                dto.rombelIds
+            );
+        });
     }
 }

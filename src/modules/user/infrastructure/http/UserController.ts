@@ -54,7 +54,9 @@ export class UserController {
                 search: searchParams.get("search") ?? undefined,
             });
 
+
             const result = await this.service.list(parsed);
+
 
             if (!result.isSuccess) {
                 return HttpResultHandler.handle(result);

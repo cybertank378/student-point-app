@@ -12,6 +12,7 @@ import type {
 } from "@/modules/user/domain/interfaces/UserInterface";
 import { UserMapper } from "@/modules/user/domain/mapper/UserMapper";
 import type { UserRole, TeacherRole } from "@/libs/utils";
+import {serverLog} from "@/libs/serverLogger";
 
 //
 // ======================================================
@@ -22,23 +23,19 @@ import type { UserRole, TeacherRole } from "@/libs/utils";
 // Any relation or field addition must be reflected here.
 // ======================================================
 //
-
 const userSelect = {
     id: true,
     username: true,
     password: true,
     image: true,
 
-    // System roles
     role: true,
     teacherRole: true,
 
-    // Foreign keys (profile linkage)
     studentId: true,
     parentId: true,
     teacherId: true,
 
-    // Security & state control
     version: true,
     lockUntil: true,
     failedAttempts: true,
@@ -47,9 +44,9 @@ const userSelect = {
     createdAt: true,
     updatedAt: true,
 
-    // --------------------------------------------------
-    // STUDENT PROFILE RELATION
-    // --------------------------------------------------
+    // =============================
+    // STUDENT PROFILE (Pivot)
+    // =============================
     student: {
         select: {
             id: true,
@@ -71,9 +68,9 @@ const userSelect = {
         },
     },
 
-    // --------------------------------------------------
-    // PARENT PROFILE RELATION
-    // --------------------------------------------------
+    // =============================
+    // PARENT PROFILE (Pivot)
+    // =============================
     parent: {
         select: {
             id: true,
@@ -95,9 +92,9 @@ const userSelect = {
         },
     },
 
-    // --------------------------------------------------
-    // TEACHER PROFILE RELATION
-    // --------------------------------------------------
+    // =============================
+    // TEACHER PROFILE
+    // =============================
     teacher: {
         select: {
             id: true,
@@ -131,6 +128,10 @@ export class UserRepository implements UserInterface {
             orderBy: { createdAt: "desc" },
             select: userSelect,
         });
+
+        serverLog("data tipe nis : ",typeof users[0]?.student?.nis);
+        serverLog("data nis", users[0]?.student?.nis);
+
 
         return UserMapper.toDomainList(users);
     }

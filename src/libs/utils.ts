@@ -45,7 +45,12 @@ export const TEACHER_ROLES = [
 export type TeacherRole = (typeof TEACHER_ROLES)[number];
 
 
-
+export enum FamilyStatus {
+    COMPLETE = "COMPLETE",
+    SINGLE_MOTHER = "SINGLE_MOTHER",
+    SINGLE_FATHER = "SINGLE_FATHER",
+    ORPHAN = "ORPHAN",
+}
 
 // =====================================================
 // GENERIC HELPERS

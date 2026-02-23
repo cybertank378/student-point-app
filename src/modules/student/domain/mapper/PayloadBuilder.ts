@@ -1,26 +1,7 @@
-//Files: src/modules/student/domain/mapper/PayloadBuilder.ts
-
 /**
  * ============================================================
- * TEACHER PAYLOAD BUILDER
+ * TEACHER PAYLOAD BUILDER (STRING VERSION)
  * ============================================================
- *
- * Centralized builder utilities for Prisma Teacher payload.
- *
- * Responsibilities:
- * - Normalize nullable values
- * - Separate Create & Update payload types
- * - Prevent undefined leakage into Prisma
- * - Provide reusable orderBy builder
- * - Provide single include configuration
- *
- * Why separated?
- * - Prisma CreateInput ≠ UpdateInput
- * - Prevent TS2322 & type conflicts
- * - Maintain strict type-safety
- *
- * This file acts as:
- * 👉 Infrastructure-safe DTO → Prisma adapter
  */
 
 import { CreateTeacherDTO } from "@/modules/teacher/domain/dto/CreateTeacherDTO";
@@ -30,33 +11,29 @@ import { Prisma } from "@/generated/prisma";
 /* ============================================================
    UTIL: Normalize Nullable
 ============================================================ */
-/**
- * Convert null to undefined.
- *
- * Prisma prefers `undefined` over `null`
- * when the field is optional.
- */
 const normalizeNullable = <T>(
     value: T | null | undefined
 ): T | undefined => value ?? undefined;
 
 /* ============================================================
-   INTERNAL BASE PAYLOAD
+   CREATE PAYLOAD BUILDER
 ============================================================ */
-/**
- * Shared base payload used by both
- * creation and update builders.
- *
- * DO NOT export.
- */
-function buildBasePayload(
-    dto: CreateTeacherDTO | UpdateTeacherDTO
-) {
+export function buildCreatePayload(
+    dto: CreateTeacherDTO
+): Prisma.TeacherUncheckedCreateInput {
+
+    if (!dto.nrg) {
+        throw new Error("NRG is required for teacher creation.");
+    }
+
     return {
+        // ✅ STRING DIRECT
         nip: normalizeNullable(dto.nip),
         nuptk: normalizeNullable(dto.nuptk),
         nrk: normalizeNullable(dto.nrk),
-        nrg: normalizeNullable(dto.nrg),
+
+        // REQUIRED
+        nrg: dto.nrg,
 
         name: dto.name,
         gender: dto.gender,
@@ -81,51 +58,57 @@ function buildBasePayload(
 }
 
 /* ============================================================
-   CREATE PAYLOAD BUILDER
-============================================================ */
-/**
- * Build strictly typed Create payload.
- *
- * Only accepts CreateTeacherDTO.
- * Safe because required fields are guaranteed.
- */
-export function buildCreatePayload(
-    dto: CreateTeacherDTO
-): Prisma.TeacherUncheckedCreateInput {
-    return buildBasePayload(dto) as Prisma.TeacherUncheckedCreateInput;
-}
-
-/* ============================================================
    UPDATE PAYLOAD BUILDER
 ============================================================ */
-/**
- * Build partial-safe Update payload.
- *
- * Removes undefined fields to avoid:
- * - Prisma runtime errors
- * - Accidental field overwrites
- */
 export function buildUpdatePayload(
     dto: UpdateTeacherDTO
 ): Prisma.TeacherUncheckedUpdateInput {
 
-    const base = buildBasePayload(dto);
+    const data: Prisma.TeacherUncheckedUpdateInput = {};
 
-    return Object.fromEntries(
-        Object.entries(base).filter(
-            ([_, value]) => value !== undefined
-        )
-    ) as Prisma.TeacherUncheckedUpdateInput;
+    if (dto.nip !== undefined) data.nip = dto.nip ?? undefined;
+    if (dto.nuptk !== undefined) data.nuptk = dto.nuptk ?? undefined;
+    if (dto.nrk !== undefined) data.nrk = dto.nrk ?? undefined;
+    if (dto.nrg !== undefined) data.nrg = dto.nrg;
+
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.gender !== undefined) data.gender = dto.gender;
+    if (dto.religionCode !== undefined) data.religionCode = dto.religionCode;
+
+    if (dto.phone !== undefined) data.phone = dto.phone ?? undefined;
+    if (dto.email !== undefined) data.email = dto.email ?? undefined;
+    if (dto.photo !== undefined) data.photo = dto.photo ?? undefined;
+
+    if (dto.educationLevel !== undefined)
+        data.educationLevel = dto.educationLevel;
+
+    if (dto.major !== undefined)
+        data.major = dto.major ?? undefined;
+
+    if (dto.graduationYear !== undefined)
+        data.graduationYear = dto.graduationYear;
+
+    if (dto.birthPlace !== undefined)
+        data.birthPlace = dto.birthPlace;
+
+    if (dto.birthDate !== undefined)
+        data.birthDate = dto.birthDate;
+
+    if (dto.civilServantRank !== undefined)
+        data.civilServantRank = dto.civilServantRank ?? undefined;
+
+    if (dto.roles !== undefined)
+        data.roles = dto.roles;
+
+    if (dto.isPns !== undefined)
+        data.isPns = dto.isPns;
+
+    return data;
 }
 
 /* ============================================================
    RELATION INCLUDE CONFIG
 ============================================================ */
-/**
- * Single source of truth for Teacher relation includes it.
- *
- * Prevents duplication across repository.
- */
 export const teacherInclude = {
     religion: true,
     homeroomOf: true,
@@ -134,12 +117,8 @@ export const teacherInclude = {
 /* ============================================================
    ORDER BY BUILDER
 ============================================================ */
-/**
- * Strongly typed orderBy builder.
- *
- * Automatically synced with Prisma schema.
- */
-type TeacherOrderableField = keyof Prisma.TeacherOrderByWithRelationInput;
+type TeacherOrderableField =
+    keyof Prisma.TeacherOrderByWithRelationInput;
 
 export function buildOrderBy(
     sortBy?: TeacherOrderableField,

@@ -1,36 +1,40 @@
 //Files: src/sections/teacher/organisms/TeacherHeader.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import React, {useEffect, useRef, useState} from "react";
 import SelectField from "@/shared-ui/component/SelectField";
 import SearchField from "@/shared-ui/component/SearchField";
 import Button from "@/shared-ui/component/Button";
-import { FaPlus } from "react-icons/fa6";
-import { HiOutlineUpload } from "react-icons/hi";
+import {FaPlus} from "react-icons/fa6";
 
-import TeacherFormModal, {
-    TeacherFormType,
-} from "@/sections/teacher/molecules/TeacherFormModal";
+import TeacherFormModal, {TeacherFormType,} from "@/sections/teacher/molecules/TeacherFormModal";
 
-import type { useTeacherApi } from "@/modules/teacher/presentation/hooks/useTeacherApi";
-import { useReligionApi } from "@/modules/religion/presentation/hooks/useReligionApi";
-import { teacherRoleLabel } from "@/libs/utils";
-import { showSuccessToast, showErrorToast } from "@/shared-ui/component/Toast";
+import type {useTeacherApi} from "@/modules/teacher/presentation/hooks/useTeacherApi";
+import {useReligionApi} from "@/modules/religion/presentation/hooks/useReligionApi";
+import {teacherRoleLabel} from "@/libs/utils";
+import {showErrorToast, showSuccessToast} from "@/shared-ui/component/Toast";
+import {FcDownload, FcExport, FcImport} from "react-icons/fc";
 
 interface Props {
     api: ReturnType<typeof useTeacherApi>;
 }
 
-export default function TeacherHeader({ api }: Props) {
-    const { searchTeachers, createTeacher } = api;
+export default function TeacherHeader({api}: Props) {
+    const {searchTeachers, createTeacher, downloadImportTemplate, exportTeachers, importTeachers} = api;
 
-    const { religions, loading: religionLoading } = useReligionApi();
+    const {religions, loading: religionLoading} = useReligionApi();
+
+    /* ================= EXPORT IMPORT STATE ================= */
+    const [exportLoading, setExportLoading] = useState(false);
+    const [importLoading, setImportLoading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     /* ================= FILTER STATE ================= */
     const [search, setSearch] = useState("");
     const [role, setRole] = useState<string>("");
     const [religionCode, setReligionCode] = useState<string>("");
     const [status, setStatus] = useState<string>("");
+    const [formLoading, setFormLoading] = useState(false);
 
     /* ================= MODAL STATE ================= */
     const [open, setOpen] = useState(false);
@@ -41,7 +45,7 @@ export default function TeacherHeader({ api }: Props) {
         nrk: "",
         nrg: "",
         name: "",
-        gender: "MALE", // default
+        gender: "MALE",
         religionCode: "",
         phone: "",
         email: "",
@@ -53,7 +57,7 @@ export default function TeacherHeader({ api }: Props) {
         birthDate: new Date(),
         civilServantRank: null,
         roles: [],
-        isPns: false,
+        isPns: false
     });
 
     const handleChange = <K extends keyof TeacherFormType>(
@@ -68,16 +72,19 @@ export default function TeacherHeader({ api }: Props) {
 
     /* ================= SUBMIT CREATE ================= */
     const handleSubmit = async () => {
+        if (formLoading) return; // 🔥 prevent double submit
+
         try {
+            setFormLoading(true);
+
             const result = await createTeacher({
                 nip: form.nip || null,
                 nuptk: form.nuptk || null,
                 nrk: form.nrk || null,
-                nrg: form.nrg ? Number(form.nrg) : undefined,
+                nrg: form.nrg,
 
                 name: form.name,
                 gender: form.gender,
-
                 religionCode: form.religionCode,
 
                 phone: form.phone || null,
@@ -92,9 +99,9 @@ export default function TeacherHeader({ api }: Props) {
                 birthDate: form.birthDate,
 
                 civilServantRank: form.civilServantRank || null,
-
                 roles: form.roles,
-                isPns: form.isPns ?? false
+                isPns: form.isPns ?? false,
+                homeroomClassIds: [],
             });
 
             if (!result) {
@@ -103,43 +110,15 @@ export default function TeacherHeader({ api }: Props) {
             }
 
             showSuccessToast("Guru berhasil ditambahkan");
-
             setOpen(false);
 
-            setForm({
-                nip: "",
-                nuptk: "",
-                nrk: "",
-                nrg: "",
-                name: "",
-                gender: "MALE",
-                religionCode: "",
-                phone: "",
-                email: "",
-                photo: "",
-                educationLevel: "S1",
-                major: "",
-                graduationYear: new Date().getFullYear(),
-                birthPlace: "",
-                birthDate: new Date(),
-                civilServantRank: null,
-                roles: [],
-                isPns: false,
-            });
-
-            await searchTeachers({
-                search: search || undefined,
-                role: role || undefined,
-                religionCode: religionCode || undefined,
-                page: 1,
-                limit: 10,
-            });
-
-        } catch {
+        } catch (error) {
+            console.error("Create teacher error:", error);
             showErrorToast("Terjadi kesalahan");
+        } finally {
+            setFormLoading(false); // 🔥 always reset
         }
     };
-
 
     /* ================= AUTO SEARCH ================= */
     useEffect(() => {
@@ -151,6 +130,66 @@ export default function TeacherHeader({ api }: Props) {
             limit: 10,
         });
     }, [search, role, religionCode, status, searchTeachers]);
+
+
+    {/* ================= HANDLE DOWNLOAD TEMPLATE ================= */}
+    const handleDownloadTemplate = async () => {
+        const err = await downloadImportTemplate();
+
+        if (err) {
+            showErrorToast(err.message);
+        } else {
+            showSuccessToast("Template berhasil diunduh");
+        }
+    };
+
+    {/* ================= HANDLE IMPORT ================= */}
+    const handleImportClick = () => {fileInputRef.current?.click();};
+
+    const handleImportChange = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const file = event.target.files?.[0];
+        if (!file || importLoading) return;
+
+        try {
+            setImportLoading(true);
+
+            const err = await importTeachers(file);
+
+            if (err) showErrorToast(err.message);
+            else showSuccessToast("Import berhasil");
+        } catch {
+            showErrorToast("Gagal import file");
+        } finally {
+            setImportLoading(false);
+            event.target.value = "";
+        }
+    };
+
+    {/* ================= HANDLE EXPORT ================= */}
+    const handleExport = async () => {
+        if (exportLoading) return;
+
+        try {
+            setExportLoading(true);
+
+            const err = await exportTeachers();
+
+            if (err) {
+                showErrorToast(err.message || "Terjadi kesalahan");
+            } else {
+                showSuccessToast("Data guru berhasil diexport");
+            }
+
+        } catch {
+            showErrorToast("Gagal export data guru");
+        } finally {
+            setExportLoading(false);
+        }
+    };
+
+    {/* ================= RENDER ================= */}
 
     return (
         <>
@@ -204,45 +243,84 @@ export default function TeacherHeader({ api }: Props) {
                     </div>
                 </div>
 
-                <div className="border-t" />
+                <div className="border-t"/>
 
                 {/* ================= ACTION SECTION ================= */}
                 <div className="px-8 py-5 flex items-center justify-between">
-                    <Button variant="outline" leftIcon={HiOutlineUpload}>
-                        Export
-                    </Button>
 
+                    {/* LEFT GROUP */}
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="file"
+                            accept=".xlsx"
+                            ref={fileInputRef}
+                            onChange={handleImportChange}
+                            className="hidden"
+                        />
+
+                        <Button
+                            variant="outline"
+                            leftIcon={FcImport}
+                            onClick={handleImportClick}
+                            disabled={importLoading}
+                        >
+                            {importLoading ? "Importing..." : "Import"}
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            leftIcon={FcExport}
+                            onClick={handleExport}
+                        >
+                            Export
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            leftIcon={FcDownload}
+                            onClick={handleDownloadTemplate}
+                        >
+                            Download Template
+                        </Button>
+
+
+
+                    </div>
+
+                    {/* RIGHT GROUP */}
                     <div className="flex items-center gap-4">
                         <SearchField
                             value={search}
                             onChange={setSearch}
                             placeholder="Cari Guru"
-                            className="w-72"
+                            className="flex-1 max-w-sm"
                             debounce={400}
                         />
 
-                        {/* 🔥 FIXED TRIGGER */}
                         <Button
                             variant="filled"
                             color="primary"
                             leftIcon={FaPlus}
+                            className="h-11"
                             onClick={() => setOpen(true)}
                         >
                             Tambah Guru
                         </Button>
-
                     </div>
                 </div>
             </div>
 
             {/* ================= MODAL ================= */}
             <TeacherFormModal
+                api={api}
                 open={open}
                 onClose={() => setOpen(false)}
                 onSubmit={handleSubmit}
                 mode="add"
                 form={form}
                 onChange={handleChange}
+                teacher={null}
+                loading={formLoading}
             />
         </>
     );

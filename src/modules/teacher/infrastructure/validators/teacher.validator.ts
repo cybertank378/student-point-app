@@ -1,21 +1,19 @@
 // Files: src/modules/teacher/infrastructure/validators/teacher.validator.ts
 
 import { z } from "zod";
-import { id } from "zod/locales"
-
+import { id } from "zod/locales";
 import { TeacherRole } from "@/generated/prisma";
 import { teacherSortFields } from "@/modules/teacher/domain/dto/ListTeacherRespDTO";
-import {BaseTeacherSchema, TeacherObjectSchema, teacherRefinement} from "./base.validator";
-
-/* ============================================================
-   ZOD CONFIG
-   ============================================================ */
+import {
+    CreateTeacherSchema,
+    UpdateTeacherSchema,
+} from "./base.validator";
 
 z.config(id());
 
 /* ============================================================
-   LIST (PAGINATION)
-   ============================================================ */
+   LIST
+============================================================ */
 
 export const ListTeacherSchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
@@ -24,8 +22,8 @@ export const ListTeacherSchema = z.object({
 });
 
 /* ============================================================
-   SEARCH (ADVANCED FILTER)
-   ============================================================ */
+   SEARCH
+============================================================ */
 
 export const SearchTeacherSchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
@@ -40,40 +38,59 @@ export const SearchTeacherSchema = z.object({
 });
 
 /* ============================================================
-   CREATE
-   ============================================================ */
+   CREATE / UPDATE
+============================================================ */
 
-export const CreateTeacherSchema = BaseTeacherSchema;
+export { CreateTeacherSchema, UpdateTeacherSchema };
 
-/* ============================================================
-   UPDATE
-   ============================================================ */
-
-export const UpdateTeacherSchema =
-    TeacherObjectSchema
-        .partial()
-        .superRefine(teacherRefinement);
-
-
-/* ============================================================
-   ASSIGN ROLE
-   ============================================================ */
-
-export const AssignTeacherRoleSchema = z.object({
+/**
+ * ============================================================
+ * BULK ASSIGN TEACHER ROLE SCHEMA
+ * ============================================================
+ *
+ * Modern scalable API contract.
+ */
+export const AssignTeacherRoleBulkSchema = z.object({
+    teacherIds: z.array(z.string().min(1)).min(1),
     roles: z.array(z.enum(TeacherRole)).min(1),
 });
 
-/* ============================================================
-   ASSIGN HOMEROOM
-   ============================================================ */
+/**
+ * ============================================================
+ * SINGLE ASSIGN TEACHER ROLE SCHEMA
+ * ============================================================
+ *
+ * Backward compatible format.
+ */
+export const AssignTeacherRoleSingleSchema = z.object({
+    roles: z.array(z.enum(TeacherRole)).min(1),
+});
 
-export const AssignHomeroomSchema = z.object({
+/**
+ * ============================================================
+ * BULK ASSIGN HOMEROOM SCHEMA
+ * ============================================================
+ */
+export const AssignHomeroomBulkSchema = z.object({
+    teacherIds: z.array(z.string().min(1)).min(1),
+    rombelIds: z.array(z.string().min(1)).min(1),
+});
+
+/**
+ * ============================================================
+ * SINGLE ASSIGN HOMEROOM SCHEMA
+ * ============================================================
+ *
+ * Backward compatibility.
+ */
+export const AssignHomeroomSingleSchema = z.object({
     teacherId: z.string().min(1),
     classId: z.string().min(1),
 });
 
 /* ============================================================
-   IMPORT (BULK)
-   ============================================================ */
+   IMPORT
+============================================================ */
 
-export const ImportTeacherSchema = z.array(BaseTeacherSchema);
+export const ImportTeacherSchema =
+    z.array(CreateTeacherSchema);

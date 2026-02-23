@@ -1,3 +1,4 @@
+//Files: src/sections/user/organisms/UserHeader.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,53 +8,44 @@ import Button from "@/shared-ui/component/Button";
 import { FaPlus } from "react-icons/fa";
 
 import type { useUserApi } from "@/modules/user/presentation/hooks/useUserApi";
-import type {TeacherRole, UserRole} from "@/libs/utils";
+import type { UserRole } from "@/libs/utils";
 
-import UserFormModal from "@/sections/user/molecules/UserFormModal";
-import {CreateUserDTO} from "@/modules/user/domain/dto/CreateUserDTO";
+import UserFormModal, {
+    UserFormType,
+} from "@/sections/user/molecules/UserFormModal";
+
+import { CreateUserDTO } from "@/modules/user/domain/dto/CreateUserDTO";
 
 interface Props {
     api: ReturnType<typeof useUserApi>;
 }
 
-type CreateForm = {
-    password: string;
-    role: UserRole;
-    teacherRole: TeacherRole | null;
-    image: File | null;
-    referenceId: string;
-    isActive: boolean;
-};
-
 export default function UserHeader({ api }: Props) {
-    const { searchUsers } = api;
+    const { searchUsers, create } = api;
+
+    /* ================= FILTER STATE ================= */
     const [search, setSearch] = useState<string>("");
-    const [roleFilter, setRoleFilter] =
-        useState<"ALL" | UserRole>("ALL");
-    const [statusFilter, setStatusFilter] =
-        useState<"ALL" | "ACTIVE" | "INACTIVE">(
-            "ALL"
-        );
+    const [roleFilter, setRoleFilter] = useState<"ALL" | UserRole>("ALL");
+    const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
     /* ================= MODAL STATE ================= */
-
     const [open, setOpen] = useState<boolean>(false);
 
-    const [form, setForm] = useState<CreateForm>({
+    /* ================= FORM STATE (MATCHES UserFormType) ================= */
+    const [form, setForm] = useState<UserFormType>({
         password: "",
         role: "STUDENT",
         teacherRole: null,
         image: null,
-        referenceId: "",
         isActive: true,
     });
 
     /* ================= SEARCH TRIGGER ================= */
-
     useEffect(() => {
         void searchUsers({
             username: search || undefined,
-            role: roleFilter !== "ALL" ? roleFilter : undefined,
+            role:
+                roleFilter !== "ALL" ? roleFilter : undefined,
             isActive:
                 statusFilter === "ALL"
                     ? undefined
@@ -64,12 +56,11 @@ export default function UserHeader({ api }: Props) {
     }, [search, roleFilter, statusFilter, searchUsers]);
 
     /* ================= FORM CHANGE ================= */
-
     const handleChange = <
-        K extends keyof CreateForm
+        K extends keyof UserFormType
     >(
         field: K,
-        value: CreateForm[K]
+        value: UserFormType[K]
     ) => {
         setForm((prev) => ({
             ...prev,
@@ -78,24 +69,23 @@ export default function UserHeader({ api }: Props) {
     };
 
     /* ================= SUBMIT ================= */
-
-
     const handleSubmit = async () => {
         if (form.role === "ADMIN") return;
 
         const payload: CreateUserDTO = {
             role: form.role as Exclude<
-                typeof form.role,
+                UserRole,
                 "ADMIN"
             >,
-            referenceId: form.referenceId,
+            referenceId: "", // isi sesuai kebutuhan sistem
             ...(form.role === "TEACHER" &&
                 form.teacherRole && {
                     teacherRole: form.teacherRole,
                 }),
         };
 
-        await api.create(payload);
+        await create(payload);
+        setOpen(false);
     };
 
     return (
@@ -107,7 +97,7 @@ export default function UserHeader({ api }: Props) {
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                        {/* Select Role */}
+                        {/* ROLE FILTER */}
                         <SelectField
                             value={roleFilter}
                             onChange={(e) =>
@@ -123,7 +113,7 @@ export default function UserHeader({ api }: Props) {
                             <option value="PARENT">Parent</option>
                         </SelectField>
 
-                        {/* Select Status */}
+                        {/* STATUS FILTER */}
                         <SelectField
                             value={statusFilter}
                             onChange={(e) =>
@@ -140,7 +130,7 @@ export default function UserHeader({ api }: Props) {
                             <option value="INACTIVE">Nonaktif</option>
                         </SelectField>
 
-                        {/* Search */}
+                        {/* SEARCH */}
                         <SearchField
                             className="flex justify-end"
                             value={search}
@@ -149,7 +139,7 @@ export default function UserHeader({ api }: Props) {
                             debounce={400}
                         />
 
-                        {/* Add Button */}
+                        {/* ADD BUTTON */}
                         <div className="flex justify-end">
                             <Button
                                 variant="filled"
@@ -165,35 +155,14 @@ export default function UserHeader({ api }: Props) {
             </div>
 
             {/* ================= CREATE MODAL ================= */}
-
             <UserFormModal
                 api={api}
                 open={open}
                 onClose={() => setOpen(false)}
                 onSubmit={handleSubmit}
                 mode="add"
-                form={{
-                    password: "",
-                    role: form.role,
-                    teacherRole: form.teacherRole,
-                    image: "",
-                    isActive: true,
-                }}
-                onChange={(field, value) => {
-                    if (field === "role") {
-                        handleChange(
-                            "role",
-                            value as UserRole
-                        );
-                    }
-
-                    if (field === "teacherRole") {
-                        handleChange(
-                            "teacherRole",
-                            value as TeacherRole | null
-                        );
-                    }
-                }}
+                form={form}
+                onChange={handleChange}
             />
         </>
     );

@@ -74,7 +74,7 @@ export class StudentController {
     /* ======================================
        GET BY NIS
     ====================================== */
-    async getByNis(nis: number) {
+    async getByNis(nis: string) {
         const result = await this.service.getByNis(nis);
         return HttpResultHandler.handle(result);
     }

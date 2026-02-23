@@ -18,6 +18,7 @@ export const teacherSortFields = [
     "nip",
     "nuptk",
     "nrk",
+    "nrg",
     "roles",
     "createdAt",
 ] as const;
@@ -41,6 +42,7 @@ export interface ListTeacherParams {
     nrk?: string;
     nuptk?: string;
     nip?: string;
+    nrg?: string;
     role?: TeacherRole;
     religionCode?: string;
     sortBy?: TeacherSortField;
@@ -58,7 +60,7 @@ export interface TeacherRespDTO {
     nip: string | null;
     nuptk: string | null;
     nrk: string | null;
-    nrg : number | null;
+    nrg : string;
 
     // Basic
     name: string;

@@ -1,6 +1,7 @@
 //Files: src/app/api/teachers/export/route.ts
 
 import {createTeacherController} from "@/app/api/teachers/_factory";
+import {NextRequest} from "next/server";
 
 /**
  * ============================================================
@@ -19,6 +20,6 @@ const controller = createTeacherController();
 /**
  * GET /api/teachers/export
  */
-export async function GET() {
-    return controller.export();
+export async function GET(request: NextRequest) {
+    return controller.export(request);
 }

@@ -1,3 +1,4 @@
+
 //Files: src/modules/teacher/infrastructure/repo/TeacherRepository.ts
 
 import prisma from "@/libs/prisma";
@@ -17,7 +18,6 @@ import { BasePaginationParams } from "@/modules/shared/http/pagination/BasePagin
 import {
     buildCreatePayload,
     buildOrderBy,
-    buildUpdatePayload,
     teacherInclude
 } from "@/modules/student/domain/mapper/PayloadBuilder";
 
@@ -35,6 +35,7 @@ import {
  * - Optimized for high volume
  */
 export class TeacherRepository implements TeacherInterface {
+
 
     /* =========================================================
        FIND ALL (Paginated + Role Filter)
@@ -57,8 +58,32 @@ export class TeacherRepository implements TeacherInterface {
 
         if (params.search) {
             where.OR = [
-                { name: { startsWith: params.search, mode: "insensitive" } },
-                { nip: { startsWith: params.search } },
+                {
+                    name: {
+                        contains: params.search,
+                        mode: "insensitive",
+                    },
+                },
+                {
+                    nip: {
+                        contains: params.search, // ✅ sekarang string
+                    },
+                },
+                {
+                    nuptk: {
+                        contains: params.search,
+                    },
+                },
+                {
+                    nrk: {
+                        contains: params.search,
+                    },
+                },
+                {
+                    nrg: {
+                        contains: params.search,
+                    },
+                },
             ];
         }
 
@@ -99,8 +124,9 @@ export class TeacherRepository implements TeacherInterface {
     }
 
     /* =========================================================
-       FIND BY UNIQUE IDENTIFIERS
+       FIND BY UNIQUE IDENTIFIERS (BigInt)
     ========================================================= */
+
     async findByNip(nip: string): Promise<Teacher | null> {
         const row = await prisma.teacher.findUnique({
             where: { nip },
@@ -127,12 +153,11 @@ export class TeacherRepository implements TeacherInterface {
 
         return row ? TeacherMapper.toDomain(row) : null;
     }
-
     /* =========================================================
        CREATE
     ========================================================= */
     /**
-     * Create new teacher entity.
+     * Create a new teacher entity.
      */
     async create(dto: CreateTeacherDTO): Promise<Teacher> {
         const created = await prisma.teacher.create({
@@ -146,36 +171,32 @@ export class TeacherRepository implements TeacherInterface {
     /* =========================================================
        UPDATE
     ========================================================= */
-    /**
-     * Update teacher and handle homeroom reassignment safely.
-     * Wrapped in transaction for atomic consistency.
-     */
     async update(dto: UpdateTeacherDTO): Promise<Teacher> {
-        return prisma.$transaction(async (tx) => {
 
-            const updated = await tx.teacher.update({
-                where: { id: dto.id },
-                data: buildUpdatePayload(dto),
-                include: teacherInclude,
-            });
+        const { id, roles, homeroomClassIds, ...rest } = dto;
 
-            if (dto.homeroomClassId !== undefined) {
+        const data: Prisma.TeacherUpdateInput = {};
 
-                await tx.class.updateMany({
-                    where: { homeroomTeacherId: dto.id },
-                    data: { homeroomTeacherId: null },
-                });
-
-                if (dto.homeroomClassId) {
-                    await tx.class.update({
-                        where: { id: dto.homeroomClassId },
-                        data: { homeroomTeacherId: dto.id },
-                    });
-                }
+        // 🔥 assign only defined values
+        (Object.keys(rest) as (keyof typeof rest)[]).forEach((key) => {
+            const value = rest[key];
+            if (value !== undefined) {
+                (data as Record<string, unknown>)[key] = value;
             }
-
-            return TeacherMapper.toDomain(updated);
         });
+
+        // 🔥 handle roles relation
+        if (roles !== undefined) {
+            data.roles = roles;
+        }
+
+        const updated = await prisma.teacher.update({
+            where: { id },
+            data,
+            include: teacherInclude,
+        });
+
+        return TeacherMapper.toDomain(updated);
     }
 
     /* =========================================================
@@ -184,30 +205,31 @@ export class TeacherRepository implements TeacherInterface {
     /**
      * Replace teacher roles.
      */
-    async updateRoles(id: string, roles: string[]): Promise<Teacher> {
-        const row = await prisma.teacher.update({
-            where: { id },
-            data: { roles: roles as TeacherRole[] },
-            include: teacherInclude,
-        });
 
-        return TeacherMapper.toDomain(row);
+    async bulkAssignRoles(teacherIds: string[],roles: TeacherRole[]): Promise<void> {
+        await prisma.teacher.updateMany({
+            where: { id: { in: teacherIds } },
+            data: { roles: { set: roles } },
+        });
     }
 
-    /* =========================================================
-       ASSIGN HOMEROOM
-    ========================================================= */
-    /**
-     * Assign teacher as homeroom teacher for a class.
-     */
-    async assignHomeroom(
-        teacherId: string,
-        classId: string
-    ): Promise<void> {
-        await prisma.class.update({
-            where: { id: classId },
-            data: { homeroomTeacherId: teacherId },
-        });
+    async bulkAssignHomeroom(teacherIds: string[],rombelIds: string[]): Promise<void> {
+        await prisma.$transaction(
+            teacherIds.map((teacherId) =>
+                prisma.teacher.update({
+                    where: { id: teacherId },
+                    data: {
+                        homeroomOf: {
+                            set: rombelIds.map((id) => ({ id })),
+                        },
+                    },
+                })
+            )
+        );
+    }
+
+    async withTransaction<T>(callback: () => Promise<T>): Promise<T> {
+        return prisma.$transaction(async () => callback());
     }
 
     /* =========================================================
@@ -277,34 +299,114 @@ export class TeacherRepository implements TeacherInterface {
         };
     }
 
-    /* =========================================================
-       BULK CREATE
-    ========================================================= */
-    /**
-     * High-performance bulk insert.
-     * Optimized for 100k+ records.
-     */
-    async bulkCreate(data: CreateTeacherDTO[]): Promise<void> {
-        if (!data.length) return;
+    /* ============================================================
+   BULK IMPORT CREATE
+============================================================ */
 
-        await prisma.teacher.createMany({
+    async bulkImportCreate(
+        data: CreateTeacherDTO[]
+    ): Promise<{ inserted: number }> {
+        if (!data.length) {
+            return { inserted: 0 };
+        }
+
+        const result = await prisma.teacher.createMany({
             data: data.map((dto) => buildCreatePayload(dto)),
             skipDuplicates: true,
         });
+
+        return {
+            inserted: result.count,
+        };
     }
 
-    /* =========================================================
+    /* ============================================================
        EXPORT
-    ========================================================= */
-    /**
-     * Retrieve all teachers for export (no pagination).
-     */
-    async findAllForExport(): Promise<ReadonlyArray<Teacher>> {
+    ============================================================ */
+
+    async findAllForExport(params?: {
+        role?: string;
+    }): Promise<ReadonlyArray<Teacher>> {
+        const where: Prisma.TeacherWhereInput = {};
+
+        if (params?.role) {
+            where.roles = {
+                has: params.role as TeacherRole,
+            };
+        }
+
         const rows = await prisma.teacher.findMany({
+            where,
             include: teacherInclude,
             orderBy: { createdAt: "desc" },
         });
 
         return TeacherMapper.toDomainList(rows);
+    }
+
+    async findExistingIdentifiers(params: {
+        nips: string[];
+        nuptks: string[];
+        nrks: string[];
+    }): Promise<{
+        nips: Set<string>;
+        nuptks: Set<string>;
+        nrks: Set<string>;
+    }> {
+        const conditions: Prisma.TeacherWhereInput[] = [];
+
+        if (params.nips.length > 0) {
+            conditions.push({
+                nip: { in: params.nips },
+            });
+        }
+
+        if (params.nuptks.length > 0) {
+            conditions.push({
+                nuptk: { in: params.nuptks },
+            });
+        }
+
+        if (params.nrks.length > 0) {
+            conditions.push({
+                nrk: { in: params.nrks },
+            });
+        }
+
+        // 🔹 If no identifiers provided, skip query entirely
+        if (conditions.length === 0) {
+            return {
+                nips: new Set(),
+                nuptks: new Set(),
+                nrks: new Set(),
+            };
+        }
+
+        const rows = await prisma.teacher.findMany({
+            where: {
+                OR: conditions,
+            },
+            select: {
+                nip: true,
+                nuptk: true,
+                nrk: true,
+            },
+        });
+
+        const nipSet = new Set<string>();
+        const nuptkSet = new Set<string>();
+        const nrkSet = new Set<string>();
+
+        for (const row of rows) {
+            if (row.nip !== null) nipSet.add(row.nip);
+            if (row.nuptk !== null) nuptkSet.add(row.nuptk);
+            if (row.nrk !== null) nrkSet.add(row.nrk);
+        }
+
+        return {
+            nips: nipSet,
+            nuptks: nuptkSet,
+            nrks: nrkSet,
+        };
     }
 }

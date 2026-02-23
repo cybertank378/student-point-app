@@ -1,7 +1,7 @@
 //Files: src/modules/student/infrastructure/validators/student.validator.ts
 
 
-import { z } from "zod";
+import {z} from "zod";
 import {UUID_REGEX} from "@/libs/utils";
 
 /**
@@ -18,21 +18,35 @@ export const StudentStatusEnum = z.enum([
     "MUTATION",
 ]);
 
+
+/* ============================================================
+   NISN (10–17 DIGIT, REQUIRED)
+============================================================ */
+export const NisnSchema = z
+    .string()
+    .trim()
+    .regex(/^\d{10,17}$/, "NISN harus 10–17 digit angka");
+
+/* ============================================================
+   NIS (4–5 DIGIT, OPTIONAL)
+============================================================ */
+export const NisSchema = z
+    .string()
+    .trim()
+    .regex(/^\d{4,5}$/, "NIS harus 4–5 digit angka")
+    .nullable()
+    .optional();
+
+
 /**
  * ==============================
  * CREATE STUDENT
  * ==============================
  */
 export const CreateStudentSchema = z.object({
-    nisn: z
-        .number()
-        .int("NISN harus bilangan bulat")
-        .positive("NISN harus bernilai positif"),
+    nisn:NisnSchema,
 
-    nis: z
-        .number()
-        .int("NIS harus bilangan bulat")
-        .positive("NIS harus bernilai positif"),
+    nis: NisSchema,
 
     name: z
         .string()
@@ -53,6 +67,14 @@ export const CreateStudentSchema = z.object({
     rombelId: z
         .string()
         .regex(UUID_REGEX, "Rombel ID tidak valid"),
+
+    isDifable: z.boolean().optional(),
+
+    difableNotes: z
+        .string()
+        .max(255)
+        .nullable()
+        .optional(),
 });
 
 /**

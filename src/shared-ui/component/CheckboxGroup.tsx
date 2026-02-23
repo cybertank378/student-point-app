@@ -1,5 +1,4 @@
 //Files: src/shared-ui/component/CheckboxGroup.tsx
-// Files: src/shared-ui/component/CheckboxGroup.tsx
 
 import Checkbox from "@/shared-ui/component/Checkbox";
 import clsx from "clsx";

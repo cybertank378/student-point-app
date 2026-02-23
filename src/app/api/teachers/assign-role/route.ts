@@ -9,21 +9,18 @@ import {NextRequest} from "next/server";
  * ============================================================
  *
  * Endpoint:
- * - PATCH /api/teachers/:id/roles
+ * - POST /api/teachers/assign-role
+ * Body:
+ * {
+ *   teacherIds: string[],
+ *   roles: TeacherRole[]
+ * }
  *
  * Digunakan untuk memperbarui role guru.
  */
 
 const controller = createTeacherController();
 
-/**
- * PUT /api/teachers/:id/role
- */
-export async function PUT(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
-): Promise<Response> {
-    const { id } = await context.params;
-
-    return controller.assignRole(id, request);
+export async function POST(req: NextRequest) {
+    return controller.assignRoleBulk(req);
 }

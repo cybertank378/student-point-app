@@ -1,76 +1,102 @@
-//Files: src/modules/teacher/infrastructure/validators/base.validator.ts
 // Files: src/modules/teacher/infrastructure/validators/base.validator.ts
 
-import {
-    Gender,
-    EducationLevel,
-    CivilServantRank,
-    TeacherRole,
-} from "@/generated/prisma";
+import {CivilServantRank, EducationLevel, Gender, TeacherRole,} from "@/generated/prisma";
 
-import { z } from "zod";
-import { id } from "zod/locales";
+import {z} from "zod";
+import {id} from "zod/locales";
+import {EMAIL_REGEX} from "@/libs/utils";
 
 z.config(id());
 
-//////////////////////////////////////////////////////
-// ENUM VALIDATION
-//////////////////////////////////////////////////////
+
+const emptyToNull = <T extends z.ZodTypeAny>(schema: T) =>
+    z.preprocess(
+        (val) => (val === "" ? null : val),
+        schema
+    );
+
+
+/* ============================================================
+   ENUM VALIDATION
+============================================================ */
 
 export const GenderEnum = z.enum(Gender);
 export const EducationLevelEnum = z.enum(EducationLevel);
 export const CivilServantRankEnum = z.enum(CivilServantRank);
 export const TeacherRoleEnum = z.enum(TeacherRole);
 
-//////////////////////////////////////////////////////
-// REUSABLE FIELD SCHEMAS
-//////////////////////////////////////////////////////
 
-export const NipSchema = z
-    .string()
-    .regex(/^\d{18}$/, "NIP harus 18 digit angka")
-    .nullable()
-    .optional();
+/* ============================================================
+   NIP (18 DIGIT)
+============================================================ */
+export const NipSchema = emptyToNull(
+    z
+        .string()
+        .trim()
+        .regex(/^\d{18}$/, "NIP harus 18 digit angka")
+        .nullable()
+        .optional()
+);
+/* ============================================================
+   NUPTK (16 DIGIT)
+============================================================ */
+export const NuptkSchema = emptyToNull(
+    z
+        .string()
+        .trim()
+        .regex(/^\d{16}$/, "NUPTK harus 16 digit angka")
+        .nullable()
+        .optional()
+);
 
-export const NuptkSchema = z
-    .string()
-    .regex(/^\d{16}$/, "NUPTK harus 16 digit angka")
-    .nullable()
-    .optional();
+/* ============================================================
+   NRK (6 DIGIT) — sesuaikan jika memang 6 digit
+============================================================ */
+export const NrkSchema = emptyToNull(
+    z
+        .string()
+        .trim()
+        .regex(/^\d{6}$/, "NRK harus 6 digit angka")
+        .nullable()
+        .optional()
+);
 
-export const NrkSchema = z
-    .string()
-    .regex(/^\d{8}$/, "NRK harus 8 digit angka")
-    .nullable()
-    .optional();
-
+/* ============================================================
+   NRG (12 DIGIT) — REQUIRED
+============================================================ */
 export const NrgSchema = z
-    .number()
-    .int()
-    .min(100000000000)
-    .max(999999999999);
-
-export const PhoneSchema = z
     .string()
-    .regex(/^08\d{8,11}$/, "Nomor HP tidak valid (format Indonesia)")
-    .nullable()
-    .optional();
+    .trim()
+    .regex(/^\d{12}$/, "NRG harus 12 digit angka");
 
-export const EmailSchema = z
-    .string()
-    .email("Format email tidak valid")
-    .nullable()
-    .optional();
 
-export const PhotoSchema = z
-    .string()
-    .url("Photo harus berupa URL valid")
-    .nullable()
-    .optional();
+export const PhoneSchema = emptyToNull(
+    z
+        .string()
+        .regex(/^08\d{8,11}$/, "Nomor HP tidak valid")
+        .nullable()
+        .optional()
+);
 
-//////////////////////////////////////////////////////
-// PURE OBJECT SCHEMA (NO REFINEMENT)
-//////////////////////////////////////////////////////
+export const EmailSchema = emptyToNull(
+    z
+        .string()
+        .email("Format email tidak valid")
+        .nullable()
+        .optional()
+);
+
+export const PhotoSchema = emptyToNull(
+    z
+        .string()
+        .trim()
+        .nullable()
+        .optional()
+);
+
+/* ============================================================
+   BASE OBJECT (NO REFINEMENT)
+============================================================ */
 
 export const TeacherObjectSchema = z.object({
     nip: NipSchema,
@@ -78,14 +104,9 @@ export const TeacherObjectSchema = z.object({
     nrk: NrkSchema,
     nrg: NrgSchema,
 
-    name: z
-        .string()
-        .min(3, "Nama minimal 3 karakter")
-        .max(100, "Nama maksimal 100 karakter"),
-
+    name: z.string().min(3).max(100),
     gender: GenderEnum,
-
-    religionCode: z.string().min(1, "Kode agama wajib diisi"),
+    religionCode: z.string().min(1),
 
     phone: PhoneSchema,
     email: EmailSchema,
@@ -93,74 +114,106 @@ export const TeacherObjectSchema = z.object({
 
     educationLevel: EducationLevelEnum,
 
-    major: z
-        .string()
-        .min(2, "Jurusan minimal 2 karakter")
-        .nullable()
-        .optional(),
+    major: emptyToNull(
+        z.string().min(2).nullable().optional()
+    ),
 
     graduationYear: z
         .number()
         .int()
-        .min(1950, "Tahun kelulusan tidak valid")
-        .max(
-            new Date().getFullYear(),
-            "Tahun kelulusan tidak boleh melebihi tahun sekarang"
-        ),
+        .min(1950)
+        .max(new Date().getFullYear()),
 
-    birthPlace: z
-        .string()
-        .min(2, "Tempat lahir minimal 2 karakter"),
-
+    birthPlace: z.string().min(2),
     birthDate: z.coerce.date(),
 
     civilServantRank: CivilServantRankEnum
         .nullable()
         .optional(),
 
-    roles: z
-        .array(TeacherRoleEnum)
-        .min(1, "Minimal memiliki 1 role"),
+    roles: z.array(TeacherRoleEnum).min(1),
 
     isPns: z.boolean().default(false),
+
+    homeroomClassIds: z
+        .array(z.string().uuid())
+        .optional()
+        .default([]),
 });
 
-//////////////////////////////////////////////////////
-// STRICT TYPED REFINEMENT
-//////////////////////////////////////////////////////
-
-type TeacherObjectInput = z.infer<typeof TeacherObjectSchema>;
-
-type TeacherRefinementInput =
-    Partial<z.infer<typeof TeacherObjectSchema>>;
+/* ============================================================
+   REFINEMENT
+============================================================ */
 
 export const teacherRefinement = (
-    data: TeacherRefinementInput,
+    data: Partial<z.infer<typeof TeacherObjectSchema>>,
     ctx: z.RefinementCtx
 ) => {
-    if (data.isPns === true && !data.civilServantRank) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["civilServantRank"],
-            message: "PNS wajib memiliki pangkat",
-        });
+    if (data.isPns === true) {
+        if (!data.civilServantRank) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["civilServantRank"],
+                message: "PNS wajib memiliki pangkat",
+            });
+        }
+
+        if (!data.nip) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["nip"],
+                message: "PNS wajib memiliki NIP",
+            });
+        }
+
+        if (!data.nrk) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["nrk"],
+                message: "PNS wajib memiliki NRK",
+            });
+        }
     }
 
-    if (data.isPns === false && data.civilServantRank) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["civilServantRank"],
-            message: "Non-PNS tidak boleh memiliki pangkat",
-        });
+    if (data.isPns === false) {
+        if (data.civilServantRank) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["civilServantRank"],
+                message: "Non-PNS tidak boleh memiliki pangkat",
+            });
+        }
+
+        if (data.nip) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["nip"],
+                message: "Non-PNS tidak boleh memiliki NIP",
+            });
+        }
+
+        if (data.nrk) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["nrk"],
+                message: "Non-PNS tidak boleh memiliki NRK",
+            });
+        }
     }
 };
 
-//////////////////////////////////////////////////////
-// FINAL SCHEMAS
-//////////////////////////////////////////////////////
+/* ============================================================
+   CREATE SCHEMA (STRICT)
+============================================================ */
 
-export const BaseTeacherSchema =
+export const CreateTeacherSchema =
     TeacherObjectSchema.superRefine(teacherRefinement);
 
-export type BaseTeacherInput =
-    z.infer<typeof BaseTeacherSchema>;
+/* ============================================================
+   UPDATE SCHEMA (PARTIAL SAFE)
+============================================================ */
+
+export const UpdateTeacherSchema =
+    TeacherObjectSchema
+        .partial()
+        .superRefine(teacherRefinement);

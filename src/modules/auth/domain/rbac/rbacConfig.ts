@@ -195,6 +195,7 @@ export const rbacConfig = {
             GET: PERMISSIONS.TEACHER_READ,
             POST: PERMISSIONS.TEACHER_MANAGE,
             PUT: PERMISSIONS.TEACHER_MANAGE,
+            PATCH: PERMISSIONS.TEACHER_MANAGE,
             DELETE: PERMISSIONS.TEACHER_MANAGE,
         },
 

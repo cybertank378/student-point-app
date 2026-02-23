@@ -1,4 +1,5 @@
 //Files: src/modules/teacher/application/usecase/CreateTeacherUseCase.ts
+
 import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 import type { Teacher } from "@/modules/teacher/domain/entity/Teacher";
 import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
@@ -36,19 +37,22 @@ export class CreateTeacherUseCase
             throw new Error("Tahun lulus tidak boleh di masa depan.");
         }
 
-        if (dto.nip && await this.repo.findByNip(dto.nip)) {
+        // ✅ Uniqueness check (BigInt)
+        if (dto.nip != null &&
+            await this.repo.findByNip(dto.nip)) {
             throw new Error("NIP sudah terdaftar.");
         }
 
-        if (dto.nuptk && await this.repo.findByNuptk(dto.nuptk)) {
+        if (dto.nuptk != null &&
+            await this.repo.findByNuptk(dto.nuptk)) {
             throw new Error("NUPTK sudah terdaftar.");
         }
 
-        if (dto.nrk && await this.repo.findByNrk(dto.nrk)) {
+        if (dto.nrk != null &&
+            await this.repo.findByNrk(dto.nrk)) {
             throw new Error("NRK sudah terdaftar.");
         }
 
         return this.repo.create(dto);
     }
 }
-

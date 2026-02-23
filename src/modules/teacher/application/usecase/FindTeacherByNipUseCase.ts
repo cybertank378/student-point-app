@@ -1,4 +1,4 @@
-//Files: src/modules/teacher/application/usecase/FindTeacherByNipUseCase.ts
+// Files: src/modules/teacher/application/usecase/FindTeacherByNipUseCase.ts
 
 import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 
@@ -12,7 +12,8 @@ import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/Teach
  *
  * Business Responsibilities:
  * - Validasi NIP tidak kosong
- * - Mengembalikan guru berdasarkan NIP
+ * - Validasi NIP harus 18 digit angka
+ * - Mengembalikan guru berdasarkan NIP (String Based)
  */
 export class FindTeacherByNipUseCase
     extends BaseUseCase<string, Teacher> {
@@ -29,7 +30,14 @@ export class FindTeacherByNipUseCase
             throw new Error("NIP tidak boleh kosong.");
         }
 
-        const teacher = await this.repo.findByNip(nip.trim());
+        const cleaned = nip.trim();
+
+        // ✅ Validasi 18 digit angka
+        if (!/^\d{18}$/.test(cleaned)) {
+            throw new Error("NIP harus 18 digit angka.");
+        }
+
+        const teacher = await this.repo.findByNip(cleaned);
 
         if (!teacher) {
             throw new Error("Guru dengan NIP tersebut tidak ditemukan.");
@@ -38,4 +46,3 @@ export class FindTeacherByNipUseCase
         return teacher;
     }
 }
-

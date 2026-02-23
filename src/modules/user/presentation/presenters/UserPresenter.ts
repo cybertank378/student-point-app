@@ -1,23 +1,23 @@
-//Files: src/modules/user/presentation/presenters/UserPresenter.ts
-//Files: src/modules/user/presentation/presenters/UserPresenter.ts
+// Files: src/modules/user/presentation/presenters/UserPresenter.ts
 
 import type { UserEntity } from "@/modules/user/domain/entity/UserEntity";
-import type { UserResponseDTO } from "@/modules/user/presentation/presenters/UserResponseDTO";
+import type { UserResponseDTO } from "./UserResponseDTO";
 
 /**
  * ============================================================
  * USER PRESENTER
  * ============================================================
  *
- * Responsible for:
- * - Mapping UserEntity → UserResponseDTO
- * - Preventing domain leakage
- * - Controlling API response shape
+ * Responsibilities:
+ * - Map UserEntity → UserResponseDTO
+ * - Hide sensitive fields (password)
+ * - Normalize nullable values
+ * - Shape API contract
  *
- * Rules:
- * - Never expose password
- * - Never expose internal relations
- * - Always normalize nullable fields
+ * IMPORTANT:
+ * - Pivot relations (StudentParent) are included
+ * - No domain leakage
+ * ============================================================
  */
 export const UserPresenter = {
     toResponse(user: UserEntity): UserResponseDTO {
@@ -29,41 +29,39 @@ export const UserPresenter = {
             teacherRole: user.teacherRole ?? null,
             isActive: user.isActive,
 
-            /* =============================
-               STUDENT PROFILE
-            ============================= */
             student: user.student
                 ? {
                     id: user.student.id,
                     name: user.student.name,
                     nis: user.student.nis,
                     nisn: user.student.nisn,
+                    parents: user.student.parents,
                 }
                 : null,
 
-            /* =============================
-               PARENT PROFILE
-            ============================= */
             parent: user.parent
                 ? {
                     id: user.parent.id,
                     name: user.parent.name,
                     phone: user.parent.phone,
+                    students: user.parent.students,
                 }
                 : null,
 
-            /* =============================
-               TEACHER PROFILE
-            ============================= */
             teacher: user.teacher
                 ? {
                     id: user.teacher.id,
                     name: user.teacher.name,
-                    nip: user.teacher.nip ?? "",
-                    nrp: user.teacher.nip ?? "", // Not available in UserEntity
-                    nuptk: user.teacher.nuptk ?? "", // Not available in UserEntity
-                    nrk: user.teacher.nrk ?? "",
-                    nrg: 0, // Not available in UserEntity
+                    nip: user.teacher.nip
+                        ? user.teacher.nip.toString()
+                        : null,
+                    nuptk: user.teacher.nuptk
+                        ? user.teacher.nuptk.toString()
+                        : null,
+                    nrk: user.teacher.nrk
+                        ? user.teacher.nrk.toString()
+                        : null,
+                    nrg: user.teacher.nrg.toString(), // NOT NULL
                 }
                 : null,
 
@@ -72,7 +70,7 @@ export const UserPresenter = {
         };
     },
 
-    toResponseList(users: readonly UserEntity[]): UserResponseDTO[] {
-        return users.map((user) => this.toResponse(user));
+    toResponseList(users: readonly UserEntity[]) {
+        return users.map(this.toResponse);
     },
 };

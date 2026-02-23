@@ -1,4 +1,5 @@
-//Files: src/modules/teacher/application/usecase/FindTeacherByNrkUseCase.ts
+// Files: src/modules/teacher/application/usecase/FindTeacherByNrkUseCase.ts
+
 import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
 
 import type { Teacher } from "@/modules/teacher/domain/entity/Teacher";
@@ -11,7 +12,8 @@ import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/Teach
  *
  * Business Responsibilities:
  * - Validasi NRK tidak kosong
- * - Mengembalikan guru berdasarkan NRK
+ * - Validasi NRK harus 6 digit angka
+ * - Mengembalikan guru berdasarkan NRK (String Based)
  */
 export class FindTeacherByNrkUseCase
     extends BaseUseCase<string, Teacher> {
@@ -28,7 +30,14 @@ export class FindTeacherByNrkUseCase
             throw new Error("NRK tidak boleh kosong.");
         }
 
-        const teacher = await this.repo.findByNrk(nrk.trim());
+        const cleaned = nrk.trim();
+
+        // ✅ Validasi 6 digit angka (sesuaikan jika format berbeda)
+        if (!/^\d{6}$/.test(cleaned)) {
+            throw new Error("NRK harus 6 digit angka.");
+        }
+
+        const teacher = await this.repo.findByNrk(cleaned);
 
         if (!teacher) {
             throw new Error("Guru dengan NRK tersebut tidak ditemukan.");

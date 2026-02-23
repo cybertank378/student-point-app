@@ -51,14 +51,13 @@ export async function GET(
  * 200 → Updated teacher
  * 400 → Validation error
  */
-export async function PUT(
+export async function PATCH(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }
 ): Promise<Response> {
     const { id } = await context.params;
     return controller.update(id, request);
 }
-
 /**
  * ============================================================
  * DELETE /api/teachers/:id

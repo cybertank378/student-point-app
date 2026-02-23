@@ -13,7 +13,7 @@ import type { AcademicYearInterface } from "@/modules/academic-year/domain/inter
  * ============================================================
  *
  * Purpose:
- * - Create new Student entity.
+ * - Create a new Student entity.
  *
  * Business Rules:
  * - Must have an active academic year.
@@ -38,6 +38,7 @@ export class CreateStudentUseCase extends BaseUseCase<
     protected async handle(
         dto: CreateStudentDTO
     ): Promise<Student> {
+
         // 1️⃣ Validate active academic year
         const activeYear =
             await this.academicYearRepo.findActive();
@@ -48,14 +49,17 @@ export class CreateStudentUseCase extends BaseUseCase<
             );
         }
 
-        // 2️⃣ Validate NIS uniqueness
-        const exists =
-            await this.studentRepo.findByNis(dto.nis);
+        // 2️⃣ Validate NIS uniqueness (if provided)
+        if (dto.nis !== null && dto.nis !== undefined) {
 
-        if (exists) {
-            throw AppError.conflict(
-                "NIS sudah terdaftar"
-            );
+            const exists =
+                await this.studentRepo.findByNis(dto.nis);
+
+            if (exists) {
+                throw AppError.conflict(
+                    "NIS sudah terdaftar"
+                );
+            }
         }
 
         // 3️⃣ Persist student

@@ -11,52 +11,39 @@ import type { AssignTeacherRoleDTO } from "@/modules/teacher/domain/dto/AssignTe
 import type { AssignHomeroomDTO } from "@/modules/teacher/domain/dto/AssignHomeroomDTO";
 import type { ImportRows } from "@/modules/teacher/application/usecase/ImportTeacherUseCase";
 
-import { ListTeacherUseCase } from "../usecase/ListTeacherUseCase";
-import { GetTeacherByIdUseCase } from "../usecase/GetTeacherByIdUseCase";
-import { CreateTeacherUseCase } from "../usecase/CreateTeacherUseCase";
-import { UpdateTeacherUseCase } from "../usecase/UpdateTeacherUseCase";
-import { DeleteTeacherUseCase } from "../usecase/DeleteTeacherUseCase";
-import { AssignTeacherRoleUseCase } from "../usecase/AssignTeacherRoleUseCase";
-import { AssignHomeroomUseCase } from "../usecase/AssignHomeroomUseCase";
-import { SearchTeacherUseCase } from "../usecase/SearchTeacherUseCase";
-import { ImportTeacherUseCase } from "../usecase/ImportTeacherUseCase";
-import { ExportTeacherUseCase } from "../usecase/ExportTeacherUseCase";
-import {
-    UploadTeacherImageRequest,
-    UploadTeacherImageUseCase
-} from "@/modules/teacher/application/usecase/UploadTeacherImageUseCase";
+import { ListTeacherUseCase } from "@/modules/teacher/application/usecase/ListTeacherUseCase";
+import { GetTeacherByIdUseCase } from "@/modules/teacher/application/usecase/GetTeacherByIdUseCase";
+import { CreateTeacherUseCase } from "@/modules/teacher/application/usecase/CreateTeacherUseCase";
+import { UpdateTeacherUseCase } from "@/modules/teacher/application/usecase/UpdateTeacherUseCase";
+import { DeleteTeacherUseCase } from "@/modules/teacher/application/usecase/DeleteTeacherUseCase";
+import { AssignTeacherRoleUseCase } from "@/modules/teacher/application/usecase/AssignTeacherRoleUseCase";
+import { AssignHomeroomUseCase } from "@/modules/teacher/application/usecase/AssignHomeroomUseCase";
+import { SearchTeacherUseCase } from "@/modules/teacher/application/usecase/SearchTeacherUseCase";
+import { ImportTeacherUseCase } from "@/modules/teacher/application/usecase/ImportTeacherUseCase";
+import { ExportTeacherUseCase } from "@/modules/teacher/application/usecase/ExportTeacherUseCase";
+import { UploadTeacherImageRequest, UploadTeacherImageUseCase} from "@/modules/teacher/application/usecase/UploadTeacherImageUseCase";
 import {FileStorageInterface} from "@/libs/FileStorageInterface";
-import {UploadUserImageRequest} from "@/modules/user/application/usecase/UploadUserImageUseCase";
-
 /**
  * ============================================================
  * TEACHER SERVICE
  * ============================================================
  *
- * Application Facade untuk modul Teacher.
+ * Application Facade for Teacher Module.
  *
- * Tanggung Jawab:
- * - Menjadi entry point seluruh operasi Teacher.
- * - Menginisialisasi seluruh UseCase terkait Teacher.
- * - Mendelegasikan eksekusi ke masing-masing UseCase.
+ * Responsibilities:
+ * - Acts as entry point for controllers
+ * - Delegates execution to UseCases
+ * - Keeps orchestration centralized
  *
- * Bukan Tanggung Jawab:
- * - Tidak mengandung business logic.
- * - Tidak berinteraksi langsung dengan Prisma.
- * - Tidak melakukan validasi domain.
+ * Not Responsible For:
+ * - Business rules (handled by UseCase)
+ * - Persistence logic (handled by Repository)
+ * - Validation (handled by Schema)
  *
- * Arsitektur:
- * Controller → TeacherService → UseCase → Repository → Prisma
+ * Architecture:
+ * Controller → Service → UseCase → Repository → Prisma
  */
 export class TeacherService {
-
-    /**
-     * UseCase Instances
-     * ------------------------------------------------------------
-     * Disimpan sebagai properti private agar:
-     * - Tidak dapat diakses dari luar
-     * - Tidak dapat dimodifikasi setelah inisialisasi
-     */
     private readonly listUC: ListTeacherUseCase;
     private readonly getUC: GetTeacherByIdUseCase;
     private readonly createUC: CreateTeacherUseCase;
@@ -71,10 +58,9 @@ export class TeacherService {
 
     /**
      * Constructor
-     * ------------------------------------------------------------
-     * Menggunakan dependency injection pada level repository.
      *
-     * @param repo - Implementasi TeacherInterface (biasanya TeacherRepository)
+     * @param repo - Teacher repository implementation
+     * @param fileRepo - File storage implementation
      */
     constructor(
         repo: TeacherInterface,
@@ -90,84 +76,72 @@ export class TeacherService {
         this.searchUC = new SearchTeacherUseCase(repo);
         this.importUC = new ImportTeacherUseCase(repo);
         this.exportUC = new ExportTeacherUseCase(repo);
-        this.uploadTeacherImageUC = new UploadTeacherImageUseCase(repo, fileRepo)
+        this.uploadTeacherImageUC = new UploadTeacherImageUseCase(
+            repo,
+            fileRepo
+        );
     }
 
     /* ==========================================================
-       QUERY METHODS (READ OPERATIONS)
+       QUERY METHODS
        ========================================================== */
 
-    /**
-     * Mengambil daftar guru dengan pagination.
-     */
     getAll(params: Parameters<ListTeacherUseCase["execute"]>[0]) {
         return this.listUC.execute(params);
     }
 
-    /**
-     * Mengambil detail guru berdasarkan ID.
-     */
     getById(id: string): Promise<Result<Teacher>> {
         return this.getUC.execute(id);
     }
 
-    /**
-     * Melakukan pencarian guru dengan filter lanjutan.
-     */
     search(params: Parameters<SearchTeacherUseCase["execute"]>[0]) {
         return this.searchUC.execute(params);
     }
 
-    /**
-     * Mengambil seluruh data guru untuk keperluan export.
-     */
-    export() {
-        return this.exportUC.execute();
+    export(params?: { role?: string }) {
+        return this.exportUC.execute(params);
     }
 
     /* ==========================================================
-       COMMAND METHODS (WRITE OPERATIONS)
+       COMMAND METHODS
        ========================================================== */
 
-    /**
-     * Membuat data guru baru.
-     */
     create(dto: CreateTeacherDTO) {
         return this.createUC.execute(dto);
     }
 
-    /**
-     * Memperbarui data guru.
-     */
     update(dto: UpdateTeacherDTO) {
         return this.updateUC.execute(dto);
     }
 
-    /**
-     * Menghapus data guru berdasarkan ID.
-     */
     delete(id: string) {
         return this.deleteUC.execute(id);
     }
 
     /**
-     * Menetapkan atau memperbarui role guru.
+     * ============================================================
+     * BULK ASSIGN ROLE
+     * ============================================================
+     *
+     * Core method for assigning roles.
+     * Supports single & bulk automatically.
      */
-    assignRole(dto: AssignTeacherRoleDTO) {
+    assignRoleBulk(dto: AssignTeacherRoleDTO) {
         return this.assignRoleUC.execute(dto);
     }
 
+
     /**
-     * Menetapkan guru sebagai wali kelas.
+     * ============================================================
+     * BULK ASSIGN HOMEROOM
+     * ============================================================
      */
-    assignHomeroom(dto: AssignHomeroomDTO) {
+    assignHomeroomBulk(dto: AssignHomeroomDTO) {
         return this.assignHomeroomUC.execute(dto);
     }
 
-    /**
-     * Import data guru secara massal.
-     */
-    import(rows: ImportRows): Promise<Result<string>> {
+
+    import(rows: ImportRows) {
         return this.importUC.execute(rows);
     }
 
@@ -177,4 +151,3 @@ export class TeacherService {
         return this.uploadTeacherImageUC.execute(request);
     }
 }
-

@@ -1,145 +1,202 @@
-//Files: src/modules/teacher/application/usecase/UpdateTeacherUseCase.ts
-import {BaseUseCase} from "@/modules/shared/core/BaseUseCase";
-import type {Teacher} from "@/modules/teacher/domain/entity/Teacher";
-import type {TeacherInterface} from "@/modules/teacher/domain/interfaces/TeacherInterface";
-import type {UpdateTeacherDTO} from "@/modules/teacher/domain/dto/UpdateTeacherDTO";
-import {serverLog} from "@/libs/serverLogger";
+// Files: src/modules/teacher/application/usecase/UpdateTeacherUseCase.ts
 
-/**
- * ============================================================
- * UPDATE TEACHER USE CASE
- * ============================================================
- *
- * Business Rules:
- * - Guru harus ada
- * - NIP / NUPTK / NRK harus tetap unik
- * - Tahun lulus tidak boleh di masa depan
- * - Tanggal lahir tidak boleh di masa depan
- * - Minimal memiliki satu role
- *
- * Error handling dibungkus oleh BaseUseCase.
- */
-export class UpdateTeacherUseCase
-    extends BaseUseCase<UpdateTeacherDTO, Teacher> {
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+import type { Teacher } from "@/modules/teacher/domain/entity/Teacher";
+import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
+import type { UpdateTeacherDTO } from "@/modules/teacher/domain/dto/UpdateTeacherDTO";
+import { AppError } from "@/modules/shared/errors/AppError";
+import { serverLog } from "@/libs/serverLogger";
 
+export class UpdateTeacherUseCase extends BaseUseCase<
+    UpdateTeacherDTO,
+    Teacher
+> {
     constructor(private readonly repo: TeacherInterface) {
         super();
     }
-
-    /**
-     * Override execute untuk logging tambahan.
-     */
-    async execute(dto: UpdateTeacherDTO) {
-        try {
-            return await super.execute(dto);
-        } catch (error: unknown) {
-            serverLog("UpdateTeacherUseCase Error:", error);
-            throw error; // tetap dilempar agar BaseUseCase menangkapnya
-        }
-    }
-
-    /**
-     * Implementasi business logic pembaruan guru.
-     */
-
     protected async handle(dto: UpdateTeacherDTO): Promise<Teacher> {
-
-        const teacher = await this.repo.findById(dto.id);
-        if (!teacher) throw new Error("Guru tidak ditemukan.");
-
-        /**
-         * ====================================================
-         * NRG WAJIB
-         * ====================================================
-         */
-        if (!dto.nrg) {
-            throw new Error("NRG wajib diisi.");
+        if (!dto.id) {
+            throw AppError.badRequest("ID guru wajib diisi.");
         }
 
-        if (dto.nrg < 100000000000 || dto.nrg > 999999999999) {
-            throw new Error("NRG harus 12 digit angka.");
+        const existing = await this.repo.findById(dto.id);
+
+        if (!existing) {
+            throw AppError.notFound("Guru tidak ditemukan.");
         }
 
         const now = new Date();
 
         /**
-         * ====================================================
-         * VALIDASI FIELD JIKA DIKIRIM
-         * ====================================================
+         * ============================================================
+         * SAFE PATCH MERGE (EXPLICIT FIELD MAPPING)
+         * ============================================================
          */
 
-        dto.roles?.length === 0 &&
-        (() => {
-            throw new Error("Guru minimal memiliki satu role.");
-        })();
+        serverLog("DATA BE PHOTO : ", dto.photo)
 
-        dto.birthDate && dto.birthDate > now &&
-        (() => {
-            throw new Error("Tanggal lahir tidak boleh di masa depan.");
-        })();
+        const merged: UpdateTeacherDTO = {
+            id: existing.id,
 
-        dto.graduationYear && dto.graduationYear > now.getFullYear() &&
-        (() => {
-            throw new Error("Tahun lulus tidak boleh di masa depan.");
-        })();
+            name: dto.name ?? existing.name,
+            email: dto.email ?? existing.email,
+            phone: dto.phone ?? existing.phone,
+            photo: dto.photo ?? existing.photo,
 
-        /**
-         * ====================================================
-         * VALIDASI DUPLIKAT (UNIQUE CHECK)
-         * ====================================================
-         */
+            birthDate: dto.birthDate ?? existing.birthDate,
+            graduationYear: dto.graduationYear ?? existing.graduationYear,
 
-        await this.validateUnique(dto, teacher.id);
+            roles: dto.roles ?? existing.roles,
 
-        /**
-         * ====================================================
-         * VALIDASI PNS RULE
-         * ====================================================
-         */
+            isPns: dto.isPns ?? existing.isPns,
 
-        const finalState = {
-            isPns: dto.isPns ?? teacher.isPns,
-            civilServantRank: dto.civilServantRank ?? teacher.civilServantRank,
+            nip: dto.nip ?? existing.nip,
+            nuptk: dto.nuptk ?? existing.nuptk,
+            nrk: dto.nrk ?? existing.nrk,
+            nrg: dto.nrg ?? existing.nrg,
+
+            civilServantRank: dto.civilServantRank ?? existing.civilServantRank,
         };
 
-        if (finalState.isPns && !finalState.civilServantRank) {
-            throw new Error("PNS wajib memiliki pangkat.");
+        /**
+         * ============================================================
+         * BASIC BUSINESS VALIDATION
+         * ============================================================
+         */
+
+        if ("roles" in dto && (!merged.roles || merged.roles.length === 0)) {
+            throw AppError.badRequest("Guru minimal memiliki satu role.");
         }
 
-        if (!finalState.isPns && finalState.civilServantRank) {
-            throw new Error("Non-PNS tidak boleh memiliki pangkat.");
+        if (
+            "birthDate" in dto &&
+            merged.birthDate &&
+            merged.birthDate > now
+        ) {
+            throw AppError.badRequest(
+                "Tanggal lahir tidak boleh di masa depan."
+            );
+        }
+
+        if (
+            "graduationYear" in dto &&
+            merged.graduationYear &&
+            merged.graduationYear > now.getFullYear()
+        ) {
+            throw AppError.badRequest(
+                "Tahun lulus tidak boleh di masa depan."
+            );
         }
 
         /**
-         * ====================================================
-         * UPDATE
-         * ====================================================
+         * ============================================================
+         * UNIQUE VALIDATION (ONLY IF FIELD SENT)
+         * ============================================================
          */
 
-        return this.repo.update(dto);
+        await this.validateUnique(dto, merged, existing);
+
+        /**
+         * ============================================================
+         * FULLY DYNAMIC PNS VALIDATION
+         * ============================================================
+         */
+
+        const finalIsPns = merged.isPns;
+
+        /**
+         * If client explicitly changes isPns
+         */
+        if ("isPns" in dto) {
+            // TRUE → FALSE
+            if (dto.isPns === false) {
+                merged.nip = null;
+                merged.nrk = null;
+                merged.nuptk = null;
+                merged.civilServantRank = null;
+            }
+
+            // FALSE → TRUE
+            if (dto.isPns === true && !existing.isPns) {
+                if (!merged.nip) {
+                    throw AppError.badRequest("PNS wajib memiliki NIP.");
+                }
+                if (!merged.nrk) {
+                    throw AppError.badRequest("PNS wajib memiliki NRK.");
+                }
+                if (!merged.civilServantRank) {
+                    throw AppError.badRequest("PNS wajib memiliki pangkat.");
+                }
+                if (!merged.nrg) {
+                    throw AppError.badRequest("NRG wajib diisi.");
+                }
+            }
+        }
+
+        /**
+         * If still PNS → validate only fields sent
+         */
+        if (finalIsPns) {
+            if ("nip" in dto && !merged.nip) {
+                throw AppError.badRequest("PNS wajib memiliki NIP.");
+            }
+
+            if ("nrk" in dto && !merged.nrk) {
+                throw AppError.badRequest("PNS wajib memiliki NRK.");
+            }
+
+            if ("civilServantRank" in dto && !merged.civilServantRank) {
+                throw AppError.badRequest("PNS wajib memiliki pangkat.");
+            }
+
+            if ("nrg" in dto && !merged.nrg) {
+                throw AppError.badRequest("NRG wajib diisi.");
+            }
+        }
+
+        /**
+         * ============================================================
+         * FINAL UPDATE
+         * ============================================================
+         */
+
+        return await this.repo.update(merged);
     }
 
     private async validateUnique(
         dto: UpdateTeacherDTO,
-        id: string
-    ) {
-        if (dto.nip) {
-            const t = await this.repo.findByNip(dto.nip);
-            if (t && t.id !== id)
-                throw new Error("NIP sudah digunakan oleh guru lain.");
+        merged: UpdateTeacherDTO,
+        existing: Teacher
+    ): Promise<void> {
+        if ("nip" in dto && merged.nip && merged.nip !== existing.nip) {
+            const t = await this.repo.findByNip(merged.nip);
+            if (t && t.id !== existing.id) {
+                throw AppError.conflict(
+                    "NIP sudah digunakan oleh guru lain."
+                );
+            }
         }
 
-        if (dto.nuptk) {
-            const t = await this.repo.findByNuptk(dto.nuptk);
-            if (t && t.id !== id)
-                throw new Error("NUPTK sudah digunakan oleh guru lain.");
+        if (
+            "nuptk" in dto &&
+            merged.nuptk &&
+            merged.nuptk !== existing.nuptk
+        ) {
+            const t = await this.repo.findByNuptk(merged.nuptk);
+            if (t && t.id !== existing.id) {
+                throw AppError.conflict(
+                    "NUPTK sudah digunakan oleh guru lain."
+                );
+            }
         }
 
-        if (dto.nrk) {
-            const t = await this.repo.findByNrk(dto.nrk);
-            if (t && t.id !== id)
-                throw new Error("NRK sudah digunakan oleh guru lain.");
+        if ("nrk" in dto && merged.nrk && merged.nrk !== existing.nrk) {
+            const t = await this.repo.findByNrk(merged.nrk);
+            if (t && t.id !== existing.id) {
+                throw AppError.conflict(
+                    "NRK sudah digunakan oleh guru lain."
+                );
+            }
         }
     }
-
 }

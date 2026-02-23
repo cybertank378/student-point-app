@@ -1,5 +1,3 @@
-//Files: src/modules/user/presentation/presenters/UserResponseDTO.ts
-
 export interface UserResponseDTO {
     id: string;
     username: string;
@@ -11,24 +9,36 @@ export interface UserResponseDTO {
     student?: {
         id: string;
         name: string;
-        nis: number;
-        nisn: number;
+        nis: string | null;
+        nisn: string;
+        parents: {
+            id: string;
+            name: string;
+            phone: string;
+            role: string;
+        }[];
     } | null;
 
     parent?: {
         id: string;
         name: string;
-        phone: string;
+        phone: string | null;
+        students: {
+            id: string;
+            name: string;
+            nis: string | null;
+            nisn: string;
+            role: string;
+        }[];
     } | null;
 
     teacher?: {
         id: string;
         name: string;
-        nip: string;
-        nrp: string;
-        nuptk: string;
-        nrk: string;
-        nrg: number;
+        nip: string | null;     // BigInt → string
+        nuptk: string | null;
+        nrk: string | null;
+        nrg: string;            // NOT NULL
     } | null;
 
     createdAt: Date;

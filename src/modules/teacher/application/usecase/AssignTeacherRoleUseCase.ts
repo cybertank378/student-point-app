@@ -1,8 +1,6 @@
 //Files: src/modules/teacher/application/usecase/AssignTeacherRoleUseCase.ts
 // src/modules/teacher/application/usecase/AssignTeacherRoleUseCase.ts
 import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
-
-import type { Teacher } from "@/modules/teacher/domain/entity/Teacher";
 import type { TeacherInterface } from "@/modules/teacher/domain/interfaces/TeacherInterface";
 import type { AssignTeacherRoleDTO } from "@/modules/teacher/domain/dto/AssignTeacherRoleDTO";
 
@@ -11,60 +9,39 @@ import type { AssignTeacherRoleDTO } from "@/modules/teacher/domain/dto/AssignTe
  * ASSIGN TEACHER ROLE USE CASE
  * ============================================================
  *
- * Business Responsibilities:
- * - Minimal satu role harus dipilih
- * - Guru harus ada
- * - Memperbarui role guru
- *
- * Error handling dilakukan oleh BaseUseCase.
+ * Business Rules:
+ * - At least one teacher must be selected
+ * - At least one role must be provided
+ * - All teachers must exist
+ * - Operation must be atomic
  */
-export class AssignTeacherRoleUseCase
-    extends BaseUseCase<AssignTeacherRoleDTO, Teacher> {
-
-    constructor(
-        private readonly repo: TeacherInterface,
-    ) {
+export class AssignTeacherRoleUseCase extends BaseUseCase<
+    AssignTeacherRoleDTO,
+    void
+> {
+    constructor(private readonly repo: TeacherInterface) {
         super();
     }
 
-    /**
-     * Implementasi logika assign role guru.
-     */
-    protected async handle(
-        dto: AssignTeacherRoleDTO,
-    ): Promise<Teacher> {
+    protected async handle(dto: AssignTeacherRoleDTO): Promise<void> {
+        if (dto.teacherIds.length === 0) {
+            throw new Error("Minimal satu guru harus dipilih.");
+        }
 
-        /**
-         * ====================================================
-         * VALIDASI ROLE
-         * ====================================================
-         */
-
-        if (!dto.roles || dto.roles.length === 0) {
+        if (dto.roles.length === 0) {
             throw new Error("Minimal satu role harus dipilih.");
         }
 
-        /**
-         * ====================================================
-         * VALIDASI KEBERADAAN GURU
-         * ====================================================
-         */
+        await this.repo.withTransaction(async () => {
+            const teachers = await Promise.all(
+                dto.teacherIds.map((id) => this.repo.findById(id))
+            );
 
-        const teacher = await this.repo.findById(dto.teacherId);
+            if (teachers.some((teacher) => teacher === null)) {
+                throw new Error("Terdapat guru yang tidak ditemukan.");
+            }
 
-        if (!teacher) {
-            throw new Error("Guru tidak ditemukan.");
-        }
-
-        /**
-         * ====================================================
-         * UPDATE ROLE
-         * ====================================================
-         */
-
-        return this.repo.updateRoles(
-            dto.teacherId,
-            dto.roles,
-        );
+            await this.repo.bulkAssignRoles(dto.teacherIds, dto.roles);
+        });
     }
 }

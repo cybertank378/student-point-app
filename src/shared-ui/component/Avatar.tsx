@@ -54,7 +54,7 @@ const Avatar: FC<AvatarProps> = ({
       className={[
         "relative inline-flex items-center justify-center",
         "overflow-hidden rounded-full",
-        "bg-indigo-600 font-semibold text-white select-none",
+        "bg-transparent font-semibold text-white select-none",
         sizeClasses[size],
         className,
       ].join(" ")}
