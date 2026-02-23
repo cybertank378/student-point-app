@@ -16,20 +16,20 @@ async function main() {
 
     const password = await hashPassword("password123");
 
-    await prisma.$transaction(async () => {
-        await seedReligions();
-        const academicYear = await seedAcademicYear();
-        const classes = await seedClasses(academicYear.id);
+    // ❌ HAPUS prisma.$transaction
+    await seedReligions();
 
-        await seedAdmin(password);
-        await seedTeachers(password);
+    const academicYear = await seedAcademicYear();
+    const classes = await seedClasses(academicYear.id);
 
-        const students = await seedStudents(password, classes);
-        await seedParents(password);
+    await seedAdmin(password);
+    await seedTeachers(password);
 
-        await seedViolations();
-        await seedAchievements();
-    });
+    await seedStudents(password, classes);
+    await seedParents(password);
+
+    await seedViolations();
+    await seedAchievements();
 
     console.log("🎉 ALL SEEDERS EXECUTED SUCCESSFULLY");
 }
