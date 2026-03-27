@@ -12,6 +12,8 @@ import type { CreateAchievementDTO } from "@/modules/achievement/domain/dto/Crea
 import type { UpdateAchievementDTO } from "@/modules/achievement/domain/dto/UpdateAchievementDTO";
 import type { Result } from "@/modules/shared/core/Result";
 import type { Achievement } from "@/modules/achievement/domain/entity/Achievement";
+import type {BasePaginationParams, BasePaginationResponse} from "@/modules/shared/http/pagination/BasePagination";
+import type {Violation} from "@/modules/violation/domain/entity/Violation";
 
 /**
  * Application Service
@@ -40,8 +42,10 @@ export class AchievementService {
    * LIST
    * =====================
    */
-  list(): Promise<Result<Achievement[]>> {
-    return this.listUseCase.execute();
+  list(
+      params: BasePaginationParams,
+  ): Promise<Result<BasePaginationResponse<Achievement>>> {
+    return this.listUseCase.execute(params);
   }
 
   /**

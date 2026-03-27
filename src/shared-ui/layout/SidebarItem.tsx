@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import type { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
+import type { SidebarMenuItem } from "@/security/roleMenuPolicy";
 import type { IconType } from "react-icons";
 import { MdKeyboardArrowRight } from "react-icons/md";
 import { LuDot } from "react-icons/lu";

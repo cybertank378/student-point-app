@@ -1,6 +1,6 @@
 //Files: src/modules/user/domain/interfaces/UserInterface.ts
 import type { UserEntity } from "@/modules/user/domain/entity/UserEntity";
-import type { TeacherRole, UserRole } from "@/libs/utils";
+import type { TeacherRole,Role } from "@/libs/utils/enums";
 
 /* ============================================================
  * USER SEARCH PARAMS (B-TREE FRIENDLY)
@@ -16,7 +16,7 @@ export interface UserSearchParams {
     page: number;
     limit: number;
     username?: string;
-    role?: UserRole;
+    role?: Role;
     isActive?: boolean;
     teacherRole?: TeacherRole;
     createdFrom?: Date;
@@ -45,7 +45,7 @@ export interface UserSearchResult {
 
 export interface UpdateUserData {
     password?: string;
-    role?: UserRole;
+    role?: Role;
     teacherRole?: TeacherRole | null;
     isActive?: boolean;
     image?: string | null;
@@ -65,7 +65,7 @@ export interface UserInterface {
     create(data: {
         username: string;
         password: string;
-        role: UserRole;
+        role: Role;
         teacherRole?: TeacherRole | null;
         studentId?: string | null;
         parentId?: string | null;

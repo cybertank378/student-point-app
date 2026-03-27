@@ -1,40 +1,43 @@
 //Files: src/modules/rombel/domain/mapper/RombelMapper.ts
+
 import type { Prisma } from "@/generated/prisma";
 import { Rombel } from "@/modules/rombel/domain/entity/Rombel";
 
-/**
- * Prisma type dengan relation academicYear
- */
-type PrismaClassWithRelation = Prisma.ClassGetPayload<{
-  include: {
-    academicYear: {
-      select: { name: true };
-    };
-  };
-}>;
+type RombelPrismaPayload =
+    Prisma.ClassGetPayload<{
+      include: {
+        academicYear: true;
+        _count: {
+          select: {
+            enrollments: true;
+          };
+        };
+      };
+    }>;
 
-/**
- * Mapper: Prisma → Domain
- * Tidak ada logic bisnis
- */
 export const RombelMapper = {
-  toDomain(row: PrismaClassWithRelation, studentCount: number): Rombel {
+
+  toDomain(row: RombelPrismaPayload): Rombel {
+
     return new Rombel(
-      row.id,
-      row.grade,
-      row.name,
-      row.academicYear?.name ?? "",
-      row.createdAt,
-      studentCount,
+        row.id,
+        row.grade,
+        row.name,
+
+        row.academicYearId,
+        row.academicYear.name,
+
+        row.homeroomTeacherId,
+        row.createdAt,
+        row._count.enrollments
     );
+
   },
 
-  toDomainList(
-    rows: PrismaClassWithRelation[],
-    studentCountMap: Record<string, number>,
-  ): Rombel[] {
-    return rows.map((row) =>
-      RombelMapper.toDomain(row, studentCountMap[row.id] ?? 0),
-    );
-  },
+  toDomainList(rows: RombelPrismaPayload[]): Rombel[] {
+
+    return rows.map(RombelMapper.toDomain);
+
+  }
+
 };

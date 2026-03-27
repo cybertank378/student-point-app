@@ -12,10 +12,9 @@ import { UploadButton } from "@/shared-ui/component/UploadButton";
 import Divider from "@/shared-ui/component/Divider";
 
 import {
-    buildUserImagePath,
     TeacherRole,
-    UserRole,
-} from "@/libs/utils";
+    Role,
+} from "@/libs/utils/enums";
 
 import {
     showErrorToast,
@@ -24,10 +23,11 @@ import {
 
 import { useUserApi } from "@/modules/user/presentation/hooks/useUserApi";
 import { UserEntity } from "@/modules/user/domain/entity/UserEntity";
+import {buildUserImagePath} from "@/libs/utils";
 
 export interface UserFormType {
     password?: string;
-    role: UserRole;
+    role: Role;
     teacherRole: TeacherRole | null;
     image?: string | null;
     isActive: boolean;
@@ -44,7 +44,7 @@ interface Props {
         value: UserFormType[K]
     ) => void;
     mode: "add" | "edit";
-    originalRole?: UserRole;
+    originalRole?: Role;
     user?: UserEntity | null;
     title?: string;
     subtitle?: string;
@@ -78,14 +78,14 @@ export default function UserFormModal({
         errors?.[field]?.[0];
 
     /* ================= ROLE LABEL ================= */
-    const ROLE_LABEL: Record<UserRole, string> = {
+    const ROLE_LABEL: Record<Role, string> = {
         ADMIN: "Admin",
         TEACHER: "Teacher",
         STUDENT: "Student",
         PARENT: "Parent",
     };
 
-    const entityRole: UserRole = user?.role ?? form.role;
+    const entityRole: Role = user?.role ?? form.role;
     const entityName = ROLE_LABEL[entityRole];
 
     /* ================= DISPLAY NAME ================= */
@@ -206,7 +206,7 @@ export default function UserFormModal({
                             onChange={(e) =>
                                 onChange(
                                     "role",
-                                    e.target.value as UserRole
+                                    e.target.value as Role
                                 )
                             }
                             error={Boolean(getError("role"))}

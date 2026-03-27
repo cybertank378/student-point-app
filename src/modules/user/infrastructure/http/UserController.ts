@@ -18,7 +18,7 @@ import type {
     UserSearchParams,
 } from "@/modules/user/domain/interfaces/UserInterface";
 
-import { TeacherRole, UserRole } from "@/libs/utils";
+import { TeacherRole, Role } from "@/libs/utils/enums";
 import { serverLog } from "@/libs/serverLogger";
 
 /**
@@ -212,7 +212,7 @@ export class UserController {
                 page: Number(searchParams.get("page") ?? 1),
                 limit: Number(searchParams.get("limit") ?? 10),
                 username: searchParams.get("username") ?? undefined,
-                role: searchParams.get("role") as UserRole,
+                role: searchParams.get("role") as Role,
                 isActive:
                     searchParams.get("isActive") !== null
                         ? searchParams.get("isActive") === "true"

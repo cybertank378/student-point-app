@@ -2,6 +2,6 @@
 
 export interface UpdateReligionDTO {
     id: string;
-    kode: string;
     name: string;
+    kode: string;
 }

@@ -22,6 +22,7 @@ import {ExcelAdapter} from "@/modules/shared/core/ExcelAdapter";
 import {TeacherExcelMapper} from "@/modules/teacher/domain/mapper/TeacherExcelMapper";
 import {TeacherImportTemplateBuilder} from "@/modules/teacher/infrastructure/http/TeacherImportTemplateBuilder";
 import {toApiError} from "@/modules/shared/errors/ApiError";
+import {AppError} from "@/modules/shared/errors/AppError";
 
 export class TeacherController {
     constructor(
@@ -248,12 +249,8 @@ export class TeacherController {
     }
 
     /* ==========================================================
-       IMPORT / EXPORT
+        IMPORT (EXCEL FILE)
     ========================================================== */
-
-    /* ==========================================================
-   IMPORT (EXCEL FILE)
-========================================================== */
 
     async import(req: NextRequest): Promise<Response> {
         try {
@@ -262,8 +259,13 @@ export class TeacherController {
 
             if (!file) {
                 return HttpResultHandler.handle(
-                    Result.fail("File tidak ditemukan."),
-                    400
+                    Result.fail(
+                        new AppError(
+                            "File tidak ditemukan.",
+                            400,
+                            "FILE_NOT_FOUND"
+                        )
+                    )
                 );
             }
 
@@ -280,6 +282,7 @@ export class TeacherController {
             const result = await this.service.import(validated);
 
             return HttpResultHandler.handle(result);
+
         } catch (error) {
             return handleZodError(error);
         }

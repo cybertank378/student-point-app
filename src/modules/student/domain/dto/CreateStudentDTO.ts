@@ -1,24 +1,63 @@
 //Files: src/modules/student/domain/dto/CreateStudentDTO.ts
+import type { FamilyStatus, Gender } from "@/libs/utils/enums";
 
-import type {Gender} from "@/modules/student/domain/enums/Gender";
-import type {StudentStatus} from "@/modules/student/domain/enums/StudentStatus";
-import {FamilyStatus} from "@/libs/utils";
+/**
+ * ============================================================
+ * CREATE STUDENT DTO
+ * ============================================================
+ *
+ * DTO ini digunakan untuk proses pembuatan data siswa baru.
+ *
+ * DTO ini biasanya berasal dari HTTP request
+ * dan digunakan oleh CreateStudentUseCase.
+ *
+ * Catatan:
+ *
+ * - Tidak mengandung id karena id dibuat oleh sistem
+ * - Field opsional mengikuti schema Prisma
+ *
+ * Layer:
+ * Domain (DTO)
+ */
 
 export interface CreateStudentDTO {
-    nis?: string | null;
-    nisn: string;
-    name: string;
-    nickname?: string | null;
+  nis?: string | null;
 
-    gender: Gender;
-    religionCode: string;
-    rombelId: string;
+  nisn: string;
 
-    status?: StudentStatus;
+  name: string;
 
-    // ✅ Optional (kalau tidak dikirim → default COMPLETE di DB)
-    familyStatus?: FamilyStatus;
+  nickname?: string | null;
 
-    isDifable?: boolean;
-    difableNotes?: string | null;
+  gender: Gender;
+
+  photo?: string | null;
+
+  birthPlace: string;
+
+  birthDate: Date;
+
+  address: string;
+
+  phone?: string | null;
+
+  email?: string | null;
+
+  religionCode: string;
+
+  nik?: string | null;
+
+  kkNumber?: string | null;
+
+  schoolOrigin?: string | null;
+
+  graduationScore?: number | null;
+
+  instagram?: string | null;
+
+  familyStatus?: FamilyStatus;
+
+  isDifable?: boolean;
+
+  difableNotes?: string | null;
 }

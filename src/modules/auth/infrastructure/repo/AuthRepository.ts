@@ -1,12 +1,12 @@
 //Files: src/modules/auth/infrastructure/repo/AuthRepository.ts
 
-import type { AuthRepositoryInterface } from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
 import prisma from "@/libs/prisma";
-import type { AuthUser } from "@/modules/auth/domain/entity/AuthUser";
-import { AuthMapper } from "@/modules/auth/domain/mapper/AuthMapper";
-import type { PasswordResetToken } from "@/modules/auth/domain/entity/PasswordResetToken";
-import type { AuthSession } from "@/modules/auth/domain/entity/AuthSession";
 import { FIFTEEN_MINUTES } from "@/libs/utils";
+import type { AuthSession } from "@/modules/auth/domain/entity/AuthSession";
+import type { AuthUser } from "@/modules/auth/domain/entity/AuthUser";
+import type { PasswordResetToken } from "@/modules/auth/domain/entity/PasswordResetToken";
+import type { AuthRepositoryInterface } from "@/modules/auth/domain/interfaces/AuthRepositoryInterface";
+import { AuthMapper } from "@/modules/auth/domain/mapper/AuthMapper";
 
 export class AuthRepository implements AuthRepositoryInterface {
   async findByUsername(username: string): Promise<AuthUser | null> {
@@ -18,6 +18,16 @@ export class AuthRepository implements AuthRepositoryInterface {
             roles: true,
           },
         },
+        student: {
+          select: {
+            id: true,
+          },
+        },
+        parent: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
 
@@ -25,7 +35,6 @@ export class AuthRepository implements AuthRepositoryInterface {
 
     return AuthMapper.toDomainUser(data);
   }
-
   async findById(id: string): Promise<AuthUser | null> {
     const data = await prisma.user.findUnique({
       where: { id },
@@ -49,8 +58,7 @@ export class AuthRepository implements AuthRepositoryInterface {
 
     const attempts = user.failedAttempts + 1;
 
-    const lockUntil =
-      attempts >= 5 ? new Date(Date.now() + FIFTEEN_MINUTES) : user.lockUntil;
+    const lockUntil = attempts >= 5 ? new Date(Date.now() + FIFTEEN_MINUTES) : user.lockUntil;
 
     await prisma.user.update({
       where: { id: userId },
@@ -78,11 +86,7 @@ export class AuthRepository implements AuthRepositoryInterface {
     });
   }
 
-  async saveSession(
-    userId: string,
-    tokenHash: string,
-    expiresAt: Date,
-  ): Promise<void> {
+  async saveSession(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
     await prisma.authSession.create({
       data: {
         userId,
@@ -121,11 +125,7 @@ export class AuthRepository implements AuthRepositoryInterface {
     });
   }
 
-  async createResetToken(
-    userId: string,
-    tokenHash: string,
-    expiresAt: Date,
-  ): Promise<void> {
+  async createResetToken(userId: string, tokenHash: string, expiresAt: Date): Promise<void> {
     await prisma.passwordResetToken.create({
       data: {
         userId,
@@ -135,9 +135,7 @@ export class AuthRepository implements AuthRepositoryInterface {
     });
   }
 
-  async findValidResetToken(
-    tokenHash: string,
-  ): Promise<PasswordResetToken | null> {
+  async findValidResetToken(tokenHash: string): Promise<PasswordResetToken | null> {
     const token = await prisma.passwordResetToken.findFirst({
       where: {
         tokenHash,
@@ -163,7 +161,7 @@ export class AuthRepository implements AuthRepositoryInterface {
     identifier: string,
     success: boolean,
     ip: string | null,
-    userAgent: string | null,
+    userAgent: string | null
   ): Promise<void> {
     await prisma.loginAudit.create({
       data: {

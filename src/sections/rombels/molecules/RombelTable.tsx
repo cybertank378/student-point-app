@@ -1,3 +1,5 @@
+//Files: src/sections/rombels/organisms/RombelTable.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -16,19 +18,17 @@ import Button from "@/shared-ui/component/Button";
 import Loading from "@/shared-ui/component/Loading";
 
 import type { useRombelApi } from "@/modules/rombel/presentation/hooks/useRombelApi";
-import { useAcademicYearApi } from "@/modules/academic-year/presentation/hooks/useAcademicYearApi";
+import type { AcademicYear } from "@/modules/academic-year/domain/entity/AcademicYear";
 
 import type { Rombel } from "@/modules/rombel/domain/entity/Rombel";
 import type { CreateRombelDTO } from "@/modules/rombel/domain/dto/CreateRombelDTO";
 import type { UpdateRombelDTO } from "@/modules/rombel/domain/dto/UpdateRombelDTO";
 
 import RombelFormModal from "@/sections/rombels/organisms/RombelFormModal";
+import { formatClassLabel } from "@/libs/utils";
 
 type Grade = "VII" | "VIII" | "IX";
 
-/* =====================================
-   FORM STATE
-===================================== */
 type RombelFormState = {
     grade: Grade;
     name: string;
@@ -39,9 +39,11 @@ type RombelFormField = keyof RombelFormState;
 
 interface Props {
     api: ReturnType<typeof useRombelApi>;
+    academicYears: AcademicYear[];
 }
 
-export default function RombelTable({ api }: Props) {
+export default function RombelTable({ api, academicYears }: Props) {
+
     const {
         rombels,
         loading,
@@ -50,8 +52,6 @@ export default function RombelTable({ api }: Props) {
         updateRombel,
         deleteRombel,
     } = api;
-
-    const { academicYears } = useAcademicYearApi(); // ✅ FIX
 
     const [editItem, setEditItem] = useState<Rombel | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -63,13 +63,14 @@ export default function RombelTable({ api }: Props) {
         academicYearId: "",
     });
 
-    const getLabel = (grade: Grade, name: string) => {
-        return `${grade}.${name}`;
+    const resetForm = () => {
+        setForm({
+            grade: "VII",
+            name: "",
+            academicYearId: "",
+        });
     };
 
-    /* =====================================
-       FORM CHANGE
-    ===================================== */
     const handleFormChange = <K extends RombelFormField>(
         field: K,
         value: RombelFormState[K]
@@ -80,32 +81,33 @@ export default function RombelTable({ api }: Props) {
         }));
     };
 
-
-    /* =====================================
-       EDIT
-    ===================================== */
     const handleEdit = (item: Rombel) => {
+
+        const year = academicYears.find(
+            (y) => y.name === item.academicYearName
+        );
+
         setEditItem(item);
 
         setForm({
             grade: item.grade as Grade,
             name: item.name,
-            academicYearId: item.academicYearName,
+            academicYearId: year?.id ?? "",
         });
 
         setOpenForm(true);
     };
 
-    /* =====================================
-       SUBMIT
-    ===================================== */
     const handleSubmit = async () => {
+
         if (!form.name || !form.grade || !form.academicYearId) {
             return;
         }
 
         try {
+
             if (editItem) {
+
                 const payload: UpdateRombelDTO = {
                     id: editItem.id,
                     grade: form.grade,
@@ -114,7 +116,9 @@ export default function RombelTable({ api }: Props) {
                 };
 
                 await updateRombel(payload);
+
             } else {
+
                 const payload: CreateRombelDTO = {
                     grade: form.grade,
                     name: form.name,
@@ -126,23 +130,26 @@ export default function RombelTable({ api }: Props) {
 
             setOpenForm(false);
             setEditItem(null);
+            resetForm();
+
         } catch (error) {
+
             console.error("Gagal menyimpan rombel:", error);
+
         }
     };
 
-    /* =====================================
-       DELETE
-    ===================================== */
     const handleDelete = async () => {
+
         if (!deleteId) return;
+
         await deleteRombel(deleteId);
+
         setDeleteId(null);
     };
 
     return (
         <>
-            {/* ERROR */}
             {error && (
                 <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
                     {error.message}
@@ -150,81 +157,55 @@ export default function RombelTable({ api }: Props) {
             )}
 
             <Table wrapperClassName="rounded-xl shadow-sm overflow-hidden">
+
                 <TableHead className="bg-gray-100 border-b h-16">
                     <tr>
-                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
-                            No
-                        </TableHeaderCell>
-                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
-                            Kelas
-                        </TableHeaderCell>
-                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
-                            Tingkat
-                        </TableHeaderCell>
-                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
-                            Tahun Ajaran
-                        </TableHeaderCell>
-                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
-                            Jumlah Siswa
-                        </TableHeaderCell>
-                        <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">
-                            Aksi
-                        </TableHeaderCell>
+                        <TableHeaderCell>No</TableHeaderCell>
+                        <TableHeaderCell>Kelas</TableHeaderCell>
+                        <TableHeaderCell>Tahun Ajaran</TableHeaderCell>
+                        <TableHeaderCell>Jumlah Siswa</TableHeaderCell>
+                        <TableHeaderCell>Aksi</TableHeaderCell>
                     </tr>
                 </TableHead>
 
                 <tbody>
                 {loading ? (
                     <tr>
-                        <td colSpan={6}>
-                            <div className="py-10">
+                        <td colSpan={5}>
+                            <div className="py-10 text-center">
                                 <Loading />
                             </div>
                         </td>
                     </tr>
                 ) : rombels.length === 0 ? (
                     <tr>
-                        <td
-                            colSpan={6}
-                            className="text-center py-6 text-gray-500"
-                        >
+                        <td colSpan={5} className="text-center py-6 text-gray-500">
                             Tidak ada data master kelas
                         </td>
                     </tr>
                 ) : (
                     rombels.map((item, index) => (
                         <TableRow key={item.id}>
-                            <TableCell className="text-gray-500 font-medium">
-                                {index + 1}
-                            </TableCell>
+
+                            <TableCell>{index + 1}</TableCell>
 
                             <TableCell className="font-medium">
-                                {getLabel(
-                                    item.grade as Grade,
-                                    item.name
-                                )}
+                                {formatClassLabel(item.grade, item.name)}
                             </TableCell>
 
-                            <TableCell>{item.grade}</TableCell>
+                            <TableCell>{item.academicYearName}</TableCell>
 
-                            <TableCell>
-                                {item.academicYearName}
-                            </TableCell>
-
-                            <TableCell>
-                                {item.studentCount} siswa
-                            </TableCell>
+                            <TableCell>{item.studentCount} siswa</TableCell>
 
                             <TableCell>
                                 <div className="flex gap-2">
+
                                     <Button
                                         variant="text"
                                         size="md"
                                         color="primary"
                                         leftIcon={FiEdit}
-                                        onClick={() =>
-                                            handleEdit(item)
-                                        }
+                                        onClick={() => handleEdit(item)}
                                     />
 
                                     <Button
@@ -232,35 +213,29 @@ export default function RombelTable({ api }: Props) {
                                         size="md"
                                         color="error"
                                         leftIcon={FiTrash2}
-                                        onClick={() =>
-                                            setDeleteId(item.id)
-                                        }
+                                        onClick={() => setDeleteId(item.id)}
                                     />
+
                                 </div>
                             </TableCell>
+
                         </TableRow>
                     ))
                 )}
                 </tbody>
             </Table>
 
-            {/* FORM MODAL */}
             <RombelFormModal
                 open={openForm}
                 onClose={() => setOpenForm(false)}
                 onSubmit={handleSubmit}
                 title={editItem ? "Edit Rombel" : "Tambah Rombel"}
-                subtitle={
-                    editItem
-                        ? "Perbarui informasi kelas yang dipilih."
-                        : "Lengkapi informasi rombel dengan benar."
-                }
+                subtitle="Lengkapi informasi rombel"
                 form={form}
-                academicYears={academicYears} // ✅ FIX
+                academicYears={academicYears}
                 onChange={handleFormChange}
             />
 
-            {/* DELETE MODAL */}
             <Modal
                 title="Konfirmasi Hapus"
                 subtitle="Tindakan ini tidak dapat dibatalkan."
@@ -271,16 +246,8 @@ export default function RombelTable({ api }: Props) {
                 submitColor="error"
                 size="sm"
             >
-                <div className="space-y-6 text-center">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
-                        <div className="h-6 w-6 rounded-full bg-red-500" />
-                    </div>
-
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                        Apakah Anda yakin ingin menghapus data ini?
-                        <br />
-                        Data yang dihapus tidak dapat dikembalikan.
-                    </p>
+                <div className="text-center text-sm text-gray-600">
+                    Apakah Anda yakin ingin menghapus rombel ini?
                 </div>
             </Modal>
         </>

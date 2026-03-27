@@ -14,12 +14,12 @@ import type {
 
 import { Teacher } from "@/modules/teacher/domain/entity/Teacher";
 import { TeacherMapper } from "@/modules/teacher/domain/mapper/TeacherMapper";
-import { BasePaginationParams } from "@/modules/shared/http/pagination/BasePagination";
+import {BasePaginationParams, BasePaginationResponse} from "@/modules/shared/http/pagination/BasePagination";
 import {
     buildCreatePayload,
     buildOrderBy,
     teacherInclude
-} from "@/modules/student/domain/mapper/PayloadBuilder";
+} from "@/modules/teacher/domain/mapper/PayloadBuilder";
 
 
 
@@ -48,47 +48,31 @@ export class TeacherRepository implements TeacherInterface {
      */
     async findAll(
         params: BasePaginationParams & { role?: string }
-    ): Promise<{ data: ReadonlyArray<Teacher>; total: number }> {
+    ): Promise<BasePaginationResponse<Teacher>> {
 
-        const page = params.page && params.page > 0 ? params.page : 1;
-        const limit = params.limit && params.limit > 0 ? params.limit : 10;
+        const {
+            page = 1,
+            limit = 10,
+            search,
+            role,
+        } = params;
+
         const skip = (page - 1) * limit;
 
         const where: Prisma.TeacherWhereInput = {};
 
-        if (params.search) {
+        if (search) {
             where.OR = [
-                {
-                    name: {
-                        contains: params.search,
-                        mode: "insensitive",
-                    },
-                },
-                {
-                    nip: {
-                        contains: params.search, // ✅ sekarang string
-                    },
-                },
-                {
-                    nuptk: {
-                        contains: params.search,
-                    },
-                },
-                {
-                    nrk: {
-                        contains: params.search,
-                    },
-                },
-                {
-                    nrg: {
-                        contains: params.search,
-                    },
-                },
+                { name: { contains: search, mode: "insensitive" } },
+                { nip: { contains: search } },
+                { nuptk: { contains: search } },
+                { nrk: { contains: search } },
+                { nrg: { contains: search } },
             ];
         }
 
-        if (params.role) {
-            where.roles = { has: params.role as TeacherRole };
+        if (role) {
+            where.roles = { has: role as TeacherRole };
         }
 
         const [rows, total] = await Promise.all([
@@ -105,9 +89,11 @@ export class TeacherRepository implements TeacherInterface {
         return {
             data: TeacherMapper.toDomainList(rows),
             total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
         };
     }
-
     /* =========================================================
        FIND BY ID
     ========================================================= */
@@ -300,8 +286,8 @@ export class TeacherRepository implements TeacherInterface {
     }
 
     /* ============================================================
-   BULK IMPORT CREATE
-============================================================ */
+       BULK IMPORT CREATE
+    ============================================================ */
 
     async bulkImportCreate(
         data: CreateTeacherDTO[]

@@ -10,17 +10,47 @@ export type DependencyRule<T extends object> = {
 };
 
 function isEqual(a: unknown, b: unknown): boolean {
+
+    if (a === b) return true;
+
     if (a instanceof Date && b instanceof Date) {
         return a.getTime() === b.getTime();
     }
-    return a === b;
+
+    // shallow object compare
+    if (
+        typeof a === "object" &&
+        typeof b === "object" &&
+        a !== null &&
+        b !== null
+    ) {
+
+        const aKeys = Object.keys(a as object);
+        const bKeys = Object.keys(b as object);
+
+        if (aKeys.length !== bKeys.length) return false;
+
+        for (const key of aKeys) {
+            if (
+                (a as Record<string, unknown>)[key] !==
+                (b as Record<string, unknown>)[key]
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 export function buildDynamicPatch<T extends object>(
     id: string,
     form: T,
     original: T,
-    dependencies: DependencyRule<T>[] = []
+    dependencies: DependencyRule<T>[] = [],
+    ignoreFields: (keyof T)[] = []
 ): { id: string } & Partial<T> {
 
     const changes: Partial<T> = {};
@@ -30,16 +60,22 @@ export function buildDynamicPatch<T extends object>(
      * DIFF SECTION
      * ==============================
      */
+
     (Object.keys(form) as (keyof T)[]).forEach((key) => {
+
+        if (ignoreFields.includes(key)) return;
+
         const current = form[key];
         const prev = original[key];
 
         if (!isEqual(current, prev)) {
-            // ❗ Jangan kirim undefined
+
             if (current !== undefined) {
                 changes[key] = current;
             }
+
         }
+
     });
 
     /**
@@ -47,24 +83,31 @@ export function buildDynamicPatch<T extends object>(
      * DEPENDENCY SECTION
      * ==============================
      */
+
     dependencies.forEach((rule) => {
+
         if (rule.when(form, original)) {
 
             rule.include?.forEach((key) => {
+
                 const value = form[key];
 
                 if (value !== undefined) {
                     changes[key] = value;
                 }
+
             });
 
             rule.setNull?.forEach((key) => {
-                // ❗ hanya set null kalau field memang ada di original
+
                 if (original[key] !== undefined) {
                     changes[key] = null as T[typeof key];
                 }
+
             });
+
         }
+
     });
 
     return {

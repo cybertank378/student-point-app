@@ -1,5 +1,4 @@
 //Files: src/modules/rombel/presentation/hooks/useRombelApi.ts
-
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -14,13 +13,14 @@ import {
   toApiError,
 } from "@/modules/shared/errors/ApiError";
 
-export const useRombelApi = () => {
+export const useRombelApi = (autoFetch = false) => {
   const [rombels, setRombels] = useState<Rombel[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
   const fetchRombels = useCallback(async () => {
     setLoading(true);
+
     try {
       setError(null);
 
@@ -37,73 +37,75 @@ export const useRombelApi = () => {
   }, []);
 
   const createRombel = useCallback(
-    async (payload: CreateRombelDTO): Promise<Rombel | null> => {
-      try {
-        setError(null);
+      async (payload: CreateRombelDTO): Promise<Rombel | null> => {
+        try {
+          setError(null);
 
-        const res = await fetch("/api/rombels", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+          const res = await fetch("/api/rombels", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-        const created = await safeJson<Rombel>(res);
-        await fetchRombels();
-        return created ?? null;
-      } catch (err) {
-        setError(toApiError(err, "Failed to create rombel"));
-        return null;
-      }
-    },
-    [fetchRombels],
+          const created = await safeJson<Rombel>(res);
+          await fetchRombels();
+          return created ?? null;
+        } catch (err) {
+          setError(toApiError(err, "Failed to create rombel"));
+          return null;
+        }
+      },
+      [fetchRombels],
   );
 
   const updateRombel = useCallback(
-    async (payload: UpdateRombelDTO): Promise<Rombel | null> => {
-      try {
-        setError(null);
+      async (payload: UpdateRombelDTO): Promise<Rombel | null> => {
+        try {
+          setError(null);
 
-        const res = await fetch(`/api/rombels/${payload.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+          const res = await fetch(`/api/rombels/${payload.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
 
-        const updated = await safeJson<Rombel>(res);
-        await fetchRombels();
-        return updated ?? null;
-      } catch (err) {
-        setError(toApiError(err, "Failed to update rombel"));
-        return null;
-      }
-    },
-    [fetchRombels],
+          const updated = await safeJson<Rombel>(res);
+          await fetchRombels();
+          return updated ?? null;
+        } catch (err) {
+          setError(toApiError(err, "Failed to update rombel"));
+          return null;
+        }
+      },
+      [fetchRombels],
   );
 
   const deleteRombel = useCallback(
-    async (id: string) => {
-      try {
-        setError(null);
+      async (id: string) => {
+        try {
+          setError(null);
 
-        const res = await fetch(`/api/rombels/${id}`, {
-          method: "DELETE",
-        });
+          const res = await fetch(`/api/rombels/${id}`, {
+            method: "DELETE",
+          });
 
-        if (!res.ok) {
-          setError(await parseError(res));
+          if (!res.ok) {
+            setError(await parseError(res));
+          }
+
+          await fetchRombels();
+        } catch (err) {
+          setError(toApiError(err, "Failed to delete rombel"));
         }
-
-        await fetchRombels();
-      } catch (err) {
-        setError(toApiError(err, "Failed to delete rombel"));
-      }
-    },
-    [fetchRombels],
+      },
+      [fetchRombels],
   );
 
+  /* ================= OPTIONAL AUTO FETCH ================= */
   useEffect(() => {
+    if (!autoFetch) return;
     void fetchRombels();
-  }, [fetchRombels]);
+  }, [autoFetch, fetchRombels]);
 
   return {
     rombels,

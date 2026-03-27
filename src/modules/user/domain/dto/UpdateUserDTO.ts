@@ -1,9 +1,9 @@
-import type { TeacherRole, UserRole } from "@/libs/utils";
+import type { TeacherRole, Role } from "@/libs/utils/enums";
 
 export interface UpdateUserDTO {
     readonly id: string;
     readonly password?: string;
-    readonly role: UserRole;
+    readonly role: Role;
     readonly teacherRole: TeacherRole | null;
     readonly image?: string | null;
     readonly isActive: boolean;

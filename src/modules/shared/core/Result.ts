@@ -12,44 +12,38 @@
  * - Error
  * - validation error
  */
+import { AppError } from "@/modules/shared/errors/AppError";
+
 export class Result<T> {
+
     public readonly isSuccess: boolean;
-    private readonly error?: unknown;
-    private readonly value?: T;
+    public readonly isFailure: boolean;
+    private readonly _value?: T;
+    public readonly error?: AppError;
 
     private constructor(
         isSuccess: boolean,
-        value?: T,
-        error?: unknown
+        error?: AppError,
+        value?: T
     ) {
         this.isSuccess = isSuccess;
-        this.value = value;
+        this.isFailure = !isSuccess;
         this.error = error;
-
-        Object.freeze(this);
-    }
-
-    public static ok<T>(value?: T): Result<T> {
-        return new Result<T>(true, value);
-    }
-
-    public static fail<T>(error: unknown): Result<T> {
-        return new Result<T>(false, undefined, error);
+        this._value = value;
     }
 
     public getValue(): T {
         if (!this.isSuccess) {
-            throw new Error(
-                "Cannot get value from failed Result."
-            );
+            throw new Error("Cannot get value of a failed result.");
         }
-        return this.value as T;
+        return this._value as T;
     }
 
-    /**
-     * Return raw error (unknown)
-     */
-    public getError(): unknown {
-        return this.error;
+    public static ok<T>(value: T): Result<T> {
+        return new Result<T>(true, undefined, value);
+    }
+
+    public static fail<T>(error: AppError): Result<T> {
+        return new Result<T>(false, error);
     }
 }

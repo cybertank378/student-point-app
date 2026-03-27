@@ -1,59 +1,71 @@
 //Files: src/modules/achievement/application/usecases/ListAchievementUseCase.ts
-import {BaseUseCase} from "@/modules/shared/core/BaseUseCase";
-import type {AchievementInterface} from "@/modules/achievement/domain/interfaces/AchievementInterface";
-import type {Achievement} from "@/modules/achievement/domain/entity/Achievement";
+import { BaseUseCase } from "@/modules/shared/core/BaseUseCase";
+
+import type { Achievement } from "@/modules/achievement/domain/entity/Achievement";
+import type { AchievementInterface } from "@/modules/achievement/domain/interfaces/AchievementInterface";
+
+import type {
+    BasePaginationParams,
+    BasePaginationResponse,
+} from "@/modules/shared/http/pagination/BasePagination";
 
 /**
  * ============================================================
  * LIST ACHIEVEMENT USE CASE
  * ============================================================
  *
- * Purpose:
- * - Retrieve all Achievement entities.
+ * Responsible for:
+ * - Sanitizing pagination params
+ * - Enforcing pagination limit
+ * - Delegating query to repository
  *
- * Architecture:
- * - Extends BaseUseCase to standardize Result handling.
- * - Does NOT manually return Result.
- * - No try/catch required (handled by BaseUseCase).
+ * Pattern:
+ *   execute(params) -> Result<BasePaginationResponse<Achievement>>
  *
- * Execution Flow:
- *   Controller
- *        ↓
- *   execute()          (BaseUseCase)
- *        ↓
- *   handle()
- *        ↓
- *   return Achievement[]
- *        ↓
- *   BaseUseCase wraps into Result.ok()
- *
- * Error Handling:
- * - Any thrown error from repository
- *   will automatically be converted
- *   into Result.fail() by BaseUseCase.
+ * Clean Architecture compliant.
  */
 export class ListAchievementUseCase extends BaseUseCase<
-    void,
-    Achievement[]
+    BasePaginationParams,
+    BasePaginationResponse<Achievement>
 > {
+
     constructor(
         private readonly repo: AchievementInterface
     ) {
         super();
     }
 
-    /**
-     * Core business logic.
-     *
-     * Responsibilities:
-     * - Fetch all achievements from repository
-     * - Return list of Achievement entities
-     *
-     * Notes:
-     * - No manual Result wrapping
-     * - No manual error handling
-     */
-    protected async handle(): Promise<Achievement[]> {
-        return await this.repo.findAll();
+    protected async handle(
+        params: BasePaginationParams
+    ): Promise<BasePaginationResponse<Achievement>> {
+
+        /**
+         * ==============================
+         * SANITIZE INPUT
+         * ==============================
+         */
+
+        const page =
+            params.page && params.page > 0
+                ? params.page
+                : 1;
+
+        const limit =
+            params.limit && params.limit > 0
+                ? Math.min(params.limit, 100)
+                : 10;
+
+        /**
+         * ==============================
+         * DELEGATE TO REPOSITORY
+         * ==============================
+         */
+
+        return await this.repo.findAll({
+            ...params,
+            page,
+            limit,
+        });
     }
+
 }

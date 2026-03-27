@@ -1,25 +1,17 @@
 //Files: src/modules/student/domain/dto/UpdateStudentDTO.ts
+import type { StudentCompositeDTO } from "@/modules/student-composite/domain/dto/StudentCompositeDTO";
 
-import type { Gender } from "@/modules/student/domain/enums/Gender";
-import type { StudentStatus } from "@/modules/student/domain/enums/StudentStatus";
-import {FamilyStatus} from "@/libs/utils";
+/**
+ * DTO untuk update siswa dengan semantics PATCH.
+ *
+ * Hanya id yang wajib.
+ * Semua field lain optional.
+ */
 
-export interface UpdateStudentDTO {
-    id: string;
+type UpdatableStudentFields = Omit<StudentCompositeDTO, "nisn">;
 
-    name?: string;
-    nickname?: string | null;
-    gender?: Gender;
-    religionCode?: string;
-    rombelId?: string;
-    status?: StudentStatus;
-
-    // ✅ Bisa diubah jika diperlukan
-    familyStatus?: FamilyStatus;
-
-    nis?: string | null;
-    nisn?: string;
-
-    isDifable?: boolean;
-    difableNotes?: string | null;
-}
+export type UpdateStudentDTO =
+	{ id: string } &
+	Partial<UpdatableStudentFields> & {
+	nisn?: string;
+};

@@ -10,12 +10,9 @@ export class Achievement {
         public readonly name: string,
         public readonly point: number,
         public readonly createdAt: Date,
-        public readonly deletedAt: Date | null,
+        public readonly deletedAt: Date | null
     ) {}
 
-    /**
-     * Domain helper
-     */
     get isActive(): boolean {
         return this.deletedAt === null;
     }

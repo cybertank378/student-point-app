@@ -4,6 +4,6 @@ export class Religion {
     constructor(
         public readonly id: string,
         public readonly kode: string,
-        public name: string,
+        public readonly name: string
     ) {}
 }

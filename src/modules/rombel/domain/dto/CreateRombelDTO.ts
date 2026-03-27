@@ -4,7 +4,8 @@
  * Payload create rombel
  */
 export interface CreateRombelDTO {
-    grade: string;          // 7 | 8 | 9
-    name: string;           // A, B, C
-    academicYearId: string; // FK
+    grade: string;
+    name: string;
+    academicYearId: string;
+    homeroomTeacherId?: string | null;
 }

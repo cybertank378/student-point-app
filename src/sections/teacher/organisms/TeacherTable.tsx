@@ -2,7 +2,7 @@
 "use client";
 
 import {useEffect, useMemo, useState} from "react";
-import {FaEllipsisVertical, FaEye, FaPenToSquare, FaTrash,} from "react-icons/fa6";
+import { FaEye, FaPenToSquare, FaTrash,} from "react-icons/fa6";
 
 import {Chip} from "@/shared-ui/component/Chip";
 import {Table, TableCell, TableHead, TableHeaderCell, TableRow,} from "@/shared-ui/component/Table";
@@ -24,6 +24,7 @@ import BulkActionBar from "@/shared-ui/component/BulkActionBar";
 import Checkbox from "@/shared-ui/component/Checkbox";
 import {TeacherRole} from "@/generated/prisma";
 import {useRombelApi} from "@/modules/rombel/presentation/hooks/useRombelApi";
+import Button from "@/shared-ui/component/Button";
 
 interface Props {
     api: ReturnType<typeof useTeacherApi>;
@@ -58,7 +59,6 @@ export default function TeacherTable({api}: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [formLoading, setFormLoading] = useState(false);
     const [originalTeacher, setOriginalTeacher] =useState<TeacherFormType | null>(null);
-    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
     /* ================= ROLE OPTIONS ================= */
 
@@ -283,10 +283,7 @@ export default function TeacherTable({api}: Props) {
 
         setFormLoading(true);
 
-        console.log("DATA Origin", originalTeacher.photo)
-        console.log("DATA CHANGE", form.photo)
-
-        const payload = buildDynamicPatch(
+        const dynamicPayload = buildDynamicPatch(
             editingId,
             form,
             originalTeacher,
@@ -314,7 +311,15 @@ export default function TeacherTable({api}: Props) {
             ]
         );
 
-        console.log("data payload:",payload)
+        /**
+         * 🔥 CRITICAL FIX
+         * Domain switch field MUST always be sent.
+         */
+        const payload = {
+            ...dynamicPayload,
+            isPns: form.isPns,
+        };
+
         const updated = await updateTeacher(payload);
 
         setFormLoading(false);
@@ -394,7 +399,7 @@ export default function TeacherTable({api}: Props) {
                     {/* HEADER */}
                     <TableHead className="uppercase text-xs tracking-wide">
                         <TableRow className="hover:bg-transparent">
-                            <TableHeaderCell>
+                            <TableHeaderCell  className="uppercase tracking-wider text-xs font-semibold text-gray-600">
                                 <Checkbox
                                     checked={
                                         teachers.length > 0 &&
@@ -413,13 +418,13 @@ export default function TeacherTable({api}: Props) {
                                     onChange={handleSelectAll}
                                 />
                             </TableHeaderCell>
-                            <TableHeaderCell>Nama Guru</TableHeaderCell>
-                            <TableHeaderCell>Email</TableHeaderCell>
-                            <TableHeaderCell>Status Pegawai</TableHeaderCell>
-                            <TableHeaderCell>Agama</TableHeaderCell>
-                            <TableHeaderCell>Role</TableHeaderCell>
-                            <TableHeaderCell>Status</TableHeaderCell>
-                            <TableHeaderCell>Action</TableHeaderCell>
+                            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">Nama Guru</TableHeaderCell>
+                            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">Email</TableHeaderCell>
+                            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">Status Pegawai</TableHeaderCell>
+                            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">Agama</TableHeaderCell>
+                            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">Role</TableHeaderCell>
+                            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">Status</TableHeaderCell>
+                            <TableHeaderCell className="uppercase tracking-wider text-xs font-semibold text-gray-600">Action</TableHeaderCell>
                         </TableRow>
                     </TableHead>
 
@@ -457,26 +462,28 @@ export default function TeacherTable({api}: Props) {
                                     </TableCell>
 
                                     <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar
-                                                name={teacher.name}
-                                                image={
-                                                    buildUserImagePath(
-                                                        "Teacher",
-                                                        teacher.photo
-                                                    ) ?? null
-                                                }
-                                                size="sm"
-                                            />
-                                            <div>
-                                                <p className="font-medium text-gray-800">
-                                                    {teacher.name}
-                                                </p>
-                                                <p className="text-xs text-gray-500">
-                                                    {teacher.nip}
-                                                </p>
+                                        <>
+                                            <div className="flex items-center gap-3">
+                                                <Avatar
+                                                    name={teacher.name}
+                                                    image={
+                                                        buildUserImagePath(
+                                                            "Teacher",
+                                                            teacher.photo
+                                                        ) ?? null
+                                                    }
+                                                    size="sm"
+                                                />
+                                                <div>
+                                                    <p className="font-medium text-gray-800">
+                                                        {teacher.name}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {teacher.nip}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </>
                                     </TableCell>
 
                                     <TableCell className="text-gray-600">
@@ -513,74 +520,47 @@ export default function TeacherTable({api}: Props) {
                                     </TableCell>
 
                                     <TableCell>
-                                        <div className="relative flex items-center justify-end gap-4 text-gray-500">
+                                        <div className="flex gap-2">
+
                                             {/* VIEW */}
-                                            <button
+                                            <Button
                                                 type="button"
+                                                size="sm"
+                                                variant="text"
+                                                color="info"
+                                                iconOnly
+                                                shape="circle"
+                                                leftIcon={FaEye}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     console.log("View:", teacher.id);
                                                 }}
-                                                className="p-1 rounded hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
-                                            >
-                                                <FaEye size={14} className="text-blue-500" />
-                                            </button>
+                                            />
 
                                             {/* EDIT */}
-                                            <button
+                                            <Button
                                                 type="button"
+                                                size="sm"
+                                                variant="text"
+                                                color="success"
+                                                iconOnly
+                                                shape="circle"
+                                                leftIcon={FaPenToSquare}
                                                 onClick={() => handleEdit(teacher)}
-                                                className="p-1 rounded hover:bg-yellow-50 hover:text-yellow-600 transition-colors"
-                                            >
-                                                <FaPenToSquare size={14} className="text-green-500" />
-                                            </button>
+                                            />
 
                                             {/* DELETE */}
-                                            <button
+                                            <Button
                                                 type="button"
+                                                size="sm"
+                                                variant="text"
+                                                color="error"
+                                                iconOnly
+                                                shape="circle"
+                                                leftIcon={FaTrash}
                                                 onClick={() => setDeleteId(teacher.id)}
-                                                className="p-1 rounded hover:bg-red-50 hover:text-red-600 transition-colors"
-                                            >
-                                                <FaTrash size={14} className="text-red-500" />
-                                            </button>
+                                            />
 
-                                            {/* 3 DOT MENU */}
-                                            <div className="relative">
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setOpenMenuId(
-                                                            openMenuId === teacher.id ? null : teacher.id
-                                                        );
-                                                    }}
-                                                    className="p-2 rounded hover:bg-gray-100 transition"
-                                                >
-                                                    <FaEllipsisVertical
-                                                        size={16}
-                                                        className="text-gray-600"
-                                                    />
-                                                </button>
-
-                                                {/* DROPDOWN */}
-                                                {openMenuId === teacher.id && (
-                                                    <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2">
-                                                        <button
-                                                            onClick={() => handleEdit(teacher)}
-                                                            className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 transition"
-                                                        >
-                                                            Edit
-                                                        </button>
-
-                                                        <button
-                                                            onClick={() => setDeleteId(teacher.id)}
-                                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
                                         </div>
                                     </TableCell>
                                 </TableRow>

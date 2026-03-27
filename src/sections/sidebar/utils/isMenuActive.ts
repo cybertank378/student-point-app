@@ -1,6 +1,6 @@
 //Files: src/sections/sidebar/utils/isMenuActive.ts
 
-import type { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
+import type { SidebarMenuItem } from "@/security/roleMenuPolicy";
 
 /**
  * Recursively check if a menu or its children is active

@@ -1,3 +1,4 @@
+//Files: src/modules/teacher/infrastructure/validators/teacherForm.validator.ts
 import { z } from "zod";
 import {
     EducationLevel,
@@ -5,6 +6,7 @@ import {
     TeacherRole,
     CivilServantRank,
 } from "@/generated/prisma";
+import {EMAIL_REGEX} from "@/libs/utils";
 
 const currentYear = new Date().getFullYear();
 
@@ -15,7 +17,7 @@ export const TeacherFormSchema = z
             .min(1, "Nama wajib diisi.")
             .min(3, "Nama minimal 3 karakter."),
 
-        gender: z.nativeEnum(Gender, {
+        gender: z.enum(Gender, {
             message: "Jenis kelamin wajib dipilih.",
         }),
 
@@ -25,7 +27,7 @@ export const TeacherFormSchema = z
 
         email: z
             .string()
-            .email("Format email tidak valid.")
+            .regex(EMAIL_REGEX,"Format email tidak valid.")
             .optional()
             .or(z.literal("")),
 
@@ -36,7 +38,7 @@ export const TeacherFormSchema = z
             .or(z.literal("")),
 
         roles: z
-            .array(z.nativeEnum(TeacherRole))
+            .array(z.enum(TeacherRole))
             .min(1, "Minimal satu peran guru harus dipilih."),
 
         birthPlace: z
@@ -48,7 +50,7 @@ export const TeacherFormSchema = z
             .date()
             .max(new Date(), "Tanggal lahir tidak boleh di masa depan."),
 
-        educationLevel: z.nativeEnum(EducationLevel, {
+        educationLevel: z.enum(EducationLevel, {
             message: "Pendidikan terakhir wajib dipilih.",
         }),
 
@@ -74,7 +76,7 @@ export const TeacherFormSchema = z
         nip: z.string().nullable().optional(),
         nuptk: z.string().nullable().optional(),
         nrk: z.string().nullable().optional(),
-        civilServantRank: z.nativeEnum(CivilServantRank).nullable().optional(),
+        civilServantRank: z.enum(CivilServantRank).nullable().optional(),
     })
     .superRefine((data, ctx) => {
         if (data.isPns) {

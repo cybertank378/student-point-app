@@ -28,7 +28,7 @@ import { serverLog } from "@/libs/serverLogger";
  * Notes:
  * - No business logic here
  * - No manual Result checking
- * - No isFailure usage (removed in new Result pattern)
+ * - No isFailure usage (removed in a new Result pattern)
  */
 export class AcademicYearController {
     constructor(private readonly service: AcademicYearService) {}
@@ -40,7 +40,9 @@ export class AcademicYearController {
         return HttpResultHandler.handle(result);
     }
 
+
     /* ========================= GET BY ID ========================= */
+
 
     async getById(id: string) {
         const result = await this.service.getById(id);

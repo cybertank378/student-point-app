@@ -20,8 +20,8 @@ import type { UpdateAcademicYearDTO } from "@/modules/academic-year/domain/dto/U
 import AcademicYearModal from "@/sections/academic-years/organisms/AcademicYearModal";
 import { Modal } from "@/shared-ui/component/Modal";
 import Switch from "@/shared-ui/component/Switch";
-import { dateFormater, formatDateForInput, parseDate } from "@/libs/utils";
 import Button from "@/shared-ui/component/Button";
+import {formatDateForInput, parseDate, dateFormater} from "@/libs/DateUtils";
 
 interface FormState {
   name: string;

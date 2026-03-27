@@ -1,13 +1,13 @@
 //Files: src/modules/auth/domain/entity/AuthUser.ts
 
-import type {TeacherRole, UserRole} from "@/libs/utils";
+import {Role, TeacherRole} from "@/libs/utils/enums";
 
 export class AuthUser {
     constructor(
         public readonly id: string,
         public readonly username: string,
         public readonly password: string,
-        public readonly role: UserRole,
+        public readonly role: Role,
         public readonly teacherRole?: TeacherRole, // ← ini wajib optional
         public readonly isActive: boolean = true,
         public readonly failedAttempts: number = 0,

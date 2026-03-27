@@ -1,0 +1,77 @@
+/* event text agar tidak transparan */
+
+.fc .fc-toolbar-title {
+  font-family: Arial;
+  color: black;
+}
+.fc-daygrid-event {
+  opacity: 1 !important;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* event container */
+.fc-event {
+  border-radius: 6px;
+  padding: 2px 6px;
+  opacity: 1 !important;
+  color: #374151;
+}
+
+/* isi event */
+.fc-event-main {
+  opacity: 1 !important;
+}
+
+/* text tidak pudar */
+.fc-event-title {
+  opacity: 1 !important;
+  font-weight: 600;
+}
+
+/* agar teks selalu jelas */
+.fc-event-title,
+.fc-event-time {
+  color: inherit !important;
+}
+
+/* event dot */
+.fc-daygrid-event-dot {
+  border-width: 6px !important;
+}
+
+/* header hari */
+.fc-col-header-cell-cushion {
+  font-weight: 600;
+  color: #374151;
+}
+
+/* angka tanggal */
+.fc-daygrid-day-number {
+  font-weight: 500;
+  color: #111827;
+}
+
+/* Header hari Minggu */
+.fc-col-header-cell.fc-day-sun .fc-col-header-cell-cushion {
+  color: #dc2626;
+}
+
+/* Angka tanggal hari Minggu */
+.fc-day-sun .fc-daygrid-day-number {
+  color: #dc2626;
+}
+
+.fc-daygrid-day {
+  transition: background 0.2s;
+}
+
+.fc-daygrid-day:hover {
+  background: #f9fafb;
+}
+
+.fc .fc-scrollgrid {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}

@@ -11,7 +11,7 @@ import type {
     UserSearchResult,
 } from "@/modules/user/domain/interfaces/UserInterface";
 import { UserMapper } from "@/modules/user/domain/mapper/UserMapper";
-import type { UserRole, TeacherRole } from "@/libs/utils";
+import type { Role, TeacherRole } from "@/libs/utils/enums";
 import {serverLog} from "@/libs/serverLogger";
 
 //
@@ -163,7 +163,7 @@ export class UserRepository implements UserInterface {
     async create(data: {
         username: string;
         password: string;
-        role: UserRole;
+        role: Role;
         teacherRole?: TeacherRole | null;
         studentId?: string | null;
         parentId?: string | null;

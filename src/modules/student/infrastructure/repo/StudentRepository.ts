@@ -1,149 +1,341 @@
-//Files: src/modules/student/infrastructure/repo/StudentRepository.ts
+// src/modules/student/infrastructure/repository/StudentRepository.ts
 
 import prisma from "@/libs/prisma";
+import { StatisticQueryBuilder } from "@/modules/student/domain/builder/StatisticQueryBuilder";
+import { buildCreateStudentPayload, buildUpdateStudentPayload } from "@/modules/student/domain/builder/StudentPayloadBuilder";
+import type {
+  BulkImportStudentDTO,
+  CreateStudentDTO,
+  DeleteStudentDTO,
+  StudentIdentityDTO,
+  StudentStatisticDTO,
+  UpdateStudentDTO,
+} from "@/modules/student/domain/dto";
+import type { StudentEntity } from "@/modules/student/domain/entity/Student";
+import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
+import { StudentMapper } from "@/modules/student/domain/mapper/StudentMapper";
+import { StudentImportService } from "@/modules/student/infrastructure/services/StudentImportService";
+import { teacherInclude } from "@/modules/teacher/domain/mapper/PayloadBuilder";
 
-import {StudentStatusMapper} from "@/modules/student/domain/mapper/StudentStatusMapper";
-import {StudentMapper} from "@/modules/student/domain/mapper/StudentMapper";
-import {GenderMapper} from "@/modules/student/domain/mapper/GenderMapper";
-import type {UpdateStudentDTO} from "@/modules/student/domain/dto/UpdateStudentDTO";
-import type {StudentInterface} from "@/modules/student/domain/interfaces/StudentInterface";
-import type {StudentQueryDTO} from "@/modules/student/domain/dto/StudentQueryDTO";
-import type {CreateStudentDTO} from "@/modules/student/domain/dto/CreateStudentDTO";
-import type {Student} from "@/modules/student/domain/entity/Student";
-import {FamilyStatusMapper} from "@/modules/student/domain/mapper/FamilyStatusMapper";
+/**
+ * ============================================================
+ * STUDENT REPOSITORY
+ * ============================================================
+ *
+ * Implementation repository untuk entity Student.
+ *
+ * Layer:
+ * Infrastructure
+ */
+const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export class StudentRepository implements StudentInterface {
-    async findAll(query?: StudentQueryDTO) {
-        const rows = await prisma.student.findMany({
-            where: {
-                deletedAt: null,
-                ...(query?.rombelId && {rombelId: query.rombelId}),
-                ...(query?.status && {
-                    status: StudentStatusMapper.toPrisma(query.status),
-                }),
-            },
-        });
+  /**
+   * ============================================================
+   * CREATE STUDENT
+   * ============================================================
+   */
+  async create(dto: CreateStudentDTO): Promise<StudentEntity> {
+    const created = await prisma.student.create({
+      data: buildCreateStudentPayload(dto),
+      include: teacherInclude,
+    });
 
-        return rows.map(StudentMapper.toDomain);
+    return StudentMapper.toDomain(created);
+  }
+
+  /**
+   * ============================================================
+   * UPDATE STUDENT
+   * ============================================================
+   */
+
+  async update(data: UpdateStudentDTO): Promise<StudentIdentityDTO> {
+    const payload = buildUpdateStudentPayload(data);
+
+    const student = await prisma.student.update({
+      where: { id: data.id },
+      data: payload,
+    });
+
+    return {
+      id: student.id,
+      nis: student.nis,
+      nisn: student.nisn,
+    };
+  }
+
+  /**
+   * ============================================================
+   * DELETE STUDENT (SOFT DELETE)
+   * ============================================================
+   */
+
+  async delete(data: DeleteStudentDTO): Promise<void> {
+    await prisma.student.updateMany({
+      where: { id: data.id },
+      data: {
+        deletedAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * ============================================================
+   * FIND STUDENT BY ID
+   * ============================================================
+   */
+
+  async findById(studentId: string): Promise<StudentIdentityDTO | null> {
+    const student = await prisma.student.findUnique({
+      where: {
+        id: studentId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        nis: true,
+        nisn: true,
+      },
+    });
+
+    if (!student) return null;
+
+    return student;
+  }
+
+  /**
+   * ============================================================
+   * FIND STUDENT BY ID
+   * ============================================================
+   */
+
+  async findByNis(nis: string): Promise<StudentIdentityDTO | null> {
+    const student = await prisma.student.findUnique({
+      where: {
+        nis: nis,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        nis: true,
+        nisn: true,
+      },
+    });
+
+    if (!student) return null;
+
+    return student;
+  }
+
+  /**
+   * ============================================================
+   * CHECK EXISTING NISN
+   * ============================================================
+   */
+
+  async existsByNISN(nisn: string): Promise<boolean> {
+    const count = await prisma.student.count({
+      where: {
+        nisn,
+        deletedAt: null,
+      },
+    });
+
+    return count > 0;
+  }
+
+  /**
+   * ============================================================
+   * CHECK EXISTING NIS
+   * ============================================================
+   */
+
+  async existsByNIS(nis: string): Promise<boolean> {
+    const count = await prisma.student.count({
+      where: {
+        nis,
+        deletedAt: null,
+      },
+    });
+
+    return count > 0;
+  }
+
+  /**
+   * ============================================================
+   * BULK CREATE STUDENT
+   * ============================================================
+   *
+   * Digunakan untuk proses import Excel.
+   */
+  async bulkImportCreate(data: BulkImportStudentDTO[]): Promise<number> {
+    return StudentImportService.execute(data);
+  }
+
+  /**
+   * ============================================================
+   * STUDENT STATISTICS (DASHBOARD)
+   * ============================================================
+   */
+  async getStudentStatistics(): Promise<StudentStatisticDTO> {
+    /**
+     * QUERY 1
+     * TOTAL STUDENT
+     */
+
+    const totalStudents = await prisma.student.count(
+        StatisticQueryBuilder.totalStudents
+    );
+
+    /**
+     * QUERY 2
+     * GRADE DISTRIBUTION
+     */
+
+    const gradeBuilder = StatisticQueryBuilder.gradeDistribution;
+
+    const [gradeGroups, classes] = await Promise.all([
+      prisma.studentEnrollment.groupBy(gradeBuilder),
+
+      prisma.class.findMany({
+        select: {
+          id: true,
+          grade: true,
+          name: true,
+        },
+      }),
+    ]);
+
+    /**
+     * CLASS MAP
+     */
+
+    const classMap = new Map(
+        classes.map((c) => [
+          c.id,
+          {
+            grade: c.grade,
+            name: c.name,
+          },
+        ])
+    );
+
+    /**
+     * GRADE MAPPING
+     */
+
+    const gradeMap: Record<string, "grade7" | "grade8" | "grade9"> = {
+      VII: "grade7",
+      VIII: "grade8",
+      XI: "grade9", // database menggunakan XI
+    };
+
+    /**
+     * TOTAL PER GRADE
+     */
+
+    let totalGrade7 = 0;
+    let totalGrade8 = 0;
+    let totalGrade9 = 0;
+
+    for (const g of gradeGroups) {
+      const meta = classMap.get(g.classId);
+
+      const grade = meta?.grade ?? "";
+      const total = g._count.studentId;
+
+      if (gradeMap[grade] === "grade7") totalGrade7 += total;
+      if (gradeMap[grade] === "grade8") totalGrade8 += total;
+      if (gradeMap[grade] === "grade9") totalGrade9 += total;
     }
 
-    async findById(id: string) {
-        const row = await prisma.student.findFirst({
-            where: {id, deletedAt: null},
-        });
+    /**
+     * QUERY 3
+     * VIOLATION DATA
+     */
 
-        return row ? StudentMapper.toDomain(row) : null;
+    const violations = await prisma.studentViolation.findMany(
+        StatisticQueryBuilder.violations
+    );
+
+    /**
+     * BUILD VIOLATION MAP
+     */
+
+    type MonthGradeViolation = {
+      grade7: number;
+      grade8: number;
+      grade9: number;
+      total: number;
+    };
+
+    const violationMap: Record<number, MonthGradeViolation> = {};
+
+    for (let i = 1; i <= 12; i++) {
+      violationMap[i] = {
+        grade7: 0,
+        grade8: 0,
+        grade9: 0,
+        total: 0,
+      };
     }
 
-    async findByNis(nis: string) {
-        const row = await prisma.student.findUnique({where: {nis}});
-        return row ? StudentMapper.toDomain(row) : null;
+    for (const v of violations) {
+      const month = v.occurredAt.getMonth() + 1;
+
+      const grade =
+          v.student.enrollments[0]?.class.grade ?? null;
+
+      violationMap[month].total++;
+
+      if (!grade) continue;
+
+      const mapped = gradeMap[grade];
+
+      if (mapped) {
+        violationMap[month][mapped]++;
+      }
     }
 
-    async create(dto: CreateStudentDTO): Promise<Student> {
-        const row = await prisma.student.create({
-            data: {
-                nis: dto.nis ?? null,
-                nisn: dto.nisn,
-                name: dto.name,
-                nickname: dto.nickname ?? null,
-                gender: GenderMapper.toPrisma(dto.gender),
-                religionCode: dto.religionCode,
-                rombelId: dto.rombelId,
-                isDifable: dto.isDifable ?? false,
-                difableNotes: dto.difableNotes ?? null,
+    /**
+     * MONTHLY VIOLATION BY GRADE
+     */
 
-                ...(dto.status !== undefined && {
-                    status: StudentStatusMapper.toPrisma(dto.status),
-                }),
+    const monthlyViolationByGrade = Object.entries(violationMap)
+        .map(([month, data]) => ({
+          month: Number(month),
+          monthLabel: monthLabels[Number(month) - 1],
 
-                ...(dto.familyStatus !== undefined && {
-                    familyStatus:
-                        FamilyStatusMapper.toPrisma(dto.familyStatus),
-                }),
-            },
-        });
+          grade7: data.grade7,
+          grade8: data.grade8,
+          grade9: data.grade9,
+        }))
+        .sort((a, b) => a.month - b.month);
 
-        return StudentMapper.toDomain(row);
-    }
+    /**
+     * VIOLATION TREND
+     */
 
-    async update(dto: UpdateStudentDTO): Promise<Student> {
-        const row = await prisma.student.update({
-            where: { id: dto.id },
-            data: {
-                ...(dto.name !== undefined && { name: dto.name }),
-                ...(dto.nickname !== undefined && { nickname: dto.nickname }),
+    const violationTrend = Object.entries(violationMap)
+        .map(([month, data]) => ({
+          month: Number(month),
+          monthLabel: monthLabels[Number(month) - 1],
+          totalViolations: data.total,
+        }))
+        .sort((a, b) => a.month - b.month);
 
-                ...(dto.gender !== undefined && {
-                    gender: GenderMapper.toPrisma(dto.gender),
-                }),
+    /**
+     * FINAL RESULT
+     */
 
-                ...(dto.religionCode !== undefined && {
-                    religionCode: dto.religionCode,
-                }),
-
-                ...(dto.rombelId !== undefined && {
-                    rombelId: dto.rombelId,
-                }),
-
-                ...(dto.status !== undefined && {
-                    status: StudentStatusMapper.toPrisma(dto.status),
-                }),
-
-                ...(dto.familyStatus !== undefined && {
-                    familyStatus:
-                        FamilyStatusMapper.toPrisma(dto.familyStatus),
-                }),
-
-                ...(dto.nis !== undefined && { nis: dto.nis }),
-                ...(dto.nisn !== undefined && { nisn: dto.nisn }),
-
-                ...(dto.isDifable !== undefined && {
-                    isDifable: dto.isDifable,
-                }),
-
-                ...(dto.difableNotes !== undefined && {
-                    difableNotes: dto.difableNotes,
-                }),
-            },
-        });
-
-        return StudentMapper.toDomain(row);
-    }
-
-    async softDelete(id: string) {
-        await prisma.student.update({
-            where: {id},
-            data: {deletedAt: new Date()},
-        });
-    }
-
-    async assignToRombel(studentId: string, rombelId: string): Promise<void> {
-        await prisma.student.update({
-            where: {
-                id: studentId,
-                deletedAt: null,
-            },
-            data: {
-                rombelId,
-            },
-        });
-    }
-
-    async batchAssignToRombel(
-        studentIds: string[],
-        rombelId: string,
-    ): Promise<number> {
-        const result = await prisma.student.updateMany({
-            where: {
-                id: {in: studentIds},
-                deletedAt: null,
-            },
-            data: {
-                rombelId,
-            },
-        });
-
-        return result.count;
-    }
+    return {
+      totalStudents,
+      totalGrade7,
+      totalGrade8,
+      totalGrade9,
+      monthlyViolationByGrade,
+      violationTrend,
+    };
+  }
 }

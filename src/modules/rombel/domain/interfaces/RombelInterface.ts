@@ -6,14 +6,14 @@ import type {UpdateRombelDTO} from "@/modules/rombel/domain/dto/UpdateRombelDTO"
 
 export interface RombelInterface {
     findAll(): Promise<Rombel[]>;
+
     findById(id: string): Promise<Rombel | null>;
 
+    findByAcademicYear(academicYearId: string): Promise<Rombel[]>;
+
     create(dto: CreateRombelDTO): Promise<Rombel>;
+
     update(dto: UpdateRombelDTO): Promise<Rombel>;
 
     delete(id: string): Promise<void>;
-
-    hasStudents(id: string): Promise<boolean>;
-
-    findByLabel(label: string): Promise<Rombel | null>;
 }

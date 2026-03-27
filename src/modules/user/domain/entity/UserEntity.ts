@@ -1,6 +1,6 @@
 //Files: src/modules/user/domain/entity/UserEntity.ts
 
-import type {TeacherRole, UserRole} from "@/libs/utils";
+import type {TeacherRole, Role} from "@/libs/utils/enums";
 
 /**
  * Domain representation of User aggregate.
@@ -15,7 +15,7 @@ export interface UserEntity {
     password: string;
     image?: string | null;
 
-    role: UserRole;
+    role: Role;
     teacherRole?: TeacherRole | null;
 
     studentId?: string | null;

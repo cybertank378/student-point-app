@@ -1,20 +1,110 @@
-//Files: src/modules/student/domain/interfaces/GetStudentByIdUseCase.ts
+//Files: src/modules/student/domain/interfaces/StudentInterface.ts
+import type {
+  BulkImportStudentDTO,
+  CreateStudentDTO,
+  DeleteStudentDTO,
+  StudentIdentityDTO,
+  StudentStatisticDTO,
+  UpdateStudentDTO,
+} from "@/modules/student/domain/dto";
 
-import type { Student } from "@/modules/student/domain/entity/Student";
-import type { CreateStudentDTO } from "@/modules/student/domain/dto/CreateStudentDTO";
-import type { UpdateStudentDTO } from "@/modules/student/domain/dto/UpdateStudentDTO";
-import type { StudentQueryDTO } from "@/modules/student/domain/dto/StudentQueryDTO";
+/**
+ * ============================================================
+ * STUDENT REPOSITORY INTERFACE
+ * ============================================================
+ *
+ * Kontrak repository untuk modul Student.
+ *
+ * Repository ini hanya menangani operasi WRITE
+ * terhadap entity Student.
+ *
+ * Operasi READ kompleks tidak dilakukan di modul ini,
+ * melainkan pada modul `student-composite`.
+ *
+ * Layer:
+ * Domain
+ */
 
 export interface StudentInterface {
-  findAll(query?: StudentQueryDTO): Promise<Student[]>;
-  findById(id: string): Promise<Student | null>;
-  findByNis(nis: string): Promise<Student | null>;
+  /**
+   * ============================================================
+   * CREATE STUDENT
+   * ============================================================
+   *
+   * Membuat data siswa baru.
+   */
 
-  create(dto: CreateStudentDTO): Promise<Student>;
-  update(dto: UpdateStudentDTO): Promise<Student>;
+  create(data: CreateStudentDTO): Promise<StudentIdentityDTO>;
 
-  softDelete(id: string): Promise<void>;
+  /**
+   * ============================================================
+   * UPDATE STUDENT
+   * ============================================================
+   *
+   * Memperbarui data siswa.
+   */
 
-  assignToRombel(studentId: string, rombelId: string): Promise<void>;
-  batchAssignToRombel(studentIds: string[], rombelId: string): Promise<number>;
+  update(data: UpdateStudentDTO): Promise<StudentIdentityDTO>;
+
+  /**
+   * ============================================================
+   * DELETE STUDENT
+   * ============================================================
+   *
+   * Menghapus siswa secara soft delete.
+   */
+
+  delete(data: DeleteStudentDTO): Promise<void>;
+
+  /**
+   * ============================================================
+   * FIND STUDENT BY ID
+   * ============================================================
+   */
+
+  findById(studentId: string): Promise<StudentIdentityDTO | null>;
+
+  /**
+   * ============================================================
+   * FIND STUDENT BY NIS
+   * ============================================================
+   */
+
+  findByNis(nis: string): Promise<StudentIdentityDTO | null>;
+
+  /**
+   * ============================================================
+   * CHECK EXISTING NISN
+   * ============================================================
+   */
+
+  existsByNISN(nisn: string): Promise<boolean>;
+
+  /**
+   * ============================================================
+   * CHECK EXISTING NIS
+   * ============================================================
+   */
+
+  existsByNIS(nis: string): Promise<boolean>;
+
+  /**
+   * ============================================================
+   * BULK CREATE STUDENT
+   * ============================================================
+   *
+   * Digunakan pada proses import Excel.
+   */
+
+  bulkImportCreate(data: BulkImportStudentDTO[]): Promise<number>;
+
+  /**
+   * ============================================================
+   * STATISTIC STUDENT
+   * ============================================================
+   *
+   * Digunakan pada proses import Excel.
+   */
+
+  getStudentStatistics(): Promise<StudentStatisticDTO>;
 }

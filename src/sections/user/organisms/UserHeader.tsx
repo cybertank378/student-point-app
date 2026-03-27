@@ -8,7 +8,7 @@ import Button from "@/shared-ui/component/Button";
 import { FaPlus } from "react-icons/fa";
 
 import type { useUserApi } from "@/modules/user/presentation/hooks/useUserApi";
-import type { UserRole } from "@/libs/utils";
+import type { Role } from "@/libs/utils/enums";
 
 import UserFormModal, {
     UserFormType,
@@ -25,7 +25,7 @@ export default function UserHeader({ api }: Props) {
 
     /* ================= FILTER STATE ================= */
     const [search, setSearch] = useState<string>("");
-    const [roleFilter, setRoleFilter] = useState<"ALL" | UserRole>("ALL");
+    const [roleFilter, setRoleFilter] = useState<"ALL" | Role>("ALL");
     const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
     /* ================= MODAL STATE ================= */
@@ -74,7 +74,7 @@ export default function UserHeader({ api }: Props) {
 
         const payload: CreateUserDTO = {
             role: form.role as Exclude<
-                UserRole,
+                Role,
                 "ADMIN"
             >,
             referenceId: "", // isi sesuai kebutuhan sistem
@@ -102,7 +102,7 @@ export default function UserHeader({ api }: Props) {
                             value={roleFilter}
                             onChange={(e) =>
                                 setRoleFilter(
-                                    e.target.value as "ALL" | UserRole
+                                    e.target.value as "ALL" | Role
                                 )
                             }
                         >

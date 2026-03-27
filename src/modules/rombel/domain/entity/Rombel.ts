@@ -2,24 +2,33 @@
 
 /**
  * Domain Entity: Rombel (Rombongan Belajar)
- * Contoh: 7A, 8B, 9C
+ * Contoh: VII-1, VIII-2, IX-3
  */
 export class Rombel {
+
     constructor(
         public readonly id: string,
+
         public readonly grade: string,
+
         public readonly name: string,
 
-        public readonly academicYearName: string, // 🔥 GANTI INI
+        public readonly academicYearId: string,
+        public readonly academicYearName: string,
+
+        public readonly homeroomTeacherId: string | null,
 
         public readonly createdAt: Date,
-        public readonly studentCount: number,
+
+        public readonly studentCount: number
     ) {}
 
     /**
-     * Label rombel, contoh: "7A"
+     * Label rombel
+     * Contoh: VII-1
      */
     get label(): string {
-        return `${this.grade}${this.name}`;
+        return `${this.grade}-${this.name}`;
     }
+
 }

@@ -10,6 +10,7 @@ import {
 } from "@/modules/achievement/infrastructure/validators/achievementMaster.validator";
 
 import { handleZodError } from "@/modules/shared/errors/handleZodError";
+import {BasePaginationParams} from "@/modules/shared/http/pagination/BasePagination";
 
 /**
  * ============================================================
@@ -39,8 +40,27 @@ export class AchievementController {
      * ======================================
      * GET /api/achievements-master
      */
-    async getAll() {
-        const result = await this.service.list();
+    async getAll(request: Request) {
+
+        const { searchParams } = new URL(request.url);
+
+        const params: BasePaginationParams = {
+            page: searchParams.get("page")
+                ? Number(searchParams.get("page"))
+                : undefined,
+            limit: searchParams.get("limit")
+                ? Number(searchParams.get("limit"))
+                : undefined,
+            search: searchParams.get("search") ?? undefined,
+            sortBy: searchParams.get("sortBy") ?? undefined,
+            sortOrder: searchParams.get("sortOrder") as
+                | "asc"
+                | "desc"
+                | undefined,
+        };
+
+        const result = await this.service.list(params);
+
         return HttpResultHandler.handle(result);
     }
 

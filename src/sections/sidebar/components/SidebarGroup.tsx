@@ -3,7 +3,7 @@
 "use client";
 
 import { useState } from "react";
-import type { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
+import type { SidebarMenuItem } from "@/security/roleMenuPolicy";
 import { RecursiveSidebarItem } from "./RecursiveSidebarItem";
 
 interface SidebarGroupProps {

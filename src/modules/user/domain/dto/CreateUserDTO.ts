@@ -1,8 +1,8 @@
 //Files: src/modules/user/domain/dto/CreateUserDTO.ts
-import type {TeacherRole, UserRole} from "@/libs/utils";
+import {Role, TeacherRole} from "@/libs/utils/enums";
 
 export interface CreateUserDTO {
-    readonly role: Exclude<UserRole, "ADMIN">;
+    readonly role: Exclude<Role, "ADMIN">;
     readonly referenceId: string;
     readonly teacherRole?: TeacherRole;
 }

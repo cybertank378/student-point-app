@@ -1,17 +1,29 @@
-//Files: src/modules/religion/domain/mapper/ReligionMapper.ts
-import type { Religion as PrismaReligion } from "@/generated/prisma";
-import { Religion } from "@/modules/religion/domain/entity/Religion";
+// src/modules/religion/domain/mapper/ReligionMapper.ts
+
+import type { ReligionDTO } from "@/modules/religion/domain/dto/ReligionDTO";
 
 /**
- * Mapper: Prisma → Domain
- * Tidak ada logic bisnis
+ * Row minimal dari query prisma
+ * agar mapper tidak tergantung full prisma type
  */
+type ReligionRow = {
+  id: string;
+  kode: string;
+  name: string;
+};
+
 export const ReligionMapper = {
-  toDomain(row: PrismaReligion): Religion {
-    return new Religion(row.id, row.kode, row.name);
+
+  toDTO(row: ReligionRow): ReligionDTO {
+    return {
+      id: row.id,
+      kode: row.kode,
+      name: row.name,
+    };
   },
 
-  toDomainList(rows: PrismaReligion[]): Religion[] {
-    return rows.map(ReligionMapper.toDomain);
+  toDTOList(rows: ReligionRow[]): ReligionDTO[] {
+    return rows.map((row) => ReligionMapper.toDTO(row));
   },
+
 };

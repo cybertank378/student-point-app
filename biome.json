@@ -1,10 +1,12 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+
   "vcs": {
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
   },
+
   "files": {
     "ignoreUnknown": true,
     "includes": [
@@ -18,30 +20,46 @@
       "!src/generated"
     ]
   },
+
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2
+    "indentWidth": 2,
+    "lineWidth": 140
   },
+
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "es5",
+      "arrowParentheses": "always"
+    }
+  },
+
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
+
       "style": {
         "useImportType": "warn",
         "noNonNullAssertion": "off"
       },
+
       "correctness": {
         "noUnusedFunctionParameters": "warn",
         "useExhaustiveDependencies": "warn",
         "useHookAtTopLevel": "off",
         "noUnreachable": "warn"
       },
+
       "suspicious": {
         "noExplicitAny": "warn",
         "noUnknownAtRules": "off",
         "noArrayIndexKey": "off"
       },
+
       "a11y": {
         "useButtonType": "warn",
         "noLabelWithoutControl": "off",
@@ -53,15 +71,17 @@
         "noSvgWithoutTitle": "off"
       }
     },
+
     "domains": {
       "next": "recommended",
       "react": "recommended"
     }
   },
+
   "assist": {
     "actions": {
       "source": {
-        "organizeImports": "off"
+        "organizeImports": "on"
       }
     }
   }

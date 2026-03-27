@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import type { SidebarMenuItem } from "@/modules/auth/domain/rbac/roleMenuPolicy";
+import type { SidebarMenuItem } from "@/security/roleMenuPolicy";
 import { FaChevronRight } from "react-icons/fa";
 import clsx from "clsx";
 import {isRouteActive} from "@/libs/utils";

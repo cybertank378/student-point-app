@@ -1,13 +1,10 @@
 //Files: src/sections/sidebar/hooks/useSidebarMenu.ts
 "use client";
 
-import { useMemo } from "react";
-import type { UserRole } from "@/libs/utils";
 import {
-    getRolePermissions, rbacConfig,
     type SidebarNode,
-} from "@/modules/auth/domain/rbac/rbacConfig";
-import type {Permission} from "@/modules/auth/domain/rbac/permissions";
+} from "@/security/rbacConfig";
+import type {Permission} from "@/security/permissions";
 
 /* ============================================================
    RECURSIVE FILTER

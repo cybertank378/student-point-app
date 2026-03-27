@@ -1,19 +1,54 @@
-//Files: src/app/api/students/nis/[nis]/route.ts
-import type {NextRequest} from "next/server";
-import {createStudentController} from "@/app/api/students/_factory";
-import {getRouteParam} from "@/modules/shared/http/getRouteParam";
+// Files: src/app/api/students/nis/[nis]/route.ts
 
-const controller = createStudentController();
+import type { NextRequest } from "next/server";
+import { RouteParamHelper } from "@/modules/shared/http/RouteParamHelper";
+import StudentProvider from "@/modules/student/application/provider/StudentProvider";
 
 /**
- * =====================================================
- * GET /api/students/nis/:nis
- * =====================================================
+ * ============================================================
+ * HEADER FILE
+ * ============================================================
  *
- * RbacConfig handled in middleware
+ * Student By NIS Route
+ *
+ * Route handler untuk mengambil data siswa
+ * berdasarkan **NIS (Nomor Induk Siswa)**.
+ *
+ * Dependency controller disediakan oleh
+ * StudentProvider sebagai composition root.
  */
 
-export async function GET(req: NextRequest) {
-    const nisParam = getRouteParam(req);
-    return controller.getByNis(nisParam);
+const controller = StudentProvider.controller();
+
+/**
+ * ============================================================
+ * GET STUDENT BY NIS
+ * ============================================================
+ *
+ * Mengambil profil siswa berdasarkan NIS.
+ *
+ * ------------------------------------------------------------
+ * PARAM
+ * ------------------------------------------------------------
+ *
+ * @param {NextRequest} request
+ * @param {Promise<{ nis: string }>} params
+ *
+ * ------------------------------------------------------------
+ * RETURNS
+ * ------------------------------------------------------------
+ *
+ * @returns {Promise<Response>}
+ *
+ * ------------------------------------------------------------
+ * EXAMPLE
+ * ------------------------------------------------------------
+ *
+ * GET /api/students/nis/202300145
+ */
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ nis: string }> }) {
+  const nis = await RouteParamHelper.param(params, "nis");
+
+  return controller.getByNis(nis);
 }

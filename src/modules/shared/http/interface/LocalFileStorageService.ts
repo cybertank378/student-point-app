@@ -1,53 +1,71 @@
-//Files: src/modules/user/infrastructure/repo/LocalFileStorageService.ts
-
 import fs from "fs/promises";
 import path from "path";
-import type { FileStorageInterface } from "@/libs/FileStorageInterface";
+
+import type {
+  FileStorageInterface,
+  StoredFileResult
+} from "@/libs/FileStorageInterface";
 
 export class LocalFileStorageService implements FileStorageInterface {
-    async save(
-        folder: string,
-        fileName: string,
-        file: File
-    ): Promise<void> {
 
-        const uploadDir = path.join(
-            process.cwd(),
-            "public",
-            "assets",
-            "upload",
-            folder
-        );
+  private readonly basePath = path.join(
+      process.cwd(),
+      "public",
+      "assets",
+      "upload"
+  );
 
-        await fs.mkdir(uploadDir, { recursive: true });
+  private normalizeFolder(folder: string): string {
+    return folder.replace(/^\/+|\/+$/g, "");
+  }
 
-        const filePath = path.join(uploadDir, fileName);
+  private resolveFolderPath(folder: string): string {
+    return path.join(this.basePath, this.normalizeFolder(folder));
+  }
 
-        const buffer = Buffer.from(
-            await file.arrayBuffer()
-        );
+  private resolveFilePath(folder: string, fileName: string): string {
+    return path.join(this.resolveFolderPath(folder), fileName);
+  }
 
-        await fs.writeFile(filePath, buffer);
-    }
+  private buildPublicUrl(folder: string, fileName: string): string {
+    const normalizedFolder = this.normalizeFolder(folder);
+    return `/assets/upload/${normalizedFolder}/${fileName}`.replace(/\\/g, "/");
+  }
 
-    async delete(
-        folder: string,
-        fileName: string
-    ): Promise<void> {
+  async save(
+      folder: string,
+      fileName: string,
+      file: File
+  ): Promise<StoredFileResult> {
 
-        const filePath = path.join(
-            process.cwd(),
-            "public",
-            "assets",
-            "upload",
-            folder,
-            fileName
-        );
+    const folderPath = this.resolveFolderPath(folder);
+    await fs.mkdir(folderPath, { recursive: true });
 
-        try {
-            await fs.unlink(filePath);
-        } catch {
-            // ignore if not exists
-        }
-    }
+    const filePath = this.resolveFilePath(folder, fileName);
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    await fs.writeFile(filePath, buffer);
+
+    return {
+      fileName,
+      filePath,
+      publicUrl: this.buildPublicUrl(folder, fileName)
+    };
+  }
+
+  async delete(folder: string, fileName: string): Promise<void> {
+    const filePath = this.resolveFilePath(folder, fileName);
+    try {
+      await fs.unlink(filePath);
+    } catch {}
+  }
+
+  async replace(
+      folder: string,
+      fileName: string,
+      file: File
+  ): Promise<StoredFileResult> {
+    await this.delete(folder, fileName);
+    return this.save(folder, fileName, file);
+  }
 }

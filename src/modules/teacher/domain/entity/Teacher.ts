@@ -15,9 +15,6 @@ import type {
  * Pure domain model (no Prisma dependency).
  * Immutable identity, mutable state where needed.
  *
- * IMPORTANT:
- * BigInt fields are represented as bigint in the domain.
- * String conversion should only happen at the presentation layer.
  */
 export class Teacher {
     constructor(

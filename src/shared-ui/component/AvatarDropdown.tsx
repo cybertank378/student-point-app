@@ -2,8 +2,8 @@
 
 "use client";
 
-import { getAvatarMenuByRole } from "@/modules/auth/domain/rbac/rbacConfig";
-import type { UserRole } from "@/libs/utils";
+import { getAvatarMenuByRole } from "@/security/rbacConfig";
+import {Role} from "@/libs/utils/enums";
 import { DropdownItem } from "@/shared-ui/component/DropdownItem";
 import { useAuthApi } from "@/modules/auth/presentation/hooks/useAuthApi";
 import { useRouter } from "next/navigation";
@@ -12,7 +12,7 @@ import Button from "@/shared-ui/component/Button";
 import { FiLogOut } from "react-icons/fi";
 
 interface Props {
-    role: UserRole;
+    role: Role;
 }
 
 export default function AvatarDropdown({ role }: Props) {

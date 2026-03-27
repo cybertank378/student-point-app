@@ -1,13 +1,9 @@
 //Files: src/modules/auth/application/service/JwtService.ts
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} from "@/modules/shared/core/jwt";
-
-import type { TokenServiceInterface } from "@/modules/auth/domain/interfaces/TokenServiceInterface";
 
 import type AuthPayload from "@/modules/auth/domain/entity/AuthPayload";
+
+import type { TokenServiceInterface } from "@/modules/auth/domain/interfaces/TokenServiceInterface";
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from "@/modules/shared/core/jwt";
 
 /* ================= TYPE GUARD ================= */
 
@@ -20,6 +16,7 @@ function isAuthPayload(payload: unknown): payload is AuthPayload {
 
   return (
     typeof record.sub === "string" &&
+    typeof record.id === "string" &&
     typeof record.username === "string" &&
     typeof record.role === "string"
   );

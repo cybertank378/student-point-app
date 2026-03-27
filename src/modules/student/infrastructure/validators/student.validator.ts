@@ -1,180 +1,194 @@
 //Files: src/modules/student/infrastructure/validators/student.validator.ts
-
-
 import {z} from "zod";
+import {EducationLevel, EnrollmentStatus, HouseOwnership, ParentType} from "@/libs/utils/enums";
+import {
+	BaseIdSchema,
+	BaseNisnSchema,
+	BaseStudentSchema
+} from "@/modules/student/infrastructure/validators/base.student.validator";
 import {UUID_REGEX} from "@/libs/utils";
-
-/**
- * ==============================
- * ENUMS (HTTP LAYER)
- * ==============================
- */
-export const GenderEnum = z.enum(["MALE", "FEMALE"]);
-
-export const StudentStatusEnum = z.enum([
-    "ACTIVE",
-    "GRADUATED",
-    "DROPPED",
-    "MUTATION",
-]);
+import {TeacherObjectSchema, teacherRefinement} from "@/modules/teacher/infrastructure/validators/base.validator";
 
 
-/* ============================================================
-   NISN (10–17 DIGIT, REQUIRED)
-============================================================ */
-export const NisnSchema = z
-    .string()
-    .trim()
-    .regex(/^\d{10,17}$/, "NISN harus 10–17 digit angka");
-
-/* ============================================================
-   NIS (4–5 DIGIT, OPTIONAL)
-============================================================ */
-export const NisSchema = z
-    .string()
-    .trim()
-    .regex(/^\d{4,5}$/, "NIS harus 4–5 digit angka")
-    .nullable()
-    .optional();
-
-
-/**
- * ==============================
- * CREATE STUDENT
- * ==============================
- */
-export const CreateStudentSchema = z.object({
-    nisn:NisnSchema,
-
-    nis: NisSchema,
-
-    name: z
-        .string()
-        .min(3, "Nama minimal 3 karakter")
-        .max(100, "Nama maksimal 100 karakter"),
-
-    nickname: z
-        .string()
-        .min(2, "Nickname minimal 2 karakter")
-        .max(50, "Nickname maksimal 50 karakter")
-        .optional(),
-
-    gender: GenderEnum,
-
-    religionCode: z
-        .string(),
-
-    rombelId: z
-        .string()
-        .regex(UUID_REGEX, "Rombel ID tidak valid"),
-
-    isDifable: z.boolean().optional(),
-
-    difableNotes: z
-        .string()
-        .max(255)
-        .nullable()
-        .optional(),
+export const studentIdSchema = z.object ({
+	id: BaseIdSchema,
 });
 
-/**
- * ==============================
- * UPDATE STUDENT
- * ==============================
- */
-export const UpdateStudentSchema = z.object({
-    name: z
-        .string()
-        .min(3)
-        .max(100),
+export const studentNisnSchema = z.string ().max (10);
 
-    nickname: z
-        .string()
-        .min(2)
-        .max(50)
-        .nullable()
-        .optional(),
 
-    gender: GenderEnum.optional(),
-
-    religionId: z
-        .string()
-        .regex(UUID_REGEX)
-        .optional(),
-
-    rombelId: z
-        .string()
-        .regex(UUID_REGEX)
-        .optional(),
-
-    status: StudentStatusEnum.optional(),
+export const createStudentSchema = BaseStudentSchema.omit ({
+	photo: true,
+}).extend ({
+	photo: z.string ().nullable ().optional (),
+	familyStatus: BaseStudentSchema.shape.familyStatus.optional (),
+	isDifable: BaseStudentSchema.shape.isDifable.optional (),
+	difableNotes: BaseStudentSchema.shape.difableNotes.optional (),
 });
 
-/**
- * ==============================
- * QUERY STUDENT (LIST)
- * ==============================
- */
-export const StudentQuerySchema = z.object({
-    rombelId: z.string().regex(UUID_REGEX).optional(),
-
-    status: StudentStatusEnum.optional(),
-
-    page: z.coerce
-        .number()
-        .int()
-        .positive()
-        .default(1),
-
-    limit: z.coerce
-        .number()
-        .int()
-        .positive()
-        .default(10),
+export const updateStudentSchema = createStudentSchema.partial().extend({
+	nisn: BaseNisnSchema.optional().nullable(),
 });
 
-/**
- * ==============================
- * ASSIGN STUDENT → ROMBEL
- * ==============================
- */
-export const AssignRombelSchema = z.object({
-    studentId: z.string().regex(UUID_REGEX),
-    rombelId: z.string().regex(UUID_REGEX),
+export const importStudentSchema = z.array (
+	z.object ({
+		/* =========================================================
+		 CORE STUDENT
+		 ========================================================= */
+
+		student: BaseStudentSchema.omit ({
+			photo: true,
+		}),
+
+		/* =========================================================
+		 STUDENT PROFILE
+		 ========================================================= */
+
+		profile: z
+			.object ({
+				childOrder: z.number ().optional (),
+				totalSiblings: z.number ().optional (),
+				distanceToSchool: z.string ().optional (),
+				transport: z.string ().optional (),
+				hobby: z.string ().optional (),
+				dream: z.string ().optional (),
+				closeFriend: z.string ().optional (),
+			})
+			.optional (),
+
+		/* =========================================================
+		 STUDENT FACILITY
+		 ========================================================= */
+
+		facility: z.object ({
+			hasPC: z.boolean ().optional (),
+			hasLaptop: z.boolean ().optional (),
+			hasPhone: z.boolean ().optional (),
+			internetAccess: z.string ().optional (),
+		}),
+
+		/* =========================================================
+		 STUDENT HEALTH
+		 ========================================================= */
+
+		health: z
+			.object ({
+				inclusion: z.boolean ().optional (),
+				canRead: z.boolean ().optional (),
+				canWrite: z.boolean ().optional (),
+				canCount: z.boolean ().optional (),
+				canSpeak: z.boolean ().optional (),
+				canFollowCeremony: z.boolean ().optional (),
+				canDoSport: z.boolean ().optional (),
+				canSeeBoard: z.boolean ().optional (),
+				canHearClearly: z.boolean ().optional (),
+				canWalkRun: z.boolean ().optional (),
+				canHoldPen: z.boolean ().optional (),
+				dominantHandRight: z.boolean ().optional (),
+				diseaseHistory: z.string ().optional (),
+			})
+			.optional (),
+
+		/* =========================================================
+		 RELIGION ACTIVITY
+		 ========================================================= */
+
+		religionActivity: z
+			.object ({
+				prayFiveTimes: z.boolean ().optional (),
+				oftenMissPrayer: z.string ().optional (),
+				quranStudyLevel: z.string ().optional (),
+				worshipActivities: z.string ().optional (),
+				worshipLocation: z.string ().optional (),
+			})
+			.optional (),
+
+		/* =========================================================
+		 FAMILY INFORMATION
+		 ========================================================= */
+
+		family: z
+			.object ({
+				livingWith: z.string ().optional (),
+				houseOwnership: z.enum (HouseOwnership).optional (),
+				headOfFamilyName: z.string ().optional (),
+				familyCardAddress: z.string ().optional (),
+			})
+			.optional (),
+
+		/* =========================================================
+		 PARENTS
+		 ========================================================= */
+
+		parents: z
+			.array (
+				z.object ({
+					role: z.enum (ParentType),
+					name: z.string (),
+					phone: z.string (),
+					education: z.enum (EducationLevel),
+					job: z.string (),
+					income: z.string ().optional (),
+					religionCode: z.string (),
+  					address: z.string (),
+					guardianRelation: z.string ().optional (),
+				})
+			)
+			.optional (),
+
+		/* =========================================================
+		 ENROLLMENT
+		 ========================================================= */
+
+		enrollment: z
+			.object ({
+				academicYearId: z.string (),
+				academicYear: ({
+					academicYearName: z.string ().optional (),
+				}),
+				classId: z.string (),
+				class: z.object ({
+					grade: z.string ().optional (),
+					name: z.string ().optional (),
+				}),
+				status: z.enum (EnrollmentStatus).optional (),
+			})
+			.optional (),
+
+		/* =========================================================
+		 STUDENT AID
+		 ========================================================= */
+		aids: z
+			.array (
+				z.object ({
+					academicYearId: z.string (),
+					kjp: z.boolean ().optional (),
+					pip: z.boolean ().optional (),
+				})
+			)
+			.optional (),
+	})
+);
+
+export const deleteStudentSchema = z.object ({
+	id: BaseIdSchema,
 });
 
-/**
- * ==============================
- * BATCH ASSIGN → ROMBEL
- * ==============================
- */
-export const BatchAssignRombelSchema = z.object({
-    studentIds: z
-        .array(z.string().regex(UUID_REGEX))
-        .min(1, "Minimal 1 siswa"),
 
-    rombelId: z.string().regex(UUID_REGEX),
-});
+export const ListStudentSchema = z.object({
+	page: z.coerce.number().optional(),
+	limit: z.coerce.number().optional(),
 
-/**
- * ==============================
- * ASSIGN STUDENT → ACADEMIC YEAR
- * ==============================
- */
-export const AssignAcademicYearSchema = z.object({
-    studentId: z.string().regex(UUID_REGEX),
-    rombelId: z.string().regex(UUID_REGEX),
-});
+	search: z.string().optional(),
 
-/**
- * ==============================
- * BATCH ASSIGN → ACADEMIC YEAR
- * ==============================
- */
-export const BatchAssignAcademicYearSchema = z.object({
-    studentIds: z
-        .array(z.string().regex(UUID_REGEX))
-        .min(1, "Minimal 1 siswa"),
+	classId: z.string().uuid().optional(),
 
-    rombelId: z.string().regex(UUID_REGEX),
+	isDifable: z
+		.string()
+		.optional()
+		.transform((val) =>
+			val === undefined ? undefined : val === "true"
+		),
+
+	status: z.enum(EnrollmentStatus).optional(),
 });

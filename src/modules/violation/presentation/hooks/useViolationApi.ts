@@ -10,6 +10,7 @@ import {
     safeJson,
     toApiError,
 } from "@/modules/shared/errors/ApiError";
+import {buildPaginationQuery} from "@/libs/utils";
 
 /* ============================================================
    PAYLOAD TYPES
@@ -123,19 +124,13 @@ export interface UseViolationApiReturn {
 export function useViolationApi(): UseViolationApiReturn {
     /* ================= STATE ================= */
 
-    const [violations, setViolations] =
-        useState<Violation[]>([]);
+    const [violations, setViolations] = useState<Violation[]>([]);
 
-    const [pagination, setPagination] =
-        useState<BasePaginationResponse<Violation> | null>(
-            null,
-        );
+    const [pagination, setPagination] = useState<BasePaginationResponse<Violation> | null>(null, );
 
-    const [loading, setLoading] =
-        useState<boolean>(false);
+    const [loading, setLoading] =useState<boolean>(false);
 
-    const [error, setError] =
-        useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     /* ============================================================
        FETCH PAGINATED LIST
@@ -149,30 +144,7 @@ export function useViolationApi(): UseViolationApiReturn {
             setError(null);
 
             try {
-                const query = new URLSearchParams();
-
-                if (params?.page) {
-                    query.append("page", String(params.page));
-                }
-
-                if (params?.limit) {
-                    query.append("limit", String(params.limit));
-                }
-
-                if (params?.search) {
-                    query.append("search", params.search);
-                }
-
-                if (params?.sortBy) {
-                    query.append("sortBy", params.sortBy);
-                }
-
-                if (params?.sortOrder) {
-                    query.append(
-                        "sortOrder",
-                        params.sortOrder,
-                    );
-                }
+                const query = buildPaginationQuery(params);
 
                 const response = await fetch(
                     `/api/violations-master?${query.toString()}`,

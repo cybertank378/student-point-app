@@ -1,5 +1,7 @@
 //Files: src/app/(protected)/dashboard/students/page.tsx
 
+import StudentSection from "@/sections/student/pages/StudentSection";
+
 export default function StudentsPage() {
-    return <div>Students Page</div>;
+    return <StudentSection />;
 }

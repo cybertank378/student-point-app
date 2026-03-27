@@ -36,6 +36,11 @@ export class AppError extends Error {
 		return new AppError(message, 409, "CONFLICT", details);
 	}
 
+
+	static validation(message = "Unvalidate detected", details?: unknown) {
+		return new AppError(message, 419, "UNVALIDATE", details);
+	}
+
 	static unauthorized(message = "Unauthorized", details?: unknown) {
 		return new AppError(message, 401, "UNAUTHORIZED", details);
 	}

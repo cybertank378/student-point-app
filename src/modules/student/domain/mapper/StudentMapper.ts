@@ -1,35 +1,51 @@
 //Files: src/modules/student/domain/mapper/StudentMapper.ts
-import { GenderMapper } from "@/modules/student/domain/mapper/GenderMapper";
-import { StudentStatusMapper } from "@/modules/student/domain/mapper/StudentStatusMapper";
-import { Student } from "@/modules/student/domain/entity/Student";
-import type { Student as PrismaStudent } from "@/generated/prisma";
-import {FamilyStatusMapper} from "@/modules/student/domain/mapper/FamilyStatusMapper";
 
-/**
- * Mapper: Prisma → Domain
- * Tidak ada logic bisnis
- */
+import type { Prisma } from "@/generated/prisma";
+import { StudentEntity } from "@/modules/student/domain/entity/Student";
 
-export const StudentMapper = {
-    toDomain(row: PrismaStudent): Student {
-        return new Student(
-            row.id,
-            row.nis ?? null,
-            row.nisn,
-            row.name,
-            row.nickname ?? null,
-            GenderMapper.toDomain(row.gender),
-            row.religionCode,
-            row.rombelId,
-            StudentStatusMapper.toDomain(row.status),
-            FamilyStatusMapper.toDomain(row.familyStatus), // ✅ FIXED
-            row.isDifable ?? false,
-            row.difableNotes ?? null,
-            row.deletedAt ?? null,
-        );
-    },
+type StudentRow = Prisma.StudentGetPayload<{}>;
 
-    toDomainList(rows: PrismaStudent[]): Student[] {
-        return rows.map((row) => StudentMapper.toDomain(row));
-    },
-};
+export class StudentMapper {
+  static toDomain(row: StudentRow): StudentEntity {
+    return new StudentEntity(
+      row.id,
+
+      row.nis,
+      row.nisn,
+
+      row.name,
+      row.nickname,
+      row.gender,
+      row.photo,
+
+      row.birthPlace,
+      row.birthDate,
+
+      row.address,
+      row.phone,
+      row.email,
+
+      row.religionCode,
+
+      row.nik,
+      row.kkNumber,
+
+      row.schoolOrigin,
+      row.graduationScore,
+
+      row.instagram,
+
+      row.familyStatus,
+
+      row.isDifable,
+      row.difableNotes,
+
+      row.createdAt,
+      row.deletedAt
+    );
+  }
+
+  static toDomainList(rows: StudentRow[]): StudentEntity[] {
+    return rows.map(StudentMapper.toDomain);
+  }
+}

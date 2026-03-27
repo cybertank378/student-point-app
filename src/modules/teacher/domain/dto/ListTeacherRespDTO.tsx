@@ -7,6 +7,8 @@
 
 import {CivilServantRank, EducationLevel, Gender, TeacherRole} from "@/generated/prisma";
 
+import type { Teacher } from "@/modules/teacher/domain/entity/Teacher";
+
 /**
  * ============================================================
  * SORTABLE FIELDS (Single Source of Truth)
@@ -104,8 +106,6 @@ export interface ListTeacherRespDTO {
 /* ============================================================
  * DOMAIN SEARCH (ENTITY BASED – DOMAIN LAYER ONLY)
  * ============================================================ */
-
-import type { Teacher } from "@/modules/teacher/domain/entity/Teacher";
 
 export interface TeacherSearchParams {
     page: number;

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { Result } from "@/modules/shared/core/Result";
-import { AppError } from "@/modules/shared/errors/AppError";
 
 export class HttpResultHandler {
 
@@ -8,39 +7,21 @@ export class HttpResultHandler {
         result: Result<T>,
         successStatus = 200
     ) {
-        if (!result.isSuccess) {
-            console.error("HTTP RESULT FAILURE:", result.getError());
-            const error = result.getError();
 
-            // Proper type narrowing
-            if (error instanceof AppError) {
-                return NextResponse.json(
-                    error.toJSON(),
-                    { status: error.statusCode }
-                );
-            }
+        if (result.isFailure) {
 
-            // Generic JS Error
-            if (error instanceof Error) {
-                return NextResponse.json(
-                    {
-                        message: error.message,
-                        code: "INTERNAL_ERROR",
-                        statusCode: 500,
-                    },
-                    { status: 500 }
-                );
-            }
+            const error = result.error!;
 
-            // Fallback unknown error
+            // Log once, centrally
+            console.error("HTTP RESULT FAILURE:", error);
+
             return NextResponse.json(
-                {
-                    message: "Internal server error",
-                    code: "INTERNAL_ERROR",
-                    statusCode: 500,
-                },
-                { status: 500 }
+                error.toJSON(),
+                { status: error.statusCode }
             );
+
+
+
         }
 
         const value = result.getValue();

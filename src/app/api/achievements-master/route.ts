@@ -2,6 +2,7 @@
 
 import type { NextRequest } from "next/server";
 import { createAchievementController } from "./_factory";
+import {createViolationController} from "@/app/api/violations-master/_factory";
 
 const controller = createAchievementController();
 
@@ -14,8 +15,8 @@ const controller = createAchievementController();
  * RbacConfig handled in middleware
  */
 
-export async function GET() {
-    return controller.getAll();
+export async function GET(request: Request) {
+    return controller.getAll(request);
 }
 
 export async function POST(req: NextRequest) {

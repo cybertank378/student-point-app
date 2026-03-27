@@ -1,166 +1,80 @@
-//Files: src/proxy.ts
+// Files: src/proxy.ts
+
 import { type NextRequest, NextResponse } from "next/server";
-import prisma from "@/libs/prisma";
-import {
-  mapToAuthPayload,
-  ONE_DAY,
-  SEVEN_DAYS,
-  TEACHER_ROLES,
-  type TeacherRole,
-  USER_ROLES,
-  type UserRole,
-} from "@/libs/utils";
-import { BcryptService } from "@/modules/auth/application/service/BcryptService";
 import type AuthPayload from "@/modules/auth/domain/entity/AuthPayload";
-import { canAccessRoute } from "@/modules/auth/domain/rbac/fieldGuard";
-import { evaluatePolicy } from "@/modules/auth/domain/rbac/policyEngine";
-import {
-  generateAccessToken,
-  verifyAccessToken,
-  verifyRefreshToken,
-} from "@/modules/shared/core/jwt";
+import { verifyAccessToken } from "@/modules/shared/core/jwt";
+import { canAccessRoute } from "@/security/fieldGuard";
+import { evaluatePolicy } from "@/security/policyEngine";
 
 /* ============================================================
-   HASH SERVICE
-============================================================ */
-
-const hashService = new BcryptService();
-
-/* ============================================================
-   TYPE GUARD
-============================================================ */
-
-function isJwtPayload(payload: unknown): payload is AuthPayload {
-  if (typeof payload !== "object" || payload === null) {
-    return false;
-  }
-
-  const record = payload as Record<string, unknown>;
-
-  const validRole =
-    typeof record.role === "string" &&
-    USER_ROLES.includes(record.role as UserRole);
-
-  const validTeacherRole =
-    record.teacherRole === undefined ||
-    (typeof record.teacherRole === "string" &&
-      TEACHER_ROLES.includes(record.teacherRole as TeacherRole));
-
-  return (
-    typeof record.sub === "string" &&
-    typeof record.username === "string" &&
-    validRole &&
-    validTeacherRole
-  );
-}
-
-/* ============================================================
-   PUBLIC ROUTE CHECK
-============================================================ */
+ PUBLIC ROUTE
+ ============================================================ */
 
 function isPublicRoute(path: string) {
-  return (
-    path.startsWith("/login") ||
-    path.startsWith("/403") ||
-    path.startsWith("/api/auth") ||
-    path.startsWith("/_next") ||
-    path.startsWith("/favicon")
-  );
+  // static files
+  if (
+      path.startsWith("/_next") ||
+      path.startsWith("/assets") ||
+      path.startsWith("/pdf.worker") ||
+      path === "/favicon.ico"
+  ) {
+    return true;
+  }
+
+  // auth routes
+  return path.startsWith ("/login") ||
+      path.startsWith ("/api/auth");
+
+
 }
 
 /* ============================================================
-   PROXY
-============================================================ */
+ PROXY
+ ============================================================ */
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  console.log("PROXY HIT:", pathname);
+
   if (isPublicRoute(pathname)) {
+    console.log("PUBLIC BYPASS:", pathname);
     return NextResponse.next();
   }
 
+  console.log("PROTECTED:", pathname);
+
+  /* ================= TOKEN ================= */
+
   const accessToken = req.cookies.get("accessToken")?.value;
 
-  const refreshToken = req.cookies.get("refresh_token")?.value;
-
-  let user: AuthPayload | null = null;
-
-  const response = NextResponse.next();
-
-  /* ================= ACCESS TOKEN ================= */
-
-  if (accessToken) {
-    const decoded = await verifyAccessToken(accessToken);
-
-    if (isJwtPayload(decoded)) {
-      user = mapToAuthPayload(decoded);
-    }
+  if (!accessToken) {
+    return NextResponse.redirect(
+        new URL(`/login?redirect=${pathname}`, req.url)
+    );
   }
 
-  /* ================= AUTO REFRESH ================= */
+  /* ================= VERIFY TOKEN ================= */
 
-  if (!user && refreshToken) {
-    const decoded = await verifyRefreshToken(refreshToken);
+  const decoded = await verifyAccessToken(accessToken);
 
-    if (!isJwtPayload(decoded)) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
+  /* ================= TOKEN EXPIRED ================= */
 
-    /* ===== Validate refresh token in DB ===== */
+  if (!decoded) {
+    console.log("[JWT] Access token expired");
 
-    const sessions = await prisma.authSession.findMany({
-      where: {
-        userId: decoded.sub,
-        revoked: false,
-        expiresAt: { gt: new Date() },
-      },
-    });
+    const res = NextResponse.redirect(
+        new URL(`/login?redirect=${pathname}`, req.url)
+    );
 
-    let validSession = false;
+    res.cookies.delete("accessToken");
 
-    for (const session of sessions) {
-      const match = await hashService.compare(refreshToken, session.tokenHash);
-
-      if (match) {
-        validSession = true;
-        break;
-      }
-    }
-
-    if (!validSession) {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-
-    /* ===== Generate new access token ===== */
-
-    const payload = mapToAuthPayload(decoded);
-
-    const newAccessToken = await generateAccessToken(payload);
-
-    response.cookies.set("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: ONE_DAY,
-    });
-
-    response.cookies.set("refresh_token", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: SEVEN_DAYS,
-    });
-
-    user = payload;
+    return res;
   }
 
-  if (!user) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+  const user = decoded as AuthPayload;
 
-  /* ================= DASHBOARD GUARD ================= */
+  /* ================= DASHBOARD ================= */
 
   if (pathname.startsWith("/dashboard")) {
     const allowed = canAccessRoute(user.role, pathname);
@@ -168,11 +82,9 @@ export async function proxy(req: NextRequest) {
     if (!allowed) {
       return NextResponse.redirect(new URL("/403", req.url));
     }
-
-    return response;
   }
 
-  /* ================= API POLICY ================= */
+  /* ================= API ================= */
 
   if (pathname.startsWith("/api")) {
     const allowed = evaluatePolicy({
@@ -182,17 +94,22 @@ export async function proxy(req: NextRequest) {
     });
 
     if (!allowed) {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+      return NextResponse.json(
+          { message: "Forbidden" },
+          { status: 403 }
+      );
     }
   }
 
-  return response;
+  /* ================= ALLOW ================= */
+
+  return NextResponse.next();
 }
 
 /* ============================================================
-   MATCHER
-============================================================ */
+ MATCHER
+ ============================================================ */
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/api/:path*"],
+  matcher: ["/dashboard/:path*", "/api/:path*, "],
 };

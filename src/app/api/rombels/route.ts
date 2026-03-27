@@ -13,8 +13,8 @@ const controller = createRombelController();
  * RbacConfig handled in middleware
  */
 
-export async function GET(req: NextRequest) {
-    return await controller.getAll(req);
+export async function GET() {
+    return await controller.getAll();
 }
 
 export async function POST(req: NextRequest) {

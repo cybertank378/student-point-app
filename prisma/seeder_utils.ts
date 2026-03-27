@@ -12,6 +12,18 @@ export async function hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, 10);
 }
 
+
+// ✅ generate NIS 5 digit (00001 - 99999)
+export function generateNis(index: number): string {
+    return String(index + 1).padStart(5, "0");
+}
+
+// ✅ generate NISN 10 digit (deterministic & unique)
+export function generateNisn(index: number): string {
+    return `2024${String(index + 1).padStart(6, "0")}`; // 4 + 6 = 10 digit
+}
+
+
 /* ============================================================
    WEIGHTED DISTRIBUTION GENERATOR
 ============================================================ */

@@ -2,7 +2,7 @@
 
 import type { Prisma } from "@/generated/prisma";
 import type { UserEntity } from "@/modules/user/domain/entity/UserEntity";
-import type { TeacherRole, UserRole } from "@/libs/utils";
+import type { TeacherRole, Role } from "@/libs/utils/enums";
 
 export type UserWithRelations = Prisma.UserGetPayload<{
     select: {
@@ -87,7 +87,7 @@ export const UserMapper = {
             password: user.password,
             image: user.image ?? null,
 
-            role: user.role as UserRole,
+            role: user.role as Role,
             teacherRole: user.teacherRole as TeacherRole | null,
 
             studentId: user.studentId ?? null,

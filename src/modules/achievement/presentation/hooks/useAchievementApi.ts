@@ -1,220 +1,228 @@
 //Files: src/modules/achievement/presentation/hooks/useAchievementApi.ts
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {useCallback, useEffect, useState} from "react";
 
-import type { Achievement } from "@/modules/achievement/domain/entity/Achievement";
-import type { CreateAchievementDTO } from "@/modules/achievement/domain/dto/CreateAchievementDTO";
-import type { UpdateAchievementDTO } from "@/modules/achievement/domain/dto/UpdateAchievementDTO";
+import type {Achievement} from "@/modules/achievement/domain/entity/Achievement";
+import type {CreateAchievementDTO} from "@/modules/achievement/domain/dto/CreateAchievementDTO";
+import type {UpdateAchievementDTO} from "@/modules/achievement/domain/dto/UpdateAchievementDTO";
 
-import {
-  type ApiError,
-  parseError,
-  safeJson,
-  toApiError,
-} from "@/modules/shared/errors/ApiError";
+import {type ApiError, parseError, safeJson, toApiError,} from "@/modules/shared/errors/ApiError";
+import type {BasePaginationParams, BasePaginationResponse} from "@/modules/shared/http/pagination/BasePagination";
+import {buildPaginationQuery} from "@/libs/utils";
 
 /**
  * Hook: Achievement Master API
  * Endpoint: /api/achievements-master
  */
 export const useAchievementApi = () => {
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<ApiError | null>(null);
+    const [achievements, setAchievements] = useState<Achievement[]>([]);
+    const [pagination, setPagination] = useState<BasePaginationResponse<Achievement> | null>(null,);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<ApiError | null>(null);
 
-  /**
-   * ============================
-   * FETCH ALL
-   * ============================
-   */
-  const fetchAchievements = useCallback(async () => {
-    setLoading(true);
-    try {
-      setError(null);
+    /**
+     * ============================
+     * FETCH ALL
+     * ============================
+     */
+    const fetchAchievements = useCallback(
+        async (params?: BasePaginationParams): Promise<void> => {
+            setLoading(true);
+            setError(null);
 
-      const res = await fetch("/api/achievements-master");
+            try {
+                const query = buildPaginationQuery(params);
 
-      if (!res.ok) {
-        const apiErr = await parseError(res);
-        setError(apiErr);
-        setAchievements([]);
-        return;
-      }
+                const response = await fetch(
+                    `/api/achievements-master${query ? `?${query}` : ""}`
+                );
 
-      const list = await safeJson<Achievement[]>(res);
+                const result =
+                    await safeJson<
+                        BasePaginationResponse<Achievement>
+                    >(response);
 
-      setAchievements(list ?? []);
-    } catch (err) {
-      const apiErr = toApiError(err, "Failed to fetch achievements");
-      setError(apiErr);
-      setAchievements([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+                setAchievements([...result.data]);
+                setPagination(result);
 
-  /**
-   * ============================
-   * GET BY ID
-   * ============================
-   */
-  const getAchievementById = useCallback(
-    async (id: string | null | undefined): Promise<Achievement | null> => {
-      if (!id) {
-        console.warn("getAchievementById called without id");
-        return null;
-      }
+            } catch (err: unknown) {
+                const apiError = toApiError(
+                    err,
+                    "Gagal mengambil data achievement."
+                );
 
-      try {
-        setError(null);
+                setError(apiError);
+                setAchievements([]);
+            } finally {
+                setLoading(false);
+            }
+        },
+        []
+    );
 
-        const res = await fetch(`/api/achievements-master/${id}`);
+    /**
+     * ============================
+     * GET BY ID
+     * ============================
+     */
+    const getAchievementById = useCallback(
+        async (id: string | null | undefined): Promise<Achievement | null> => {
+            if (!id) {
+                console.warn("getAchievementById called without id");
+                return null;
+            }
 
-        if (!res.ok) {
-          const apiErr = await parseError(res);
-          setError(apiErr);
-          return null;
-        }
+            try {
+                setError(null);
 
-        const achievement = await safeJson<Achievement>(res);
+                const res = await fetch(`/api/achievements-master/${id}`);
 
-        return achievement ?? null;
-      } catch (err) {
-        const apiErr = toApiError(err, "Failed to fetch achievement");
-        setError(apiErr);
-        return null;
-      }
-    },
-    [],
-  );
+                if (!res.ok) {
+                    const apiErr = await parseError(res);
+                    setError(apiErr);
+                    return null;
+                }
 
-  /**
-   * ============================
-   * CREATE
-   * ============================
-   */
-  const createAchievement = useCallback(
-    async (payload: CreateAchievementDTO): Promise<Achievement | null> => {
-      try {
-        setError(null);
+                const achievement = await safeJson<Achievement>(res);
 
-        const res = await fetch("/api/achievements-master", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+                return achievement ?? null;
+            } catch (err) {
+                const apiErr = toApiError(err, "Failed to fetch achievement");
+                setError(apiErr);
+                return null;
+            }
+        },
+        [],
+    );
 
-        if (!res.ok) {
-          const apiErr = await parseError(res);
-          setError(apiErr);
-          return null;
-        }
+    /**
+     * ============================
+     * CREATE
+     * ============================
+     */
+    const createAchievement = useCallback(
+        async (payload: CreateAchievementDTO): Promise<Achievement | null> => {
+            try {
+                setError(null);
 
-        const created = await safeJson<Achievement>(res);
+                const res = await fetch("/api/achievements-master", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
 
-        await fetchAchievements();
-        return created ?? null;
-      } catch (err) {
-        const apiErr = toApiError(err, "Failed to create achievement");
-        setError(apiErr);
-        console.error("createAchievement error", err);
-        return null;
-      }
-    },
-    [fetchAchievements],
-  );
+                if (!res.ok) {
+                    const apiErr = await parseError(res);
+                    setError(apiErr);
+                    return null;
+                }
 
-  /**
-   * ============================
-   * UPDATE
-   * ============================
-   */
-  const updateAchievement = useCallback(
-    async (payload: UpdateAchievementDTO): Promise<Achievement | null> => {
-      try {
-        setError(null);
+                const created = await safeJson<Achievement>(res);
 
-        const res = await fetch(`/api/achievements-master/${payload.id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+                await fetchAchievements();
+                return created ?? null;
+            } catch (err) {
+                const apiErr = toApiError(err, "Failed to create achievement");
+                setError(apiErr);
+                console.error("createAchievement error", err);
+                return null;
+            }
+        },
+        [fetchAchievements],
+    );
 
-        if (!res.ok) {
-          const apiErr = await parseError(res);
-          setError(apiErr);
-          return null;
-        }
+    /**
+     * ============================
+     * UPDATE
+     * ============================
+     */
+    const updateAchievement = useCallback(
+        async (payload: UpdateAchievementDTO): Promise<Achievement | null> => {
+            try {
+                setError(null);
 
-        const updated = await safeJson<Achievement>(res);
+                const res = await fetch(`/api/achievements-master/${payload.id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(payload),
+                });
 
-        await fetchAchievements();
-        return updated ?? null;
-      } catch (err) {
-        const apiErr = toApiError(err, "Failed to update achievement");
-        setError(apiErr);
-        console.error("updateAchievement error", err);
-        return null;
-      }
-    },
-    [fetchAchievements],
-  );
+                if (!res.ok) {
+                    const apiErr = await parseError(res);
+                    setError(apiErr);
+                    return null;
+                }
 
-  /**
-   * ============================
-   * DELETE (SOFT)
-   * ============================
-   */
-  const deleteAchievement = useCallback(
-    async (id: string): Promise<void> => {
-      if (!id) return;
+                const updated = await safeJson<Achievement>(res);
 
-      try {
-        setError(null);
+                await fetchAchievements();
+                return updated ?? null;
+            } catch (err) {
+                const apiErr = toApiError(err, "Failed to update achievement");
+                setError(apiErr);
+                console.error("updateAchievement error", err);
+                return null;
+            }
+        },
+        [fetchAchievements],
+    );
 
-        const res = await fetch(`/api/achievements-master/${id}`, {
-          method: "DELETE",
-        });
+    /**
+     * ============================
+     * DELETE (SOFT)
+     * ============================
+     */
+    const deleteAchievement = useCallback(
+        async (id: string): Promise<void> => {
+            if (!id) return;
 
-        if (!res.ok) {
-          const apiErr = await parseError(res);
-          setError(apiErr);
-          console.error("deleteAchievement failed", apiErr);
-          return;
-        }
+            try {
+                setError(null);
 
-        await fetchAchievements();
-      } catch (err) {
-        const apiErr = toApiError(err, "Failed to delete achievement");
-        setError(apiErr);
-        console.error("deleteAchievement error", err);
-      }
-    },
-    [fetchAchievements],
-  );
+                const res = await fetch(`/api/achievements-master/${id}`, {
+                    method: "DELETE",
+                });
 
-  /**
-   * ============================
-   * INITIAL LOAD
-   * ============================
-   */
-  useEffect(() => {
-    void fetchAchievements();
-  }, [fetchAchievements]);
+                if (!res.ok) {
+                    const apiErr = await parseError(res);
+                    setError(apiErr);
+                    console.error("deleteAchievement failed", apiErr);
+                    return;
+                }
 
-  return {
-    achievements,
-    loading,
-    error,
-    fetchAchievements,
-    getAchievementById,
-    createAchievement,
-    updateAchievement,
-    deleteAchievement,
-  };
+                await fetchAchievements();
+            } catch (err) {
+                const apiErr = toApiError(err, "Failed to delete achievement");
+                setError(apiErr);
+                console.error("deleteAchievement error", err);
+            }
+        },
+        [fetchAchievements],
+    );
+
+    /**
+     * ============================
+     * INITIAL LOAD
+     * ============================
+     */
+    useEffect(() => {
+        void fetchAchievements();
+    }, [fetchAchievements]);
+
+    return {
+        achievements,
+        loading,
+        pagination,
+        error,
+        fetchAchievements,
+        getAchievementById,
+        createAchievement,
+        updateAchievement,
+        deleteAchievement,
+    };
 };

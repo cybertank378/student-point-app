@@ -1,32 +1,130 @@
 //Files: src/app/api/students/[id]/route.ts
 
 import type { NextRequest } from "next/server";
-import { createStudentController } from "../_factory";
-import { getRouteParam } from "@/modules/shared/http/getRouteParam";
-
-const controller = createStudentController();
+import { RouteParamHelper } from "@/modules/shared/http/RouteParamHelper";
+import StudentProvider from "@/modules/student/application/provider/StudentProvider";
 
 /**
- * =====================================================
- * GET    /api/students/:id
- * PUT    /api/students/:id
- * DELETE /api/students/:id
- * =====================================================
+ * ============================================================
+ * HEADER FILE
+ * ============================================================
  *
- * RbacConfig & Ownership handled in middleware / policy layer
+ * Student Detail Route
+ *
+ * Route handler untuk operasi terhadap resource
+ * Student berdasarkan ID.
+ *
+ * ============================================================
+ * DESKRIPSI DOMAIN
+ * ============================================================
+ *
+ * Endpoint ini digunakan untuk:
+ *
+ * • mengambil detail siswa
+ * • memperbarui data siswa
+ * • menghapus siswa
+ *
+ * Dependency controller disediakan oleh
+ * StudentProvider sebagai composition root.
  */
 
-export async function GET(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.getById(id);
+const controller = StudentProvider.controller();
+
+/**
+ * ============================================================
+ * GET STUDENT BY ID
+ * ============================================================
+ *
+ * Mengambil detail siswa berdasarkan ID.
+ *
+ * ------------------------------------------------------------
+ * PARAM
+ * ------------------------------------------------------------
+ *
+ * @param {NextRequest} request
+ * @param {Promise<{ id: string }>} params
+ *
+ * ------------------------------------------------------------
+ * RETURNS
+ * ------------------------------------------------------------
+ *
+ * @returns {Promise<Response>}
+ *
+ * ------------------------------------------------------------
+ * EXAMPLE
+ * ------------------------------------------------------------
+ *
+ * GET /api/students/uuid-student
+ */
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
+  const id = await RouteParamHelper.id(params);
+
+  return controller.getById(id);
 }
 
-export async function PUT(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.update(id, req);
+/**
+ * ============================================================
+ * UPDATE STUDENT
+ * ============================================================
+ *
+ * Memperbarui data siswa secara parsial.
+ *
+ * ------------------------------------------------------------
+ * PARAM
+ * ------------------------------------------------------------
+ *
+ * @param {NextRequest} request
+ * @param {Promise<{ id: string }>} params
+ *
+ * ------------------------------------------------------------
+ * RETURNS
+ * ------------------------------------------------------------
+ *
+ * @returns {Promise<Response>}
+ *
+ * ------------------------------------------------------------
+ * EXAMPLE
+ * ------------------------------------------------------------
+ *
+ * PATCH /api/students/uuid-student
+ */
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
+  const id = await RouteParamHelper.id(params);
+
+  return controller.update(id, request);
 }
 
-export async function DELETE(req: NextRequest) {
-    const id = getRouteParam(req);
-    return controller.delete(id);
+/**
+ * ============================================================
+ * DELETE STUDENT
+ * ============================================================
+ *
+ * Menghapus data siswa dari sistem.
+ *
+ * ------------------------------------------------------------
+ * PARAM
+ * ------------------------------------------------------------
+ *
+ * @param {NextRequest} request
+ * @param {Promise<{ id: string }>} params
+ *
+ * ------------------------------------------------------------
+ * RETURNS
+ * ------------------------------------------------------------
+ *
+ * @returns {Promise<Response>}
+ *
+ * ------------------------------------------------------------
+ * EXAMPLE
+ * ------------------------------------------------------------
+ *
+ * DELETE /api/students/uuid-student
+ */
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }): Promise<Response> {
+  const id = await RouteParamHelper.id(params);
+
+  return controller.delete(id);
 }

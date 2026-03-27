@@ -60,7 +60,7 @@ export class GetAcademicYearByIdUseCase extends BaseUseCase<
         const year = await this.repo.findById(id);
 
         if (!year) {
-            throw new Error("Academic year not found");
+            throw new Error("Tahun Ajaran tidak ditemukan");
         }
 
         return year;

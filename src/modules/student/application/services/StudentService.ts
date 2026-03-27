@@ -1,155 +1,135 @@
-//Files: src/modules/student/application/services/StudentService.ts
+// Files: src/modules/student/application/services/StudentService.ts
+// Files: src/modules/student/application/services/StudentService.ts
+
+import type { FileStorageInterface } from "@/libs/FileStorageInterface";
 import type { Result } from "@/modules/shared/core/Result";
-
-import type { Student } from "@/modules/student/domain/entity/Student";
-import type { CreateStudentDTO } from "@/modules/student/domain/dto/CreateStudentDTO";
-import type { UpdateStudentDTO } from "@/modules/student/domain/dto/UpdateStudentDTO";
-import type { StudentQueryDTO } from "@/modules/student/domain/dto/StudentQueryDTO";
-
-import { ListStudentUseCase } from "@/modules/student/application/usecases/ListStudentUseCase";
-import { GetStudentByIdUseCase } from "@/modules/student/application/usecases/GetStudentByIdUseCase";
-import { BatchAssignStudentToRombelUseCase } from "@/modules/student/application/usecases/BatchAssignStudentToRombelUseCase";
-import { AssignStudentToRombelUseCase } from "@/modules/student/application/usecases/AssignStudentToRombelUseCase";
-import { DeleteStudentUseCase } from "@/modules/student/application/usecases/DeleteStudentUseCase";
-import { UpdateStudentUseCase } from "@/modules/student/application/usecases/UpdateStudentUseCase";
-import { CreateStudentUseCase } from "@/modules/student/application/usecases/CreateStudentUseCase";
-import { GetStudentByNisUseCase } from "@/modules/student/application/usecases/GetStudentByNisUseCase";
-import { AssignStudentAcademicYearUseCase } from "@/modules/student/application/usecases/AssignStudentAcademicYearUseCase";
-
-import type { AcademicYearInterface } from "@/modules/academic-year/domain/interfaces/AcademicYearInterface";
-import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
+import type { BasePaginationParams, BasePaginationResponse } from "@/modules/shared/http/pagination/BasePagination";
 import {
-    BatchAssignStudentAcademicYearUseCase
-} from "@/modules/student/application/usecases/BatchAssignStudentAcademicYearUseCase";
+  CheckStudentNisnExistsUseCase,
+  CreateStudentUseCase,
+  DeleteStudentUseCase,
+  GetStudentByIdUseCase,
+  GetStudentByNisUseCase,
+  GetStudentListUseCase,
+  GetStudentStatisticsUseCase,
+  ImportStudentUseCase,
+  UpdateStudentUseCase,
+  UploadStudentImageUseCase,
+} from "@/modules/student/application/usecases";
+
+import type { UploadStudentImageRequest } from "@/modules/student/application/usecases/UploadStudentImageUseCase";
+import type { StudentIdentityDTO, StudentStatisticDTO } from "@/modules/student/domain/dto";
+import type { BulkImportStudentDTO } from "@/modules/student/domain/dto/BulkImportStudentDTO";
+import type { CreateStudentDTO } from "@/modules/student/domain/dto/CreateStudentDTO";
+import type { DeleteStudentDTO } from "@/modules/student/domain/dto/DeleteStudentDTO";
+import type { UpdateStudentDTO } from "@/modules/student/domain/dto/UpdateStudentDTO";
+import type { StudentInterface } from "@/modules/student/domain/interfaces/StudentInterface";
+import type { StudentCompositeService } from "@/modules/student-composite/application/services/StudentCompositeService";
+import type { StudentCompositeDTO } from "@/modules/student-composite/domain/dto/StudentCompositeDTO";
+import type { StudentListCompositeDTO } from "@/modules/student-composite/domain/dto/StudentListCompositeDTO";
+import {StudentListParams} from "@/modules/student-composite/domain/types/StudentListParams";
 
 /**
  * ============================================================
  * STUDENT SERVICE
  * ============================================================
  *
- * Aggregator seluruh Student usecase.
- * Semua method return Result<T>.
+ * Application Facade for Student Module.
+ *
+ * Responsibilities:
+ * - Acts as entry point for controllers
+ * - Delegates execution to UseCases
+ * - Keeps orchestration centralized
+ *
+ * Not Responsible For:
+ * - Business rules (handled by UseCase)
+ * - Persistence logic (handled by Repository)
+ * - Validation (handled by Schema)
+ *
+ * Architecture:
+ * Controller → Service → UseCase → Repository → Prisma
  */
+
 export class StudentService {
-    private readonly listUseCase: ListStudentUseCase;
-    private readonly getByIdUseCase: GetStudentByIdUseCase;
-    private readonly getByNisUseCase: GetStudentByNisUseCase;
-    private readonly createUseCase: CreateStudentUseCase;
-    private readonly updateUseCase: UpdateStudentUseCase;
-    private readonly deleteUseCase: DeleteStudentUseCase;
-    private readonly assignRombelUseCase: AssignStudentToRombelUseCase;
-    private readonly batchAssignRombelUseCase: BatchAssignStudentToRombelUseCase;
-    private readonly assignAcademicYearUseCase: AssignStudentAcademicYearUseCase;
-    private readonly batchAssignAcademicYearUseCase: BatchAssignStudentAcademicYearUseCase;
+  private readonly checkNisnUC: CheckStudentNisnExistsUseCase;
+  private readonly createUC: CreateStudentUseCase;
+  private readonly updateUC: UpdateStudentUseCase;
+  private readonly deleteUC: DeleteStudentUseCase;
+  private readonly importUC: ImportStudentUseCase;
 
-    constructor(
-        repo: StudentInterface,
-        academicYearRepo: AcademicYearInterface
-    ) {
-        this.listUseCase = new ListStudentUseCase(repo);
-        this.getByIdUseCase = new GetStudentByIdUseCase(repo);
-        this.getByNisUseCase = new GetStudentByNisUseCase(repo);
-        this.createUseCase = new CreateStudentUseCase(
-            repo,
-            academicYearRepo
-        );
-        this.updateUseCase = new UpdateStudentUseCase(repo);
-        this.deleteUseCase = new DeleteStudentUseCase(repo);
-        this.assignRombelUseCase = new AssignStudentToRombelUseCase(repo);
-        this.batchAssignRombelUseCase =new BatchAssignStudentToRombelUseCase(repo);
-        this.assignAcademicYearUseCase = new AssignStudentAcademicYearUseCase(repo);
-        this.batchAssignAcademicYearUseCase = new BatchAssignStudentAcademicYearUseCase(repo);
-    }
+  private readonly getUC: GetStudentByIdUseCase;
+  private readonly getNisUC: GetStudentByNisUseCase;
+  private readonly listUC: GetStudentListUseCase;
+  private readonly statisticsUC: GetStudentStatisticsUseCase;
+  private readonly uploadImageUC: UploadStudentImageUseCase;
 
-    /* =========================
-       LIST
-    ========================= */
+  constructor(
+      repo: StudentInterface,
+      compositeService: StudentCompositeService,
+      fileStorage: FileStorageInterface
+  ) {
+    this.checkNisnUC = new CheckStudentNisnExistsUseCase(repo);
+    this.createUC = new CreateStudentUseCase(repo);
+    this.updateUC = new UpdateStudentUseCase(repo);
+    this.deleteUC = new DeleteStudentUseCase(repo);
+    this.importUC = new ImportStudentUseCase(repo);
+    this.getUC = new GetStudentByIdUseCase(compositeService);
+    this.getNisUC = new GetStudentByNisUseCase(repo, compositeService);
+    this.statisticsUC = new GetStudentStatisticsUseCase(repo);
+    this.listUC = new GetStudentListUseCase(compositeService);
+    this.uploadImageUC = new UploadStudentImageUseCase(repo, fileStorage);
+  }
 
-    getAll(
-        query?: StudentQueryDTO
-    ): Promise<Result<Student[]>> {
-        return this.listUseCase.execute(query);
-    }
+  /* ==========================================================
+   QUERY METHODS
+   ========================================================== */
 
-    /* =========================
-       GET BY ID
-    ========================= */
+  getById(id: string): Promise<Result<StudentCompositeDTO>> {
+    return this.getUC.execute(id);
+  }
 
-    getById(id: string): Promise<Result<Student>> {
-        return this.getByIdUseCase.execute(id);
-    }
+  getByNis(nis: string): Promise<Result<StudentCompositeDTO>> {
+    return this.getNisUC.execute(nis);
+  }
 
-    /* =========================
-       GET BY NIS
-    ========================= */
+  getList(params: StudentListParams): Promise<Result<BasePaginationResponse<StudentListCompositeDTO>>> {
+    return this.listUC.execute(params);
+  }
 
-    getByNis(nis: string): Promise<Result<Student>> {
-        return this.getByNisUseCase.execute(nis);
-    }
+  checkNisnExists(nisn: string): Promise<Result<boolean>> {
+    return this.checkNisnUC.execute(nisn);
+  }
+  /**
+   * ==========================================================
+   * STUDENT STATISTICS
+   * ==========================================================
+   */
 
-    /* =========================
-       CREATE
-    ========================= */
+  getStatistics(): Promise<Result<StudentStatisticDTO>> {
+    return this.statisticsUC.execute();
+  }
 
-    create(
-        dto: CreateStudentDTO
-    ): Promise<Result<Student>> {
-        return this.createUseCase.execute(dto);
-    }
+  /* ==========================================================
+   COMMAND METHODS
+   ========================================================== */
 
-    /* =========================
-       UPDATE
-    ========================= */
+  create(dto: CreateStudentDTO): Promise<Result<StudentIdentityDTO>> {
+    return this.createUC.execute(dto);
+  }
 
-    update(
-        dto: UpdateStudentDTO
-    ): Promise<Result<Student>> {
-        return this.updateUseCase.execute(dto);
-    }
+  update(dto: UpdateStudentDTO): Promise<Result<StudentIdentityDTO>> {
+    return this.updateUC.execute(dto);
+  }
 
-    /* =========================
-       DELETE
-    ========================= */
+  delete(dto: DeleteStudentDTO): Promise<Result<void>> {
+    return this.deleteUC.execute(dto);
+  }
 
-    delete(id: string): Promise<Result<void>> {
-        return this.deleteUseCase.execute(id);
-    }
+  import(rows: BulkImportStudentDTO[]): Promise<Result<number>> {
+    return this.importUC.execute(rows);
+  }
 
-    /* =========================
-       ASSIGN ROMBEL
-    ========================= */
-
-    assignToRombel(
-        dto: { studentId: string; rombelId: string }
-    ): Promise<Result<void>> {
-        return this.assignRombelUseCase.execute(dto);
-    }
-
-    /* =========================
-       BATCH ASSIGN ROMBEL
-    ========================= */
-
-    batchAssignToRombel(
-        dto: { studentIds: string[]; rombelId: string }
-    ): Promise<Result<number>> {
-        return this.batchAssignRombelUseCase.execute(dto);
-    }
-
-    /* =========================
-       ASSIGN ACADEMIC YEAR
-    ========================= */
-    assignAcademicYear(
-        dto: { studentId: string; rombelId: string }
-    ): Promise<Result<Student>> {
-        return this.assignAcademicYearUseCase.execute(dto);
-    }
-
-    /* =========================
-       BATCH ASSIGN ACADEMIC YEAR
-    ========================= */
-    batchAssignAcademicYear(
-        dto: { studentIds: string[]; rombelId: string }
-    ): Promise<Result<number>> {
-        return this.batchAssignAcademicYearUseCase.execute(dto);
-    }
+  uploadStudentImage(request: UploadStudentImageRequest): Promise<Result<{ fileName: string }>> {
+    return this.uploadImageUC.execute(request);
+  }
 }

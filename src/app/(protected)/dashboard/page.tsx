@@ -6,14 +6,14 @@ import TeacherDashboard from "@/app/(protected)/dashboard/components/TeacherDash
 import StudentDashboard from "@/app/(protected)/dashboard/components/StudentDashboard";
 import ParentDashboard from "@/app/(protected)/dashboard/components/ParentDashboard";
 
-import type { UserRole } from "@/libs/utils";
+import type { Role } from "@/libs/utils/enums";
 import type React from "react";
 
 type DashboardComponent = React.ComponentType<{
   user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 }>;
 
-const DASHBOARD_MAP: Record<UserRole, DashboardComponent> = {
+const DASHBOARD_MAP: Record<Role, DashboardComponent> = {
   ADMIN: AdminDashboard,
   TEACHER: TeacherDashboard,
   STUDENT: StudentDashboard,

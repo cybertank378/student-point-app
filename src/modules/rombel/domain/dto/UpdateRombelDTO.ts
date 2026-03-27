@@ -8,4 +8,5 @@ export interface UpdateRombelDTO {
     grade: string;
     name: string;
     academicYearId: string;
+    homeroomTeacherId?: string | null;
 }
